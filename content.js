@@ -5,7 +5,9 @@ if (window.top !== window.self) {
   (() => {
     // ===== 常數 =====
     const HOLD_DURATION_MS = 3000; // 長按 3 秒 = 300ml
-    const TICK_INTERVAL = 50; // 水位更新頻率
+    const MAX_ML = 300;
+    const TICK_INTERVAL = 50;
+    const SHATTER_TIMEOUT_MS = 60000; // 1 分鐘不理會自動碎裂
 
     // ===== CSS =====
     const STYLES = `
@@ -13,7 +15,7 @@ if (window.top !== window.self) {
         all: initial;
         position: fixed;
         bottom: 32px;
-        left: 32px;
+        right: 32px;
         z-index: 2147483647;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         font-size: 14px;
@@ -71,7 +73,7 @@ if (window.top !== window.self) {
         height: 100%;
       }
 
-      /* 搖晃動畫 — 持續搖晃直到喝完 */
+      /* 搖晃動畫 */
       .cup-wrapper.shaking {
         animation: shake 0.5s ease-in-out infinite;
         transform-origin: bottom center;
@@ -85,8 +87,6 @@ if (window.top !== window.self) {
         75% { transform: rotate(-3deg); }
         90% { transform: rotate(3deg); }
       }
-
-      /* 水位由 SVG 控制 */
 
       /* 進度環 */
       .progress-ring {
@@ -122,6 +122,7 @@ if (window.top !== window.self) {
         100% { transform: scale(1); }
       }
 
+      /* +ml 飄字 */
       .done-text {
         position: absolute;
         top: -20px;
@@ -138,12 +139,33 @@ if (window.top !== window.self) {
         0% { opacity: 1; transform: translateX(-50%) translateY(0); }
         100% { opacity: 0; transform: translateX(-50%) translateY(-50px); }
       }
+
+      /* ===== 碎裂動畫 ===== */
+      .shatter-container {
+        position: relative;
+        width: 80px;
+        height: 120px;
+      }
+      .shard {
+        position: absolute;
+        opacity: 1;
+        animation: shardFly 0.8s ease-out forwards;
+      }
+      @keyframes shardFly {
+        0% {
+          opacity: 1;
+          transform: translate(0, 0) rotate(0deg) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0.3);
+        }
+      }
     `;
 
-    // ===== 枯萎游標 CSS（注入到頁面 document，非 Shadow DOM） =====
+    // ===== 枯萎游標 CSS =====
     const CURSOR_STYLE_ID = "drink-water-ext-cursor";
     const WITHERED_CURSOR = `
-      /* 枯萎的黃色游標 — SVG data URI */
       * {
         cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M3 2 L8 22 L12 16 L20 18 Z' fill='%23c8a415' stroke='%23806a00' stroke-width='1.2'/%3E%3Cpath d='M5 5 L8 18' stroke='%23a08200' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E") 4 2, auto !important;
       }
@@ -162,58 +184,44 @@ if (window.top !== window.self) {
     const container = document.createElement("div");
     container.className = "drink-container";
 
-    const circumference = 2 * Math.PI * 13; // r=13
+    const circumference = 2 * Math.PI * 13;
 
-    // 杯子形狀：上寬下窄的透明玻璃杯（參照 Duralex Unie）
-    // 外形座標（viewBox 80x120）
-    // 杯口: 左10 右70 (寬60), 杯底: 左18 右62 (寬44), 高度: 上8 下112
     container.innerHTML = `
       <div class="hint">🥤 長按杯子喝水！</div>
       <div class="cup-wrapper shaking">
         <svg class="cup-svg" viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <!-- 杯子內部形狀（用於裁切水位） -->
             <clipPath id="cup-clip">
               <path d="M14 12 L66 12 L62 108 Q62 112 58 112 L22 112 Q18 112 18 108 Z"/>
             </clipPath>
-            <!-- 玻璃質感漸層 -->
-            <linearGradient id="glass-grad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stop-color="rgba(255,255,255,0.25)"/>
-              <stop offset="30%" stop-color="rgba(255,255,255,0.08)"/>
-              <stop offset="70%" stop-color="rgba(255,255,255,0.03)"/>
-              <stop offset="100%" stop-color="rgba(255,255,255,0.2)"/>
-            </linearGradient>
-            <!-- 水的漸層 -->
             <linearGradient id="water-grad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#4fc3f7" stop-opacity="0.85"/>
               <stop offset="100%" stop-color="#0277bd" stop-opacity="0.95"/>
             </linearGradient>
           </defs>
 
-          <!-- 水位（被裁切在杯內） -->
+          <!-- 水位 -->
           <g clip-path="url(#cup-clip)">
-            <rect class="water-rect" x="0" y="120" width="80" height="108" fill="url(#water-grad)"/>
-            <!-- 水面波紋 -->
-            <ellipse class="water-surface" cx="40" cy="120" rx="30" ry="3" fill="rgba(255,255,255,0.35)"/>
+            <rect class="water-rect" x="0" y="112" width="80" height="0" fill="url(#water-grad)"/>
+            <ellipse class="water-surface" cx="40" cy="112" rx="30" ry="3" fill="rgba(255,255,255,0.35)"/>
           </g>
 
-          <!-- 杯身外框 -->
-          <path d="M12 8 L68 8 L63 108 Q62 114 57 114 L23 114 Q18 114 17 108 Z"
+          <!-- 杯身 -->
+          <path class="cup-body-path" d="M12 8 L68 8 L63 108 Q62 114 57 114 L23 114 Q18 114 17 108 Z"
                 fill="none" stroke="rgba(180,180,180,0.6)" stroke-width="2.5"/>
 
-          <!-- 杯口加粗邊（厚玻璃邊緣） -->
+          <!-- 杯口 -->
           <path d="M10 8 Q10 4 14 4 L66 4 Q70 4 70 8 L68 10 L12 10 Z"
                 fill="rgba(200,200,200,0.3)" stroke="rgba(160,160,160,0.5)" stroke-width="1"/>
 
-          <!-- 玻璃質感（高光） -->
+          <!-- 高光 -->
           <path d="M14 12 L20 12 L22 108 L18 108 Z" fill="rgba(255,255,255,0.15)"/>
 
-          <!-- 杯底厚度 -->
+          <!-- 杯底 -->
           <path d="M17 108 L63 108 L62 114 Q62 116 58 116 L22 116 Q18 116 18 114 Z"
                 fill="rgba(180,180,180,0.2)" stroke="rgba(160,160,160,0.3)" stroke-width="1"/>
         </svg>
 
-        <!-- 進度環 -->
         <svg class="progress-ring" viewBox="0 0 32 32">
           <circle class="bg" cx="16" cy="16" r="13"/>
           <circle class="fg" cx="16" cy="16" r="13"
@@ -233,13 +241,11 @@ if (window.top !== window.self) {
     const progressFg = shadow.querySelector(".progress-ring .fg");
     const hintEl = shadow.querySelector(".hint");
 
-    // 水位控制：杯內空間從 y=12 到 y=112，總高 100
     const CUP_TOP = 12;
     const CUP_BOTTOM = 112;
     const CUP_HEIGHT = CUP_BOTTOM - CUP_TOP;
 
     function setWaterLevel(pct) {
-      // pct: 0~1
       const waterH = CUP_HEIGHT * pct;
       const waterY = CUP_BOTTOM - waterH;
       waterRect.setAttribute("y", waterY);
@@ -250,21 +256,21 @@ if (window.top !== window.self) {
     setWaterLevel(0);
 
     // ===== 狀態 =====
-    let isThirsty = false; // 是否處於口渴模式
+    let isThirsty = false;
     let isHolding = false;
     let holdStart = 0;
     let holdTimer = null;
+    let shatterTimer = null;
 
     // ===== 啟動口渴模式 =====
     function activateThirstMode() {
       if (isThirsty) return;
       isThirsty = true;
 
-      // 顯示水杯
       host.classList.add("active");
       cupWrapper.classList.add("shaking");
+      cupWrapper.style.display = "";
 
-      // 注入枯萎游標
       let cursorStyle = document.getElementById(CURSOR_STYLE_ID);
       if (!cursorStyle) {
         cursorStyle = document.createElement("style");
@@ -273,33 +279,48 @@ if (window.top !== window.self) {
         document.head.appendChild(cursorStyle);
       }
 
-      // 重設水位
       setWaterLevel(0);
       progressFg.style.strokeDashoffset = circumference;
       hintEl.textContent = "🥤 長按杯子喝水！";
+
+      // 1 分鐘不理會 → 碎裂
+      clearTimeout(shatterTimer);
+      shatterTimer = setTimeout(() => {
+        if (isThirsty && !isHolding) {
+          shatterAndDismiss();
+        }
+      }, SHATTER_TIMEOUT_MS);
     }
 
-    // ===== 解除口渴模式 =====
-    function deactivateThirstMode() {
+    // ===== 解除口渴模式（喝了水） =====
+    function drinkAndDismiss(progress) {
       isThirsty = false;
+      clearTimeout(shatterTimer);
+
+      const ml = Math.round(MAX_ML * progress);
+      if (ml <= 0) return;
 
       // 移除枯萎游標
       const cursorStyle = document.getElementById(CURSOR_STYLE_ID);
       if (cursorStyle) cursorStyle.remove();
 
-      // 完成動畫
       cupWrapper.classList.remove("shaking");
       cupWrapper.classList.add("done");
 
+      // +Xml 飄字
       const doneText = document.createElement("span");
       doneText.className = "done-text";
-      doneText.textContent = "+300ml ✓";
+      doneText.textContent = `+${ml}ml`;
       cupWrapper.appendChild(doneText);
 
-      // 通知 background 喝完了
-      chrome.runtime.sendMessage({ type: "DRINK_COMPLETE" });
+      // 通知 background
+      chrome.runtime.sendMessage({ type: "DRINK_COMPLETE", ml });
 
-      // 1.5 秒後隱藏
+      // 播放叮音效（按滿才播）
+      if (progress >= 1) {
+        chrome.runtime.sendMessage({ type: "PLAY_DING_REQUEST" });
+      }
+
       setTimeout(() => {
         host.classList.remove("active");
         cupWrapper.classList.remove("done");
@@ -309,10 +330,88 @@ if (window.top !== window.self) {
       }, 1500);
     }
 
+    // ===== 碎裂動畫 =====
+    function shatterAndDismiss() {
+      isThirsty = false;
+      clearTimeout(shatterTimer);
+
+      // 移除枯萎游標
+      const cursorStyle = document.getElementById(CURSOR_STYLE_ID);
+      if (cursorStyle) cursorStyle.remove();
+
+      cupWrapper.classList.remove("shaking");
+
+      // 隱藏原始杯子
+      cupWrapper.style.display = "none";
+      hintEl.textContent = "";
+
+      // 建立碎片容器
+      const shatterBox = document.createElement("div");
+      shatterBox.className = "shatter-container";
+
+      // 產生碎片（三角形 SVG）
+      const shardColors = [
+        "rgba(180,180,180,0.5)",
+        "rgba(200,210,220,0.6)",
+        "rgba(160,170,180,0.4)",
+        "rgba(220,225,230,0.5)",
+        "rgba(190,200,210,0.45)",
+      ];
+      const shardCount = 8;
+
+      for (let i = 0; i < shardCount; i++) {
+        const shard = document.createElement("div");
+        shard.className = "shard";
+
+        // 隨機位置（大致在杯子範圍內）
+        const startX = 15 + Math.random() * 50;
+        const startY = 20 + Math.random() * 80;
+        shard.style.left = startX + "px";
+        shard.style.top = startY + "px";
+
+        // 隨機飛散方向
+        const tx = (Math.random() - 0.5) * 160 + "px";
+        const ty = (Math.random() - 0.3) * 120 + "px";
+        const rot = (Math.random() - 0.5) * 360 + "deg";
+        shard.style.setProperty("--tx", tx);
+        shard.style.setProperty("--ty", ty);
+        shard.style.setProperty("--rot", rot);
+
+        // 碎片 SVG
+        const size = 12 + Math.random() * 16;
+        const color = shardColors[i % shardColors.length];
+        const p1 = `${Math.random() * size},0`;
+        const p2 = `${size},${size * (0.6 + Math.random() * 0.4)}`;
+        const p3 = `0,${size * (0.4 + Math.random() * 0.6)}`;
+
+        shard.innerHTML = `
+          <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+            <polygon points="${p1} ${p2} ${p3}" fill="${color}" stroke="rgba(160,160,160,0.6)" stroke-width="0.5"/>
+          </svg>
+        `;
+
+        shatterBox.appendChild(shard);
+      }
+
+      container.appendChild(shatterBox);
+
+      // 碎裂後淡出
+      setTimeout(() => {
+        host.classList.remove("active");
+        shatterBox.remove();
+        cupWrapper.style.display = "";
+        setWaterLevel(0);
+        progressFg.style.strokeDashoffset = circumference;
+      }, 1200);
+    }
+
     // ===== 長按邏輯 =====
     function startHold(e) {
       e.preventDefault();
       if (!isThirsty) return;
+
+      // 開始按住，暫停碎裂計時
+      clearTimeout(shatterTimer);
 
       isHolding = true;
       holdStart = Date.now();
@@ -323,10 +422,8 @@ if (window.top !== window.self) {
         const elapsed = Date.now() - holdStart;
         const progress = Math.min(elapsed / HOLD_DURATION_MS, 1);
 
-        // 更新水位
         setWaterLevel(progress);
 
-        // 更新進度環
         const offset = circumference * (1 - progress);
         progressFg.style.strokeDashoffset = offset;
 
@@ -335,22 +432,39 @@ if (window.top !== window.self) {
           clearInterval(holdTimer);
           holdTimer = null;
           isHolding = false;
-          deactivateThirstMode();
+          drinkAndDismiss(1);
         }
       }, TICK_INTERVAL);
     }
 
     function endHold() {
       if (!isHolding) return;
+
+      const elapsed = Date.now() - holdStart;
+      const progress = Math.min(elapsed / HOLD_DURATION_MS, 1);
+
       isHolding = false;
       clearInterval(holdTimer);
       holdTimer = null;
 
-      // 中途放開 → 水位歸零，繼續搖晃
-      setWaterLevel(0);
-      progressFg.style.strokeDashoffset = circumference;
-      cupWrapper.classList.add("shaking");
-      hintEl.textContent = "😤 還沒喝完！繼續按！";
+      // 按了一定比例 → 記錄該比例的水量
+      if (progress >= 0.05) {
+        drinkAndDismiss(progress);
+      } else {
+        // 幾乎沒按 → 歸零繼續搖晃
+        setWaterLevel(0);
+        progressFg.style.strokeDashoffset = circumference;
+        cupWrapper.classList.add("shaking");
+        hintEl.textContent = "😤 再按久一點！";
+
+        // 重新啟動碎裂計時
+        clearTimeout(shatterTimer);
+        shatterTimer = setTimeout(() => {
+          if (isThirsty && !isHolding) {
+            shatterAndDismiss();
+          }
+        }, SHATTER_TIMEOUT_MS);
+      }
     }
 
     // 滑鼠事件

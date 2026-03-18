@@ -55,36 +55,20 @@ if (window.top !== window.self) {
         50% { opacity: 0.5; }
       }
 
-      /* 水杯 */
+      /* 水杯 — 無把手透明玻璃杯（上寬下窄） */
       .cup-wrapper {
         position: relative;
         width: 80px;
-        height: 110px;
+        height: 120px;
         cursor: pointer;
       }
 
-      .cup {
+      .cup-svg {
         position: absolute;
-        bottom: 0;
+        top: 0;
         left: 0;
-        width: 72px;
-        height: 92px;
-        background: rgba(255, 255, 255, 0.9);
-        border: 3px solid #bdbdbd;
-        border-radius: 4px 4px 18px 18px;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-      }
-
-      .cup-handle {
-        position: absolute;
-        right: -16px;
-        top: 32px;
-        width: 16px;
-        height: 34px;
-        border: 3px solid #bdbdbd;
-        border-left: none;
-        border-radius: 0 12px 12px 0;
+        width: 100%;
+        height: 100%;
       }
 
       /* 搖晃動畫 — 持續搖晃直到喝完 */
@@ -102,34 +86,7 @@ if (window.top !== window.self) {
         90% { transform: rotate(3deg); }
       }
 
-      /* 水位 */
-      .water {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 0%;
-        background: linear-gradient(180deg, #4fc3f7 0%, #0288d1 100%);
-        border-radius: 0 0 15px 15px;
-        transition: none;
-      }
-      .water.filling {
-        /* 填水中不用 transition，由 JS 控制 */
-      }
-      .water.resetting {
-        transition: height 0.3s ease-out;
-      }
-
-      .water::before {
-        content: "";
-        position: absolute;
-        top: -3px;
-        left: 0;
-        right: 0;
-        height: 6px;
-        background: rgba(255, 255, 255, 0.4);
-        border-radius: 50%;
-      }
+      /* 水位由 SVG 控制 */
 
       /* 進度環 */
       .progress-ring {
@@ -207,13 +164,56 @@ if (window.top !== window.self) {
 
     const circumference = 2 * Math.PI * 13; // r=13
 
+    // 杯子形狀：上寬下窄的透明玻璃杯（參照 Duralex Unie）
+    // 外形座標（viewBox 80x120）
+    // 杯口: 左10 右70 (寬60), 杯底: 左18 右62 (寬44), 高度: 上8 下112
     container.innerHTML = `
       <div class="hint">🥤 長按杯子喝水！</div>
       <div class="cup-wrapper shaking">
-        <div class="cup">
-          <div class="water"></div>
-        </div>
-        <div class="cup-handle"></div>
+        <svg class="cup-svg" viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- 杯子內部形狀（用於裁切水位） -->
+            <clipPath id="cup-clip">
+              <path d="M14 12 L66 12 L62 108 Q62 112 58 112 L22 112 Q18 112 18 108 Z"/>
+            </clipPath>
+            <!-- 玻璃質感漸層 -->
+            <linearGradient id="glass-grad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.25)"/>
+              <stop offset="30%" stop-color="rgba(255,255,255,0.08)"/>
+              <stop offset="70%" stop-color="rgba(255,255,255,0.03)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0.2)"/>
+            </linearGradient>
+            <!-- 水的漸層 -->
+            <linearGradient id="water-grad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#4fc3f7" stop-opacity="0.85"/>
+              <stop offset="100%" stop-color="#0277bd" stop-opacity="0.95"/>
+            </linearGradient>
+          </defs>
+
+          <!-- 水位（被裁切在杯內） -->
+          <g clip-path="url(#cup-clip)">
+            <rect class="water-rect" x="0" y="120" width="80" height="108" fill="url(#water-grad)"/>
+            <!-- 水面波紋 -->
+            <ellipse class="water-surface" cx="40" cy="120" rx="30" ry="3" fill="rgba(255,255,255,0.35)"/>
+          </g>
+
+          <!-- 杯身外框 -->
+          <path d="M12 8 L68 8 L63 108 Q62 114 57 114 L23 114 Q18 114 17 108 Z"
+                fill="none" stroke="rgba(180,180,180,0.6)" stroke-width="2.5"/>
+
+          <!-- 杯口加粗邊（厚玻璃邊緣） -->
+          <path d="M10 8 Q10 4 14 4 L66 4 Q70 4 70 8 L68 10 L12 10 Z"
+                fill="rgba(200,200,200,0.3)" stroke="rgba(160,160,160,0.5)" stroke-width="1"/>
+
+          <!-- 玻璃質感（高光） -->
+          <path d="M14 12 L20 12 L22 108 L18 108 Z" fill="rgba(255,255,255,0.15)"/>
+
+          <!-- 杯底厚度 -->
+          <path d="M17 108 L63 108 L62 114 Q62 116 58 116 L22 116 Q18 116 18 114 Z"
+                fill="rgba(180,180,180,0.2)" stroke="rgba(160,160,160,0.3)" stroke-width="1"/>
+        </svg>
+
+        <!-- 進度環 -->
         <svg class="progress-ring" viewBox="0 0 32 32">
           <circle class="bg" cx="16" cy="16" r="13"/>
           <circle class="fg" cx="16" cy="16" r="13"
@@ -228,9 +228,26 @@ if (window.top !== window.self) {
 
     // ===== 元素參照 =====
     const cupWrapper = shadow.querySelector(".cup-wrapper");
-    const waterEl = shadow.querySelector(".water");
+    const waterRect = shadow.querySelector(".water-rect");
+    const waterSurface = shadow.querySelector(".water-surface");
     const progressFg = shadow.querySelector(".progress-ring .fg");
     const hintEl = shadow.querySelector(".hint");
+
+    // 水位控制：杯內空間從 y=12 到 y=112，總高 100
+    const CUP_TOP = 12;
+    const CUP_BOTTOM = 112;
+    const CUP_HEIGHT = CUP_BOTTOM - CUP_TOP;
+
+    function setWaterLevel(pct) {
+      // pct: 0~1
+      const waterH = CUP_HEIGHT * pct;
+      const waterY = CUP_BOTTOM - waterH;
+      waterRect.setAttribute("y", waterY);
+      waterRect.setAttribute("height", waterH);
+      waterSurface.setAttribute("cy", waterY);
+    }
+
+    setWaterLevel(0);
 
     // ===== 狀態 =====
     let isThirsty = false; // 是否處於口渴模式
@@ -257,7 +274,7 @@ if (window.top !== window.self) {
       }
 
       // 重設水位
-      waterEl.style.height = "0%";
+      setWaterLevel(0);
       progressFg.style.strokeDashoffset = circumference;
       hintEl.textContent = "🥤 長按杯子喝水！";
     }
@@ -287,7 +304,7 @@ if (window.top !== window.self) {
         host.classList.remove("active");
         cupWrapper.classList.remove("done");
         doneText.remove();
-        waterEl.style.height = "0%";
+        setWaterLevel(0);
         progressFg.style.strokeDashoffset = circumference;
       }, 1500);
     }
@@ -300,8 +317,6 @@ if (window.top !== window.self) {
       isHolding = true;
       holdStart = Date.now();
       cupWrapper.classList.remove("shaking");
-      waterEl.classList.remove("resetting");
-      waterEl.classList.add("filling");
       hintEl.textContent = "💧 繼續按住...";
 
       holdTimer = setInterval(() => {
@@ -309,7 +324,7 @@ if (window.top !== window.self) {
         const progress = Math.min(elapsed / HOLD_DURATION_MS, 1);
 
         // 更新水位
-        waterEl.style.height = (progress * 100) + "%";
+        setWaterLevel(progress);
 
         // 更新進度環
         const offset = circumference * (1 - progress);
@@ -332,9 +347,7 @@ if (window.top !== window.self) {
       holdTimer = null;
 
       // 中途放開 → 水位歸零，繼續搖晃
-      waterEl.classList.remove("filling");
-      waterEl.classList.add("resetting");
-      waterEl.style.height = "0%";
+      setWaterLevel(0);
       progressFg.style.strokeDashoffset = circumference;
       cupWrapper.classList.add("shaking");
       hintEl.textContent = "😤 還沒喝完！繼續按！";

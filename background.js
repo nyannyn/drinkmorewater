@@ -84,7 +84,7 @@ async function resetDailyIfNeeded() {
 // ===== 訊息處理 =====
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg.type === "DRINK_COMPLETE") {
-    handleDrinkComplete().then(sendResponse);
+    handleDrinkComplete(msg.ml).then(sendResponse);
     return true;
   }
   if (msg.type === "GET_STATUS") {
@@ -109,21 +109,19 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
 });
 
-async function handleDrinkComplete() {
+async function handleDrinkComplete(ml) {
   await resetDailyIfNeeded();
   const { todayMl = 0, todayCups = 0 } = await chrome.storage.local.get([
     "todayMl",
     "todayCups",
   ]);
-  const newMl = todayMl + DRINK_ML;
+  const addMl = ml ?? DRINK_ML;
+  const newMl = todayMl + addMl;
   const newCups = todayCups + 1;
   await chrome.storage.local.set({ todayMl: newMl, todayCups: newCups });
 
   // 喝完水，重新開始計時
   await startAlarm();
-
-  // 播放叮！音效
-  await playDingSound();
 
   return { todayMl: newMl, todayCups: newCups };
 }

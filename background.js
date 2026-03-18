@@ -1,21 +1,13 @@
 // ===== 常數 =====
 const ALARM_NAME = "drink-reminder";
-const DEFAULT_INTERVAL_MIN = 30;
-const DAILY_GOAL_ML = 2000;
-const CUP_ML = 250;
+const DEFAULT_INTERVAL_MIN = 1; // 測試期 1 分鐘（正式改為 60）
+const DRINK_ML = 300;
 
 // ===== 初始化 =====
 chrome.runtime.onInstalled.addListener(async () => {
-  const data = await chrome.storage.local.get([
-    "intervalMin",
-    "dailyGoal",
-    "cupMl",
-    "enabled",
-  ]);
+  const data = await chrome.storage.local.get(["intervalMin", "enabled"]);
   await chrome.storage.local.set({
     intervalMin: data.intervalMin ?? DEFAULT_INTERVAL_MIN,
-    dailyGoal: data.dailyGoal ?? DAILY_GOAL_ML,
-    cupMl: data.cupMl ?? CUP_ML,
     enabled: data.enabled ?? true,
   });
   await resetDailyIfNeeded();
@@ -45,8 +37,8 @@ async function startAlarm() {
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name !== ALARM_NAME) return;
   await resetDailyIfNeeded();
-  await playSound();
 
+  // 通知所有分頁進入「口渴模式」
   const tabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
   for (const tab of tabs) {
     try {
@@ -72,15 +64,15 @@ async function ensureOffscreenDocument() {
   creatingOffscreen = chrome.offscreen.createDocument({
     url: "offscreen.html",
     reasons: ["AUDIO_PLAYBACK"],
-    justification: "播放喝水提醒音效",
+    justification: "播放喝水完成音效",
   });
   await creatingOffscreen;
   creatingOffscreen = null;
 }
 
-async function playSound() {
+async function playDingSound() {
   await ensureOffscreenDocument();
-  chrome.runtime.sendMessage({ type: "PLAY_SOUND" });
+  chrome.runtime.sendMessage({ type: "PLAY_DING" });
 }
 
 // ===== 跨日重設 =====
@@ -98,8 +90,8 @@ async function resetDailyIfNeeded() {
 
 // ===== 訊息處理 =====
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  if (msg.type === "DRINK") {
-    handleDrink(msg.ml).then(sendResponse);
+  if (msg.type === "DRINK_COMPLETE") {
+    handleDrinkComplete().then(sendResponse);
     return true;
   }
   if (msg.type === "GET_STATUS") {
@@ -114,17 +106,28 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     toggleEnabled().then(sendResponse);
     return true;
   }
+  if (msg.type === "PLAY_DING_REQUEST") {
+    playDingSound().then(() => sendResponse({ ok: true }));
+    return true;
+  }
 });
 
-async function handleDrink(ml) {
+async function handleDrinkComplete() {
   await resetDailyIfNeeded();
-  const { todayMl = 0, todayCups = 0, cupMl = CUP_ML } =
-    await chrome.storage.local.get(["todayMl", "todayCups", "cupMl"]);
-  const addMl = ml ?? cupMl;
-  const newMl = todayMl + addMl;
+  const { todayMl = 0, todayCups = 0 } = await chrome.storage.local.get([
+    "todayMl",
+    "todayCups",
+  ]);
+  const newMl = todayMl + DRINK_ML;
   const newCups = todayCups + 1;
   await chrome.storage.local.set({ todayMl: newMl, todayCups: newCups });
+
+  // 喝完水，重新開始計時
   await startAlarm();
+
+  // 播放叮！音效
+  await playDingSound();
+
   return { todayMl: newMl, todayCups: newCups };
 }
 
@@ -133,28 +136,22 @@ async function getStatus() {
   const data = await chrome.storage.local.get([
     "todayMl",
     "todayCups",
-    "dailyGoal",
-    "cupMl",
     "intervalMin",
     "enabled",
   ]);
   return {
     todayMl: data.todayMl ?? 0,
     todayCups: data.todayCups ?? 0,
-    dailyGoal: data.dailyGoal ?? DAILY_GOAL_ML,
-    cupMl: data.cupMl ?? CUP_ML,
     intervalMin: data.intervalMin ?? DEFAULT_INTERVAL_MIN,
     enabled: data.enabled ?? true,
   };
 }
 
 async function setSettings(settings) {
-  const patch = {};
-  if (settings.intervalMin != null) patch.intervalMin = settings.intervalMin;
-  if (settings.dailyGoal != null) patch.dailyGoal = settings.dailyGoal;
-  if (settings.cupMl != null) patch.cupMl = settings.cupMl;
-  await chrome.storage.local.set(patch);
-  if (settings.intervalMin != null) await startAlarm();
+  if (settings.intervalMin != null) {
+    await chrome.storage.local.set({ intervalMin: settings.intervalMin });
+    await startAlarm();
+  }
   return { ok: true };
 }
 

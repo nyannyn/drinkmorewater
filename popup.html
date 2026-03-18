@@ -5,7 +5,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      width: 300px;
+      width: 280px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
       padding: 20px;
@@ -17,76 +17,24 @@
       color: #0277bd;
       margin-bottom: 16px;
     }
-    .cup-visual {
-      width: 80px;
-      height: 100px;
-      margin: 0 auto 12px;
-      position: relative;
-    }
-    .cup-body {
-      width: 80px;
-      height: 92px;
-      background: rgba(255,255,255,0.7);
-      border: 3px solid #4fc3f7;
-      border-radius: 0 0 20px 20px;
-      overflow: hidden;
-      position: relative;
-    }
-    .cup-water {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      background: linear-gradient(180deg, #4fc3f7, #0288d1);
-      transition: height 0.5s ease;
-      border-radius: 0 0 17px 17px;
-    }
-    .cup-handle {
-      position: absolute;
-      right: -16px; top: 22px;
-      width: 16px; height: 32px;
-      border: 3px solid #4fc3f7;
-      border-left: none;
-      border-radius: 0 10px 10px 0;
-    }
     .stats {
       text-align: center;
       margin-bottom: 16px;
+      padding: 12px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 12px;
     }
     .stats .amount {
       font-size: 28px;
       font-weight: 700;
       color: #0288d1;
     }
-    .stats .goal {
+    .stats .sub {
       font-size: 13px;
       color: #666;
+      margin-top: 4px;
     }
-    .stats .cups {
-      font-size: 12px;
-      color: #888;
-      margin-top: 2px;
-    }
-    .drink-btn {
-      display: block;
-      width: 100%;
-      padding: 12px;
-      background: linear-gradient(135deg, #4fc3f7, #0288d1);
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.1s, box-shadow 0.2s;
-      box-shadow: 0 4px 12px rgba(2, 136, 209, 0.3);
-    }
-    .drink-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 6px 16px rgba(2, 136, 209, 0.4);
-    }
-    .drink-btn:active { transform: scale(0.97); }
-
     .settings {
-      margin-top: 16px;
       border-top: 1px solid rgba(0,0,0,0.1);
       padding-top: 12px;
     }
@@ -94,17 +42,15 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
       font-size: 13px;
     }
     .setting-row label { color: #555; }
-    .setting-row input, .setting-row select {
-      width: 80px;
+    .setting-row select {
       padding: 4px 8px;
       border: 1px solid #b2ebf2;
       border-radius: 6px;
       font-size: 13px;
-      text-align: center;
       background: #fff;
     }
     .toggle-row {
@@ -138,44 +84,32 @@
     }
     .switch input:checked + .slider { background: #4fc3f7; }
     .switch input:checked + .slider::before { transform: translateX(18px); }
+    .info {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #999;
+      text-align: center;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
   <h1>💧 喝水提醒</h1>
 
-  <div class="cup-visual">
-    <div class="cup-body">
-      <div class="cup-water" id="cupWater" style="height: 0%"></div>
-    </div>
-    <div class="cup-handle"></div>
-  </div>
-
   <div class="stats">
     <div class="amount"><span id="todayMl">0</span> ml</div>
-    <div class="goal">目標 <span id="dailyGoal">2000</span> ml</div>
-    <div class="cups">今日已喝 <span id="todayCups">0</span> 杯</div>
+    <div class="sub">今日已喝 <span id="todayCups">0</span> 次（每次 300ml）</div>
   </div>
-
-  <button class="drink-btn" id="drinkBtn">喝了一杯 💧</button>
 
   <div class="settings">
     <div class="setting-row">
       <label>提醒間隔</label>
       <select id="intervalMin">
-        <option value="15">15 分鐘</option>
-        <option value="20">20 分鐘</option>
-        <option value="30" selected>30 分鐘</option>
-        <option value="45">45 分鐘</option>
+        <option value="0.5">30 秒（測試）</option>
+        <option value="1" selected>1 分鐘（測試）</option>
+        <option value="30">30 分鐘</option>
         <option value="60">60 分鐘</option>
       </select>
-    </div>
-    <div class="setting-row">
-      <label>每杯容量 (ml)</label>
-      <input type="number" id="cupMl" value="250" min="50" max="1000" step="50">
-    </div>
-    <div class="setting-row">
-      <label>每日目標 (ml)</label>
-      <input type="number" id="goalMl" value="2000" min="500" max="5000" step="100">
     </div>
     <div class="toggle-row">
       <label>啟用提醒</label>
@@ -184,6 +118,11 @@
         <span class="slider"></span>
       </label>
     </div>
+  </div>
+
+  <div class="info">
+    時間到 → 游標變黃 + 空杯搖晃<br>
+    長按杯子 3 秒 = 喝完 300ml 🥤
   </div>
 
   <script src="popup.js"></script>

@@ -416,7 +416,6 @@ if (window.top !== window.self) {
       isHolding = true;
       holdStart = Date.now();
       cupWrapper.classList.remove("shaking");
-      hintEl.textContent = "💧 繼續按住...";
 
       holdTimer = setInterval(() => {
         const elapsed = Date.now() - holdStart;
@@ -447,24 +446,8 @@ if (window.top !== window.self) {
       clearInterval(holdTimer);
       holdTimer = null;
 
-      // 按了一定比例 → 記錄該比例的水量
-      if (progress >= 0.05) {
-        drinkAndDismiss(progress);
-      } else {
-        // 幾乎沒按 → 歸零繼續搖晃
-        setWaterLevel(0);
-        progressFg.style.strokeDashoffset = circumference;
-        cupWrapper.classList.add("shaking");
-        hintEl.textContent = "😤 再按久一點！";
-
-        // 重新啟動碎裂計時
-        clearTimeout(shatterTimer);
-        shatterTimer = setTimeout(() => {
-          if (isThirsty && !isHolding) {
-            shatterAndDismiss();
-          }
-        }, SHATTER_TIMEOUT_MS);
-      }
+      // 放開即記錄該比例的水量
+      drinkAndDismiss(progress);
     }
 
     // 滑鼠事件

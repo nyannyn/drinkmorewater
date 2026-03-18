@@ -39,14 +39,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   await resetDailyIfNeeded();
 
   // 通知所有分頁進入「口渴模式」
-  const tabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
-  for (const tab of tabs) {
-    try {
-      await chrome.tabs.sendMessage(tab.id, { type: "DRINK_REMINDER" });
-    } catch {
-      // content script 尚未載入，忽略
-    }
-  }
+  await notifyAllTabs();
 });
 
 // ===== Offscreen 音效 =====
@@ -110,6 +103,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     playDingSound().then(() => sendResponse({ ok: true }));
     return true;
   }
+  if (msg.type === "TEST_REMINDER") {
+    notifyAllTabs().then(() => sendResponse({ ok: true }));
+    return true;
+  }
 });
 
 async function handleDrinkComplete() {
@@ -153,6 +150,30 @@ async function setSettings(settings) {
     await startAlarm();
   }
   return { ok: true };
+}
+
+// 通知所有分頁：先嘗試 sendMessage，失敗則用 scripting 注入
+async function notifyAllTabs() {
+  const tabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
+  for (const tab of tabs) {
+    try {
+      await chrome.tabs.sendMessage(tab.id, { type: "DRINK_REMINDER" });
+    } catch {
+      // content script 尚未載入，先注入再發送
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ["content.js"],
+        });
+        // 注入後稍等再發送訊息
+        setTimeout(() => {
+          chrome.tabs.sendMessage(tab.id, { type: "DRINK_REMINDER" }).catch(() => {});
+        }, 200);
+      } catch {
+        // 無法注入（例如 chrome:// 頁面），忽略
+      }
+    }
+  }
 }
 
 async function toggleEnabled() {

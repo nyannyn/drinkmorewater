@@ -25,3 +25,9 @@ $intervalMin.addEventListener("change", () => {
 $enabledToggle.addEventListener("change", () => {
   chrome.runtime.sendMessage({ type: "TOGGLE_ENABLED" });
 });
+
+// 立即測試
+document.getElementById("testBtn").addEventListener("click", () => {
+  chrome.runtime.sendMessage({ type: "TEST_REMINDER" });
+  window.close();
+});

@@ -84,6 +84,20 @@
     }
     .switch input:checked + .slider { background: #4fc3f7; }
     .switch input:checked + .slider::before { transform: translateX(18px); }
+    .test-btn {
+      display: block;
+      width: 100%;
+      margin-top: 12px;
+      padding: 8px;
+      background: #ff8f00;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .test-btn:hover { background: #ff6f00; }
     .info {
       margin-top: 12px;
       font-size: 11px;
@@ -119,6 +133,8 @@
       </label>
     </div>
   </div>
+
+  <button class="test-btn" id="testBtn">立即測試提醒</button>
 
   <div class="info">
     時間到 → 游標變黃 + 空杯搖晃<br>

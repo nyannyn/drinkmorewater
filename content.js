@@ -140,26 +140,84 @@ if (window.top !== window.self) {
         100% { opacity: 0; transform: translateX(-50%) translateY(-50px); }
       }
 
-      /* ===== 碎裂動畫 ===== */
+      /* ===== 碎裂動畫（三階段） ===== */
       .shatter-container {
         position: relative;
         width: 80px;
         height: 120px;
       }
+
+      /* Phase 1：裂痕 */
+      .crack-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 80px;
+        height: 120px;
+        pointer-events: none;
+      }
+      .crack-line line {
+        stroke: rgba(255,255,255,0.85);
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        filter: drop-shadow(0 0 2px rgba(200,220,240,0.6));
+        animation: crackDraw 0.35s ease-out forwards;
+      }
+      @keyframes crackDraw {
+        0% { stroke-dashoffset: var(--len); opacity: 0.3; }
+        100% { stroke-dashoffset: 0; opacity: 1; }
+      }
+
+      /* Phase 1：微震 */
+      .cup-wrapper.stress {
+        animation: stress 0.06s linear infinite;
+        transform-origin: center center;
+      }
+      @keyframes stress {
+        0% { transform: translate(0, 0); }
+        25% { transform: translate(-1.5px, 0.5px); }
+        50% { transform: translate(1px, -1px); }
+        75% { transform: translate(-0.5px, 1px); }
+        100% { transform: translate(1px, 0); }
+      }
+
+      /* Phase 2：碎片飛散（含重力拋物線） */
       .shard {
         position: absolute;
         opacity: 1;
-        animation: shardFly 0.8s ease-out forwards;
+        animation: shardFlyGravity var(--dur, 0.7s) ease-out forwards;
+        animation-delay: var(--delay, 0s);
       }
-      @keyframes shardFly {
+      @keyframes shardFlyGravity {
         0% {
           opacity: 1;
           transform: translate(0, 0) rotate(0deg) scale(1);
         }
+        30% {
+          opacity: 0.9;
+          transform: translate(calc(var(--tx) * 0.3), calc(var(--ty) * -0.15)) rotate(calc(var(--rot) * 0.3)) scale(0.9);
+        }
         100% {
           opacity: 0;
-          transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0.3);
+          transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0.2);
         }
+      }
+
+      /* Phase 2：粉塵粒子 */
+      .dust {
+        position: absolute;
+        width: var(--size, 3px);
+        height: var(--size, 3px);
+        border-radius: 50%;
+        background: rgba(200,210,220,0.5);
+        animation: dustSettle var(--dur, 1.2s) ease-out forwards;
+        animation-delay: var(--delay, 0.3s);
+        opacity: 0;
+      }
+      @keyframes dustSettle {
+        0% { opacity: 0.7; transform: translate(0, 0) scale(1); }
+        40% { opacity: 0.5; }
+        100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.3); }
       }
     `;
 
@@ -330,7 +388,7 @@ if (window.top !== window.self) {
       }, 1500);
     }
 
-    // ===== 碎裂動畫 =====
+    // ===== 碎裂動畫（三階段） =====
     function shatterAndDismiss() {
       isThirsty = false;
       clearTimeout(shatterTimer);
@@ -340,69 +398,137 @@ if (window.top !== window.self) {
       if (cursorStyle) cursorStyle.remove();
 
       cupWrapper.classList.remove("shaking");
-
-      // 隱藏原始杯子
-      cupWrapper.style.display = "none";
       hintEl.textContent = "";
 
-      // 建立碎片容器
-      const shatterBox = document.createElement("div");
-      shatterBox.className = "shatter-container";
+      // ── Phase 1：裂痕 + 微震（0-400ms）──
+      cupWrapper.classList.add("stress");
 
-      // 產生碎片（三角形 SVG）
-      const shardColors = [
-        "rgba(180,180,180,0.5)",
-        "rgba(200,210,220,0.6)",
-        "rgba(160,170,180,0.4)",
-        "rgba(220,225,230,0.5)",
-        "rgba(190,200,210,0.45)",
+      // 在杯子上疊加裂痕線
+      const crackSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      crackSvg.setAttribute("viewBox", "0 0 80 120");
+      crackSvg.classList.add("crack-line");
+
+      const crackPaths = [
+        { x1: 40, y1: 50, x2: 25, y2: 20 },
+        { x1: 40, y1: 50, x2: 60, y2: 15 },
+        { x1: 40, y1: 50, x2: 55, y2: 85 },
+        { x1: 40, y1: 50, x2: 20, y2: 90 },
+        { x1: 40, y1: 50, x2: 65, y2: 55 },
+        { x1: 35, y1: 45, x2: 18, y2: 55 },
       ];
-      const shardCount = 8;
 
-      for (let i = 0; i < shardCount; i++) {
-        const shard = document.createElement("div");
-        shard.className = "shard";
+      crackPaths.forEach((p, i) => {
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", p.x1);
+        line.setAttribute("y1", p.y1);
+        line.setAttribute("x2", p.x2);
+        line.setAttribute("y2", p.y2);
+        const len = Math.hypot(p.x2 - p.x1, p.y2 - p.y1);
+        line.style.strokeDasharray = len;
+        line.style.setProperty("--len", len);
+        line.style.animationDelay = (i * 50) + "ms";
+        crackSvg.appendChild(line);
+      });
 
-        // 隨機位置（大致在杯子範圍內）
-        const startX = 15 + Math.random() * 50;
-        const startY = 20 + Math.random() * 80;
-        shard.style.left = startX + "px";
-        shard.style.top = startY + "px";
+      cupWrapper.appendChild(crackSvg);
 
-        // 隨機飛散方向
-        const tx = (Math.random() - 0.5) * 160 + "px";
-        const ty = (Math.random() - 0.3) * 120 + "px";
-        const rot = (Math.random() - 0.5) * 360 + "deg";
-        shard.style.setProperty("--tx", tx);
-        shard.style.setProperty("--ty", ty);
-        shard.style.setProperty("--rot", rot);
-
-        // 碎片 SVG
-        const size = 12 + Math.random() * 16;
-        const color = shardColors[i % shardColors.length];
-        const p1 = `${Math.random() * size},0`;
-        const p2 = `${size},${size * (0.6 + Math.random() * 0.4)}`;
-        const p3 = `0,${size * (0.4 + Math.random() * 0.6)}`;
-
-        shard.innerHTML = `
-          <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-            <polygon points="${p1} ${p2} ${p3}" fill="${color}" stroke="rgba(160,160,160,0.6)" stroke-width="0.5"/>
-          </svg>
-        `;
-
-        shatterBox.appendChild(shard);
-      }
-
-      container.appendChild(shatterBox);
-
-      // 碎裂後淡出
+      // ── Phase 2：碎片飛散（400ms 後）──
       setTimeout(() => {
-        host.classList.remove("active");
-        shatterBox.remove();
-        cupWrapper.style.display = "";
-        setWaterLevel(0);
-        progressFg.style.strokeDashoffset = circumference;
-      }, 1200);
+        cupWrapper.style.display = "none";
+        cupWrapper.classList.remove("stress");
+        crackSvg.remove();
+
+        const shatterBox = document.createElement("div");
+        shatterBox.className = "shatter-container";
+
+        const shardColors = [
+          "rgba(180,190,200,0.55)",
+          "rgba(200,215,230,0.65)",
+          "rgba(160,175,190,0.45)",
+          "rgba(220,230,240,0.55)",
+          "rgba(190,205,215,0.5)",
+          "rgba(170,185,200,0.4)",
+        ];
+
+        // 產生 14 片碎片（三角形 + 四邊形）
+        const shardCount = 14;
+        for (let i = 0; i < shardCount; i++) {
+          const shard = document.createElement("div");
+          shard.className = "shard";
+
+          const startX = 12 + Math.random() * 56;
+          const startY = 15 + Math.random() * 90;
+          shard.style.left = startX + "px";
+          shard.style.top = startY + "px";
+
+          // 飛散方向（帶重力感）
+          const tx = (Math.random() - 0.5) * 180 + "px";
+          const ty = (Math.random() * 0.7 + 0.3) * 140 + "px"; // 偏向下方
+          const rot = (Math.random() - 0.5) * 540 + "deg";
+          const delay = Math.random() * 120 + "ms";
+          const dur = (0.5 + Math.random() * 0.4) + "s";
+
+          shard.style.setProperty("--tx", tx);
+          shard.style.setProperty("--ty", ty);
+          shard.style.setProperty("--rot", rot);
+          shard.style.setProperty("--delay", delay);
+          shard.style.setProperty("--dur", dur);
+
+          const size = 8 + Math.random() * 18;
+          const color = shardColors[i % shardColors.length];
+          const isQuad = Math.random() > 0.4;
+
+          let points;
+          if (isQuad) {
+            // 四邊形碎片
+            points = [
+              `${Math.random() * size * 0.4},${Math.random() * size * 0.3}`,
+              `${size * (0.5 + Math.random() * 0.5)},${Math.random() * size * 0.4}`,
+              `${size * (0.6 + Math.random() * 0.4)},${size * (0.6 + Math.random() * 0.4)}`,
+              `${Math.random() * size * 0.3},${size * (0.5 + Math.random() * 0.5)}`,
+            ].join(" ");
+          } else {
+            // 三角形碎片
+            points = [
+              `${Math.random() * size},0`,
+              `${size},${size * (0.5 + Math.random() * 0.5)}`,
+              `0,${size * (0.4 + Math.random() * 0.6)}`,
+            ].join(" ");
+          }
+
+          shard.innerHTML = `
+            <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+              <polygon points="${points}" fill="${color}" stroke="rgba(180,190,200,0.7)" stroke-width="0.5"/>
+            </svg>
+          `;
+          shatterBox.appendChild(shard);
+        }
+
+        // 產生 6 個粉塵粒子
+        for (let i = 0; i < 6; i++) {
+          const dust = document.createElement("div");
+          dust.className = "dust";
+          dust.style.left = (20 + Math.random() * 40) + "px";
+          dust.style.top = (30 + Math.random() * 60) + "px";
+          dust.style.setProperty("--size", (2 + Math.random() * 3) + "px");
+          dust.style.setProperty("--tx", (Math.random() - 0.5) * 60 + "px");
+          dust.style.setProperty("--ty", (Math.random() * 40 + 20) + "px");
+          dust.style.setProperty("--delay", (Math.random() * 200 + 100) + "ms");
+          dust.style.setProperty("--dur", (0.8 + Math.random() * 0.6) + "s");
+          shatterBox.appendChild(dust);
+        }
+
+        container.appendChild(shatterBox);
+
+        // ── Phase 3：清除（~1600ms 後）──
+        setTimeout(() => {
+          host.classList.remove("active");
+          shatterBox.remove();
+          cupWrapper.style.display = "";
+          setWaterLevel(0);
+          progressFg.style.strokeDashoffset = circumference;
+        }, 1200);
+      }, 400);
     }
 
     // ===== 長按邏輯 =====

@@ -57,12 +57,13 @@ if (window.top !== window.self) {
         50% { opacity: 0.5; }
       }
 
-      /* 水杯 — 無把手透明玻璃杯（上寬下窄） */
+      /* 水杯 — 擬真毛玻璃杯 */
       .cup-wrapper {
         position: relative;
-        width: 80px;
-        height: 120px;
+        width: 90px;
+        height: 130px;
         cursor: pointer;
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
       }
 
       .cup-svg {
@@ -71,6 +72,28 @@ if (window.top !== window.self) {
         left: 0;
         width: 100%;
         height: 100%;
+      }
+
+      /* 水面波浪動畫 */
+      .wave-group {
+        animation: waveShift 2s ease-in-out infinite;
+      }
+      @keyframes waveShift {
+        0%, 100% { transform: translateX(0); }
+        50% { transform: translateX(-6px); }
+      }
+
+      /* 氣泡浮上動畫 */
+      .bubble {
+        animation: bubbleRise var(--dur, 2s) ease-in infinite;
+        animation-delay: var(--delay, 0s);
+        opacity: 0;
+      }
+      @keyframes bubbleRise {
+        0% { opacity: 0; transform: translateY(0) scale(1); }
+        15% { opacity: 0.6; }
+        70% { opacity: 0.3; }
+        100% { opacity: 0; transform: translateY(var(--rise, -30px)) scale(0.4); }
       }
 
       /* 搖晃動畫 */
@@ -143,8 +166,8 @@ if (window.top !== window.self) {
       /* ===== 碎裂動畫 ===== */
       .shatter-container {
         position: relative;
-        width: 80px;
-        height: 120px;
+        width: 90px;
+        height: 130px;
       }
       .shard {
         position: absolute;
@@ -189,37 +212,102 @@ if (window.top !== window.self) {
     container.innerHTML = `
       <div class="hint">🥤 長按杯子喝水！</div>
       <div class="cup-wrapper shaking">
-        <svg class="cup-svg" viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">
+        <svg class="cup-svg" viewBox="0 0 90 130" xmlns="http://www.w3.org/2000/svg">
           <defs>
+            <!-- 杯身裁切區域 -->
             <clipPath id="cup-clip">
-              <path d="M14 12 L66 12 L62 108 Q62 112 58 112 L22 112 Q18 112 18 108 Z"/>
+              <path d="M16 14 L74 14 L70 112 Q69 118 64 118 L26 118 Q21 118 20 112 Z"/>
             </clipPath>
-            <linearGradient id="water-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#4fc3f7" stop-opacity="0.85"/>
-              <stop offset="100%" stop-color="#0277bd" stop-opacity="0.95"/>
+
+            <!-- 水漸層 -->
+            <linearGradient id="water-grad" x1="0" y1="0" x2="0.15" y2="1">
+              <stop offset="0%" stop-color="#4dd0e1" stop-opacity="0.8"/>
+              <stop offset="40%" stop-color="#26c6da" stop-opacity="0.85"/>
+              <stop offset="100%" stop-color="#0097a7" stop-opacity="0.95"/>
             </linearGradient>
+
+            <!-- 玻璃體漸層（透明→微白→透明，模擬折射） -->
+            <linearGradient id="glass-body" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.08)"/>
+              <stop offset="25%" stop-color="rgba(255,255,255,0.15)"/>
+              <stop offset="50%" stop-color="rgba(255,255,255,0.05)"/>
+              <stop offset="75%" stop-color="rgba(255,255,255,0.12)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0.06)"/>
+            </linearGradient>
+
+            <!-- 高光弧形漸層 -->
+            <linearGradient id="highlight-l" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            </linearGradient>
+            <linearGradient id="highlight-r" x1="1" y1="0" x2="0" y2="0">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.15)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            </linearGradient>
+
+            <!-- 杯口橢圓漸層 -->
+            <radialGradient id="rim-grad" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0%" stop-color="rgba(240,245,250,0.4)"/>
+              <stop offset="70%" stop-color="rgba(200,210,220,0.25)"/>
+              <stop offset="100%" stop-color="rgba(180,190,200,0.15)"/>
+            </radialGradient>
+
+            <!-- 毛玻璃濾鏡 -->
+            <filter id="glass-blur" x="-10%" y="-10%" width="120%" height="120%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
           </defs>
+
+          <!-- 玻璃杯體（填充半透明，模擬玻璃厚度） -->
+          <path d="M16 14 L74 14 L70 112 Q69 118 64 118 L26 118 Q21 118 20 112 Z"
+                fill="url(#glass-body)" filter="url(#glass-blur)"/>
 
           <!-- 水位 -->
           <g clip-path="url(#cup-clip)">
-            <rect class="water-rect" x="0" y="112" width="80" height="0" fill="url(#water-grad)"/>
-            <ellipse class="water-surface" cx="40" cy="112" rx="30" ry="3" fill="rgba(255,255,255,0.35)"/>
+            <rect class="water-rect" x="0" y="118" width="90" height="0" fill="url(#water-grad)"/>
+            <!-- 水面波浪 -->
+            <g class="wave-group">
+              <path class="water-wave" d="M0 118 Q12 115 22 118 T45 118 T68 118 T90 118 L90 120 L0 120 Z"
+                    fill="rgba(255,255,255,0.25)"/>
+            </g>
+            <!-- 氣泡 -->
+            <circle class="bubble" cx="30" cy="100" r="1.5" fill="rgba(255,255,255,0.5)"
+                    style="--dur:2.5s;--delay:0s;--rise:-25px"/>
+            <circle class="bubble" cx="50" cy="105" r="1" fill="rgba(255,255,255,0.4)"
+                    style="--dur:3s;--delay:0.8s;--rise:-30px"/>
+            <circle class="bubble" cx="42" cy="95" r="2" fill="rgba(255,255,255,0.35)"
+                    style="--dur:2.8s;--delay:1.5s;--rise:-35px"/>
+            <circle class="bubble" cx="55" cy="100" r="1.2" fill="rgba(255,255,255,0.45)"
+                    style="--dur:3.2s;--delay:0.3s;--rise:-28px"/>
           </g>
 
-          <!-- 杯身 -->
-          <path class="cup-body-path" d="M12 8 L68 8 L63 108 Q62 114 57 114 L23 114 Q18 114 17 108 Z"
-                fill="none" stroke="rgba(180,180,180,0.6)" stroke-width="2.5"/>
+          <!-- 杯身輪廓 -->
+          <path class="cup-body-path" d="M15 12 L75 12 L71 112 Q70 119 64 119 L26 119 Q20 119 19 112 Z"
+                fill="none" stroke="rgba(180,195,210,0.5)" stroke-width="2"/>
 
-          <!-- 杯口 -->
-          <path d="M10 8 Q10 4 14 4 L66 4 Q70 4 70 8 L68 10 L12 10 Z"
-                fill="rgba(200,200,200,0.3)" stroke="rgba(160,160,160,0.5)" stroke-width="1"/>
+          <!-- 左側主高光（弧形，模擬光從左上打來） -->
+          <path d="M18 16 Q16 14 19 14 L23 14 L24 16 L25 106 Q25 112 26 114 L22 114 Q20 110 20 106 Z"
+                fill="url(#highlight-l)"/>
 
-          <!-- 高光 -->
-          <path d="M14 12 L20 12 L22 108 L18 108 Z" fill="rgba(255,255,255,0.15)"/>
+          <!-- 右側次反射 -->
+          <path d="M66 20 L69 20 L67 106 Q66 112 65 114 L63 114 Q64 110 64 106 Z"
+                fill="url(#highlight-r)"/>
 
-          <!-- 杯底 -->
-          <path d="M17 108 L63 108 L62 114 Q62 116 58 116 L22 116 Q18 116 18 114 Z"
-                fill="rgba(180,180,180,0.2)" stroke="rgba(160,160,160,0.3)" stroke-width="1"/>
+          <!-- 杯口（3D 橢圓透視） -->
+          <ellipse cx="45" cy="12" rx="31" ry="5" fill="url(#rim-grad)"
+                   stroke="rgba(180,195,210,0.45)" stroke-width="1.5"/>
+          <ellipse cx="45" cy="12" rx="27" ry="3.5" fill="none"
+                   stroke="rgba(220,230,240,0.3)" stroke-width="0.8"/>
+
+          <!-- 杯底（雙層模擬玻璃厚度） -->
+          <path d="M19 112 L71 112 L69 119 Q68 122 64 122 L26 122 Q22 122 21 119 Z"
+                fill="rgba(180,195,210,0.15)" stroke="rgba(170,185,200,0.3)" stroke-width="1"/>
+          <path d="M22 114 L68 114 L67 118 Q66 120 63 120 L27 120 Q24 120 23 118 Z"
+                fill="rgba(200,215,230,0.1)"/>
+
+          <!-- 底部陰影 -->
+          <ellipse cx="45" cy="124" rx="22" ry="3" fill="rgba(0,0,0,0.08)"/>
         </svg>
 
         <svg class="progress-ring" viewBox="0 0 32 32">
@@ -237,12 +325,13 @@ if (window.top !== window.self) {
     // ===== 元素參照 =====
     const cupWrapper = shadow.querySelector(".cup-wrapper");
     const waterRect = shadow.querySelector(".water-rect");
-    const waterSurface = shadow.querySelector(".water-surface");
+    const waterWave = shadow.querySelector(".water-wave");
     const progressFg = shadow.querySelector(".progress-ring .fg");
     const hintEl = shadow.querySelector(".hint");
+    const bubbles = shadow.querySelectorAll(".bubble");
 
-    const CUP_TOP = 12;
-    const CUP_BOTTOM = 112;
+    const CUP_TOP = 14;
+    const CUP_BOTTOM = 118;
     const CUP_HEIGHT = CUP_BOTTOM - CUP_TOP;
 
     function setWaterLevel(pct) {
@@ -250,7 +339,19 @@ if (window.top !== window.self) {
       const waterY = CUP_BOTTOM - waterH;
       waterRect.setAttribute("y", waterY);
       waterRect.setAttribute("height", waterH);
-      waterSurface.setAttribute("cy", waterY);
+
+      // 更新波浪位置
+      if (waterWave) {
+        const y = waterY;
+        waterWave.setAttribute("d",
+          `M0 ${y} Q12 ${y-3} 22 ${y} T45 ${y} T68 ${y} T90 ${y} L90 ${y+2} L0 ${y+2} Z`
+        );
+      }
+
+      // 顯示/隱藏氣泡（有水才顯示）
+      bubbles.forEach(b => {
+        b.style.display = pct > 0.05 ? "" : "none";
+      });
     }
 
     setWaterLevel(0);

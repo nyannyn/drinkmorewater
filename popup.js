@@ -137,3 +137,27 @@ document.getElementById("testBtn").addEventListener("click", () => {
   chrome.runtime.sendMessage({ type: "TEST_REMINDER" });
   window.close();
 });
+
+// 匯出資料
+document.getElementById("exportBtn").addEventListener("click", () => {
+  chrome.runtime.sendMessage({ type: "EXPORT_DATA" }, (data) => {
+    if (!data) return;
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "drink-water-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+});
+
+// 重置紀錄
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (!confirm("確定要重置所有飲水紀錄嗎？此操作無法復原。")) return;
+  chrome.runtime.sendMessage({ type: "RESET_DATA" }, () => {
+    loadStatus();
+    loadWeeklyStats();
+  });
+});

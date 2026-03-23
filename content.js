@@ -440,7 +440,7 @@ if (window.top !== window.self) {
 
       setWaterLevel(0);
       progressFg.style.strokeDashoffset = circumference;
-      hintEl.textContent = "🥤 長按杯子喝水！";
+      hintEl.textContent = "🥤 長按杯子或按 Space 喝水！";
 
       // 1 分鐘不理會 → 碎裂
       clearTimeout(shatterTimer);
@@ -708,6 +708,15 @@ if (window.top !== window.self) {
     // 防止長按拖曳
     cupWrapper.addEventListener("dragstart", (e) => e.preventDefault());
     cupWrapper.addEventListener("selectstart", (e) => e.preventDefault());
+
+    // ===== 鍵盤快捷鍵 =====
+    document.addEventListener("keydown", (e) => {
+      if (!isThirsty || isHolding) return;
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        drinkAndDismiss(1); // 快速記錄 300ml
+      }
+    });
 
     // ===== 接收提醒 =====
     chrome.runtime.onMessage.addListener((msg) => {

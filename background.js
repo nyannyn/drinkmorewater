@@ -38,8 +38,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name !== ALARM_NAME) return;
   await resetDailyIfNeeded();
 
-  // 通知所有分頁進入「口渴模式」
-  await notifyAllTabs();
+  // 通知當前分頁進入「口渴模式」
+  await notifyActiveTab();
 });
 
 // ===== Offscreen 音效 =====
@@ -104,7 +104,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
   if (msg.type === "TEST_REMINDER") {
-    notifyAllTabs().then(() => sendResponse({ ok: true }));
+    notifyActiveTab().then(() => sendResponse({ ok: true }));
     return true;
   }
 });
@@ -150,12 +150,16 @@ async function setSettings(settings) {
   return { ok: true };
 }
 
-// 通知所有分頁：先嘗試 sendMessage，失敗則用 scripting 注入
-async function notifyAllTabs() {
-  const tabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
-  for (const tab of tabs) {
+// 只通知當前分頁（active tab），若無合適分頁則用系統通知
+async function notifyActiveTab() {
+  const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  const tab = tabs[0];
+
+  // 若當前分頁是 http/https，直接發送
+  if (tab && /^https?:\/\//.test(tab.url)) {
     try {
       await chrome.tabs.sendMessage(tab.id, { type: "DRINK_REMINDER" });
+      return;
     } catch {
       // content script 尚未載入，先注入再發送
       try {
@@ -163,15 +167,24 @@ async function notifyAllTabs() {
           target: { tabId: tab.id },
           files: ["content.js"],
         });
-        // 注入後稍等再發送訊息
         setTimeout(() => {
           chrome.tabs.sendMessage(tab.id, { type: "DRINK_REMINDER" }).catch(() => {});
         }, 200);
+        return;
       } catch {
-        // 無法注入（例如 chrome:// 頁面），忽略
+        // 注入失敗，改用系統通知
       }
     }
   }
+
+  // 備援：使用系統通知（例如當前分頁是 chrome:// 頁面）
+  chrome.notifications.create("drink-reminder", {
+    type: "basic",
+    iconUrl: "icons/icon128.png",
+    title: "💧 該喝水了！",
+    message: "你已經很久沒喝水了，記得補充水分哦！",
+    priority: 2,
+  });
 }
 
 async function toggleEnabled() {

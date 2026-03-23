@@ -128,6 +128,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     chrome.storage.local.set({ dailyGoalMl: msg.dailyGoalMl }).then(() => sendResponse({ ok: true }));
     return true;
   }
+  if (msg.type === "EXPORT_DATA") {
+    exportData().then(sendResponse);
+    return true;
+  }
+  if (msg.type === "RESET_DATA") {
+    resetData().then(sendResponse);
+    return true;
+  }
 });
 
 async function handleDrinkComplete(ml) {
@@ -232,6 +240,31 @@ async function toggleEnabled() {
   await chrome.storage.local.set({ enabled: next });
   await startAlarm();
   return { enabled: next };
+}
+
+// ===== 匯出 / 重置 =====
+async function exportData() {
+  const data = await chrome.storage.local.get(null);
+  return {
+    exportedAt: new Date().toISOString(),
+    todayMl: data.todayMl ?? 0,
+    todayCups: data.todayCups ?? 0,
+    lastDate: data.lastDate ?? null,
+    weeklyLog: data.weeklyLog ?? [],
+    dailyGoalMl: data.dailyGoalMl ?? DEFAULT_DAILY_GOAL_ML,
+    intervalMin: data.intervalMin ?? DEFAULT_INTERVAL_MIN,
+    enabled: data.enabled ?? true,
+  };
+}
+
+async function resetData() {
+  await chrome.storage.local.set({
+    todayMl: 0,
+    todayCups: 0,
+    weeklyLog: [],
+    lastDate: new Date().toDateString(),
+  });
+  return { ok: true };
 }
 
 // ===== 閒置偵測 =====

@@ -179,6 +179,25 @@
       cursor: pointer;
     }
     .test-btn:hover { background: #ff6f00; }
+    .data-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .data-btn {
+      flex: 1;
+      padding: 7px;
+      border: 1px solid #b2ebf2;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #fff;
+      color: #0288d1;
+    }
+    .data-btn:hover { background: #e0f7fa; }
+    .data-btn.danger { color: #d32f2f; border-color: #ffcdd2; }
+    .data-btn.danger:hover { background: #ffebee; }
     .info {
       margin-top: 12px;
       font-size: 11px;
@@ -229,6 +248,11 @@
   </div>
 
   <button class="test-btn" id="testBtn">立即測試提醒</button>
+
+  <div class="data-actions">
+    <button class="data-btn" id="exportBtn">匯出資料</button>
+    <button class="data-btn danger" id="resetBtn">重置紀錄</button>
+  </div>
 
   <div class="info">
     時間到 → 游標變黃 + 空杯搖晃<br>

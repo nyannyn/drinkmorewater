@@ -233,3 +233,17 @@ async function toggleEnabled() {
   await startAlarm();
   return { enabled: next };
 }
+
+// ===== 閒置偵測 =====
+// 使用者離開/鎖定時暫停提醒，回來時恢復
+chrome.idle.setDetectionInterval(60); // 60 秒無操作視為閒置
+
+chrome.idle.onStateChanged.addListener(async (state) => {
+  if (state === "active") {
+    // 使用者回來了，恢復鬧鐘
+    await startAlarm();
+  } else {
+    // idle 或 locked，暫停鬧鐘
+    await chrome.alarms.clear(ALARM_NAME);
+  }
+});

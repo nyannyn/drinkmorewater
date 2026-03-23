@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "喝水提醒 Drink Water Reminder",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "定時提醒你喝水，追蹤每日飲水量",
   "permissions": [
     "alarms",

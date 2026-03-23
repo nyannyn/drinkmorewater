@@ -268,7 +268,7 @@ if (window.top !== window.self) {
     const circumference = 2 * Math.PI * 13;
 
     container.innerHTML = `
-      <div class="hint">🥤 長按杯子喝水！</div>
+      <div class="hint">🥤 長按杯子或按 Space 喝水！</div>
       <div class="cup-wrapper shaking">
         <svg class="cup-svg" viewBox="0 0 90 130" xmlns="http://www.w3.org/2000/svg">
           <defs>

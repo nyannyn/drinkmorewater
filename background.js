@@ -1,6 +1,6 @@
 // ===== 常數 =====
 const ALARM_NAME = "drink-reminder";
-const DEFAULT_INTERVAL_MIN = 1; // 測試期 1 分鐘（正式改為 60）
+const DEFAULT_INTERVAL_MIN = 30;
 const DRINK_ML = 300;
 const DEFAULT_DAILY_GOAL_ML = 2000;
 
@@ -206,12 +206,12 @@ async function notifyActiveTab() {
           target: { tabId: tab.id },
           files: ["content.js"],
         });
-        setTimeout(() => {
-          chrome.tabs.sendMessage(tab.id, { type: "DRINK_REMINDER" }).catch(() => {});
-        }, 200);
+        // 等待注入完成後再發送
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        await chrome.tabs.sendMessage(tab.id, { type: "DRINK_REMINDER" });
         return;
       } catch {
-        // 注入失敗，改用系統通知
+        // 注入或發送失敗，改用系統通知
       }
     }
   }

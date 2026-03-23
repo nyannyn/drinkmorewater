@@ -2,6 +2,7 @@
 const ALARM_NAME = "drink-reminder";
 const DEFAULT_INTERVAL_MIN = 1; // 測試期 1 分鐘（正式改為 60）
 const DRINK_ML = 300;
+const DEFAULT_DAILY_GOAL_ML = 2000;
 
 // ===== 初始化 =====
 chrome.runtime.onInstalled.addListener(async () => {
@@ -38,8 +39,8 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name !== ALARM_NAME) return;
   await resetDailyIfNeeded();
 
-  // 通知所有分頁進入「口渴模式」
-  await notifyAllTabs();
+  // 通知當前分頁進入「口渴模式」
+  await notifyActiveTab();
 });
 
 // ===== Offscreen 音效 =====
@@ -68,15 +69,27 @@ async function playDingSound() {
   chrome.runtime.sendMessage({ type: "PLAY_DING" });
 }
 
-// ===== 跨日重設 =====
+// ===== 跨日重設（含每週記錄） =====
 async function resetDailyIfNeeded() {
   const today = new Date().toDateString();
-  const { lastDate } = await chrome.storage.local.get("lastDate");
-  if (lastDate !== today) {
+  const data = await chrome.storage.local.get(["lastDate", "todayMl", "todayCups", "weeklyLog"]);
+  if (data.lastDate !== today) {
+    // 將前一天的數據推入 weeklyLog
+    const log = data.weeklyLog ?? [];
+    if (data.lastDate) {
+      log.push({
+        date: data.lastDate,
+        ml: data.todayMl ?? 0,
+        cups: data.todayCups ?? 0,
+      });
+      // 只保留最近 7 天
+      while (log.length > 7) log.shift();
+    }
     await chrome.storage.local.set({
       lastDate: today,
       todayMl: 0,
       todayCups: 0,
+      weeklyLog: log,
     });
   }
 }
@@ -104,7 +117,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
   if (msg.type === "TEST_REMINDER") {
-    notifyAllTabs().then(() => sendResponse({ ok: true }));
+    notifyActiveTab().then(() => sendResponse({ ok: true }));
+    return true;
+  }
+  if (msg.type === "GET_WEEKLY_STATS") {
+    getWeeklyStats().then(sendResponse);
+    return true;
+  }
+  if (msg.type === "SET_DAILY_GOAL") {
+    chrome.storage.local.set({ dailyGoalMl: msg.dailyGoalMl }).then(() => sendResponse({ ok: true }));
     return true;
   }
 });
@@ -133,12 +154,30 @@ async function getStatus() {
     "todayCups",
     "intervalMin",
     "enabled",
+    "dailyGoalMl",
   ]);
   return {
     todayMl: data.todayMl ?? 0,
     todayCups: data.todayCups ?? 0,
     intervalMin: data.intervalMin ?? DEFAULT_INTERVAL_MIN,
     enabled: data.enabled ?? true,
+    dailyGoalMl: data.dailyGoalMl ?? DEFAULT_DAILY_GOAL_ML,
+  };
+}
+
+async function getWeeklyStats() {
+  await resetDailyIfNeeded();
+  const data = await chrome.storage.local.get(["weeklyLog", "todayMl", "todayCups", "lastDate", "dailyGoalMl"]);
+  const log = data.weeklyLog ?? [];
+  // 加入今天的數據
+  const today = {
+    date: data.lastDate ?? new Date().toDateString(),
+    ml: data.todayMl ?? 0,
+    cups: data.todayCups ?? 0,
+  };
+  return {
+    log: [...log, today],
+    dailyGoalMl: data.dailyGoalMl ?? DEFAULT_DAILY_GOAL_ML,
   };
 }
 
@@ -150,12 +189,16 @@ async function setSettings(settings) {
   return { ok: true };
 }
 
-// 通知所有分頁：先嘗試 sendMessage，失敗則用 scripting 注入
-async function notifyAllTabs() {
-  const tabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
-  for (const tab of tabs) {
+// 只通知當前分頁（active tab），若無合適分頁則用系統通知
+async function notifyActiveTab() {
+  const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+  const tab = tabs[0];
+
+  // 若當前分頁是 http/https，直接發送
+  if (tab && /^https?:\/\//.test(tab.url)) {
     try {
       await chrome.tabs.sendMessage(tab.id, { type: "DRINK_REMINDER" });
+      return;
     } catch {
       // content script 尚未載入，先注入再發送
       try {
@@ -163,15 +206,24 @@ async function notifyAllTabs() {
           target: { tabId: tab.id },
           files: ["content.js"],
         });
-        // 注入後稍等再發送訊息
         setTimeout(() => {
           chrome.tabs.sendMessage(tab.id, { type: "DRINK_REMINDER" }).catch(() => {});
         }, 200);
+        return;
       } catch {
-        // 無法注入（例如 chrome:// 頁面），忽略
+        // 注入失敗，改用系統通知
       }
     }
   }
+
+  // 備援：使用系統通知（例如當前分頁是 chrome:// 頁面）
+  chrome.notifications.create("drink-reminder", {
+    type: "basic",
+    iconUrl: "icons/icon128.png",
+    title: "💧 該喝水了！",
+    message: "你已經很久沒喝水了，記得補充水分哦！",
+    priority: 2,
+  });
 }
 
 async function toggleEnabled() {

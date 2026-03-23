@@ -57,12 +57,13 @@ if (window.top !== window.self) {
         50% { opacity: 0.5; }
       }
 
-      /* 水杯 — 無把手透明玻璃杯（上寬下窄） */
+      /* 水杯 — 擬真毛玻璃杯 */
       .cup-wrapper {
         position: relative;
-        width: 80px;
-        height: 120px;
+        width: 90px;
+        height: 130px;
         cursor: pointer;
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
       }
 
       .cup-svg {
@@ -71,6 +72,28 @@ if (window.top !== window.self) {
         left: 0;
         width: 100%;
         height: 100%;
+      }
+
+      /* 水面波浪動畫 */
+      .wave-group {
+        animation: waveShift 2s ease-in-out infinite;
+      }
+      @keyframes waveShift {
+        0%, 100% { transform: translateX(0); }
+        50% { transform: translateX(-6px); }
+      }
+
+      /* 氣泡浮上動畫 */
+      .bubble {
+        animation: bubbleRise var(--dur, 2s) ease-in infinite;
+        animation-delay: var(--delay, 0s);
+        opacity: 0;
+      }
+      @keyframes bubbleRise {
+        0% { opacity: 0; transform: translateY(0) scale(1); }
+        15% { opacity: 0.6; }
+        70% { opacity: 0.3; }
+        100% { opacity: 0; transform: translateY(var(--rise, -30px)) scale(0.4); }
       }
 
       /* 搖晃動畫 */
@@ -140,26 +163,84 @@ if (window.top !== window.self) {
         100% { opacity: 0; transform: translateX(-50%) translateY(-50px); }
       }
 
-      /* ===== 碎裂動畫 ===== */
+      /* ===== 碎裂動畫（三階段） ===== */
       .shatter-container {
         position: relative;
+        width: 90px;
+        height: 130px;
+      }
+
+      /* Phase 1：裂痕 */
+      .crack-line {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 80px;
         height: 120px;
+        pointer-events: none;
       }
+      .crack-line line {
+        stroke: rgba(255,255,255,0.85);
+        stroke-width: 1.5;
+        stroke-linecap: round;
+        filter: drop-shadow(0 0 2px rgba(200,220,240,0.6));
+        animation: crackDraw 0.35s ease-out forwards;
+      }
+      @keyframes crackDraw {
+        0% { stroke-dashoffset: var(--len); opacity: 0.3; }
+        100% { stroke-dashoffset: 0; opacity: 1; }
+      }
+
+      /* Phase 1：微震 */
+      .cup-wrapper.stress {
+        animation: stress 0.06s linear infinite;
+        transform-origin: center center;
+      }
+      @keyframes stress {
+        0% { transform: translate(0, 0); }
+        25% { transform: translate(-1.5px, 0.5px); }
+        50% { transform: translate(1px, -1px); }
+        75% { transform: translate(-0.5px, 1px); }
+        100% { transform: translate(1px, 0); }
+      }
+
+      /* Phase 2：碎片飛散（含重力拋物線） */
       .shard {
         position: absolute;
         opacity: 1;
-        animation: shardFly 0.8s ease-out forwards;
+        animation: shardFlyGravity var(--dur, 0.7s) ease-out forwards;
+        animation-delay: var(--delay, 0s);
       }
-      @keyframes shardFly {
+      @keyframes shardFlyGravity {
         0% {
           opacity: 1;
           transform: translate(0, 0) rotate(0deg) scale(1);
         }
+        30% {
+          opacity: 0.9;
+          transform: translate(calc(var(--tx) * 0.3), calc(var(--ty) * -0.15)) rotate(calc(var(--rot) * 0.3)) scale(0.9);
+        }
         100% {
           opacity: 0;
-          transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0.3);
+          transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0.2);
         }
+      }
+
+      /* Phase 2：粉塵粒子 */
+      .dust {
+        position: absolute;
+        width: var(--size, 3px);
+        height: var(--size, 3px);
+        border-radius: 50%;
+        background: rgba(200,210,220,0.5);
+        animation: dustSettle var(--dur, 1.2s) ease-out forwards;
+        animation-delay: var(--delay, 0.3s);
+        opacity: 0;
+      }
+      @keyframes dustSettle {
+        0% { opacity: 0.7; transform: translate(0, 0) scale(1); }
+        40% { opacity: 0.5; }
+        100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.3); }
       }
     `;
 
@@ -189,37 +270,102 @@ if (window.top !== window.self) {
     container.innerHTML = `
       <div class="hint">🥤 長按杯子喝水！</div>
       <div class="cup-wrapper shaking">
-        <svg class="cup-svg" viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg">
+        <svg class="cup-svg" viewBox="0 0 90 130" xmlns="http://www.w3.org/2000/svg">
           <defs>
+            <!-- 杯身裁切區域 -->
             <clipPath id="cup-clip">
-              <path d="M14 12 L66 12 L62 108 Q62 112 58 112 L22 112 Q18 112 18 108 Z"/>
+              <path d="M16 14 L74 14 L70 112 Q69 118 64 118 L26 118 Q21 118 20 112 Z"/>
             </clipPath>
-            <linearGradient id="water-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#4fc3f7" stop-opacity="0.85"/>
-              <stop offset="100%" stop-color="#0277bd" stop-opacity="0.95"/>
+
+            <!-- 水漸層 -->
+            <linearGradient id="water-grad" x1="0" y1="0" x2="0.15" y2="1">
+              <stop offset="0%" stop-color="#4dd0e1" stop-opacity="0.8"/>
+              <stop offset="40%" stop-color="#26c6da" stop-opacity="0.85"/>
+              <stop offset="100%" stop-color="#0097a7" stop-opacity="0.95"/>
             </linearGradient>
+
+            <!-- 玻璃體漸層（透明→微白→透明，模擬折射） -->
+            <linearGradient id="glass-body" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.08)"/>
+              <stop offset="25%" stop-color="rgba(255,255,255,0.15)"/>
+              <stop offset="50%" stop-color="rgba(255,255,255,0.05)"/>
+              <stop offset="75%" stop-color="rgba(255,255,255,0.12)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0.06)"/>
+            </linearGradient>
+
+            <!-- 高光弧形漸層 -->
+            <linearGradient id="highlight-l" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            </linearGradient>
+            <linearGradient id="highlight-r" x1="1" y1="0" x2="0" y2="0">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.15)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            </linearGradient>
+
+            <!-- 杯口橢圓漸層 -->
+            <radialGradient id="rim-grad" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0%" stop-color="rgba(240,245,250,0.4)"/>
+              <stop offset="70%" stop-color="rgba(200,210,220,0.25)"/>
+              <stop offset="100%" stop-color="rgba(180,190,200,0.15)"/>
+            </radialGradient>
+
+            <!-- 毛玻璃濾鏡 -->
+            <filter id="glass-blur" x="-10%" y="-10%" width="120%" height="120%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
           </defs>
+
+          <!-- 玻璃杯體（填充半透明，模擬玻璃厚度） -->
+          <path d="M16 14 L74 14 L70 112 Q69 118 64 118 L26 118 Q21 118 20 112 Z"
+                fill="url(#glass-body)" filter="url(#glass-blur)"/>
 
           <!-- 水位 -->
           <g clip-path="url(#cup-clip)">
-            <rect class="water-rect" x="0" y="112" width="80" height="0" fill="url(#water-grad)"/>
-            <ellipse class="water-surface" cx="40" cy="112" rx="30" ry="3" fill="rgba(255,255,255,0.35)"/>
+            <rect class="water-rect" x="0" y="118" width="90" height="0" fill="url(#water-grad)"/>
+            <!-- 水面波浪 -->
+            <g class="wave-group">
+              <path class="water-wave" d="M0 118 Q12 115 22 118 T45 118 T68 118 T90 118 L90 120 L0 120 Z"
+                    fill="rgba(255,255,255,0.25)"/>
+            </g>
+            <!-- 氣泡 -->
+            <circle class="bubble" cx="30" cy="100" r="1.5" fill="rgba(255,255,255,0.5)"
+                    style="--dur:2.5s;--delay:0s;--rise:-25px"/>
+            <circle class="bubble" cx="50" cy="105" r="1" fill="rgba(255,255,255,0.4)"
+                    style="--dur:3s;--delay:0.8s;--rise:-30px"/>
+            <circle class="bubble" cx="42" cy="95" r="2" fill="rgba(255,255,255,0.35)"
+                    style="--dur:2.8s;--delay:1.5s;--rise:-35px"/>
+            <circle class="bubble" cx="55" cy="100" r="1.2" fill="rgba(255,255,255,0.45)"
+                    style="--dur:3.2s;--delay:0.3s;--rise:-28px"/>
           </g>
 
-          <!-- 杯身 -->
-          <path class="cup-body-path" d="M12 8 L68 8 L63 108 Q62 114 57 114 L23 114 Q18 114 17 108 Z"
-                fill="none" stroke="rgba(180,180,180,0.6)" stroke-width="2.5"/>
+          <!-- 杯身輪廓 -->
+          <path class="cup-body-path" d="M15 12 L75 12 L71 112 Q70 119 64 119 L26 119 Q20 119 19 112 Z"
+                fill="none" stroke="rgba(180,195,210,0.5)" stroke-width="2"/>
 
-          <!-- 杯口 -->
-          <path d="M10 8 Q10 4 14 4 L66 4 Q70 4 70 8 L68 10 L12 10 Z"
-                fill="rgba(200,200,200,0.3)" stroke="rgba(160,160,160,0.5)" stroke-width="1"/>
+          <!-- 左側主高光（弧形，模擬光從左上打來） -->
+          <path d="M18 16 Q16 14 19 14 L23 14 L24 16 L25 106 Q25 112 26 114 L22 114 Q20 110 20 106 Z"
+                fill="url(#highlight-l)"/>
 
-          <!-- 高光 -->
-          <path d="M14 12 L20 12 L22 108 L18 108 Z" fill="rgba(255,255,255,0.15)"/>
+          <!-- 右側次反射 -->
+          <path d="M66 20 L69 20 L67 106 Q66 112 65 114 L63 114 Q64 110 64 106 Z"
+                fill="url(#highlight-r)"/>
 
-          <!-- 杯底 -->
-          <path d="M17 108 L63 108 L62 114 Q62 116 58 116 L22 116 Q18 116 18 114 Z"
-                fill="rgba(180,180,180,0.2)" stroke="rgba(160,160,160,0.3)" stroke-width="1"/>
+          <!-- 杯口（3D 橢圓透視） -->
+          <ellipse cx="45" cy="12" rx="31" ry="5" fill="url(#rim-grad)"
+                   stroke="rgba(180,195,210,0.45)" stroke-width="1.5"/>
+          <ellipse cx="45" cy="12" rx="27" ry="3.5" fill="none"
+                   stroke="rgba(220,230,240,0.3)" stroke-width="0.8"/>
+
+          <!-- 杯底（雙層模擬玻璃厚度） -->
+          <path d="M19 112 L71 112 L69 119 Q68 122 64 122 L26 122 Q22 122 21 119 Z"
+                fill="rgba(180,195,210,0.15)" stroke="rgba(170,185,200,0.3)" stroke-width="1"/>
+          <path d="M22 114 L68 114 L67 118 Q66 120 63 120 L27 120 Q24 120 23 118 Z"
+                fill="rgba(200,215,230,0.1)"/>
+
+          <!-- 底部陰影 -->
+          <ellipse cx="45" cy="124" rx="22" ry="3" fill="rgba(0,0,0,0.08)"/>
         </svg>
 
         <svg class="progress-ring" viewBox="0 0 32 32">
@@ -237,12 +383,13 @@ if (window.top !== window.self) {
     // ===== 元素參照 =====
     const cupWrapper = shadow.querySelector(".cup-wrapper");
     const waterRect = shadow.querySelector(".water-rect");
-    const waterSurface = shadow.querySelector(".water-surface");
+    const waterWave = shadow.querySelector(".water-wave");
     const progressFg = shadow.querySelector(".progress-ring .fg");
     const hintEl = shadow.querySelector(".hint");
+    const bubbles = shadow.querySelectorAll(".bubble");
 
-    const CUP_TOP = 12;
-    const CUP_BOTTOM = 112;
+    const CUP_TOP = 14;
+    const CUP_BOTTOM = 118;
     const CUP_HEIGHT = CUP_BOTTOM - CUP_TOP;
 
     function setWaterLevel(pct) {
@@ -250,7 +397,19 @@ if (window.top !== window.self) {
       const waterY = CUP_BOTTOM - waterH;
       waterRect.setAttribute("y", waterY);
       waterRect.setAttribute("height", waterH);
-      waterSurface.setAttribute("cy", waterY);
+
+      // 更新波浪位置
+      if (waterWave) {
+        const y = waterY;
+        waterWave.setAttribute("d",
+          `M0 ${y} Q12 ${y-3} 22 ${y} T45 ${y} T68 ${y} T90 ${y} L90 ${y+2} L0 ${y+2} Z`
+        );
+      }
+
+      // 顯示/隱藏氣泡（有水才顯示）
+      bubbles.forEach(b => {
+        b.style.display = pct > 0.05 ? "" : "none";
+      });
     }
 
     setWaterLevel(0);
@@ -330,7 +489,7 @@ if (window.top !== window.self) {
       }, 1500);
     }
 
-    // ===== 碎裂動畫 =====
+    // ===== 碎裂動畫（三階段） =====
     function shatterAndDismiss() {
       isThirsty = false;
       clearTimeout(shatterTimer);
@@ -340,69 +499,137 @@ if (window.top !== window.self) {
       if (cursorStyle) cursorStyle.remove();
 
       cupWrapper.classList.remove("shaking");
-
-      // 隱藏原始杯子
-      cupWrapper.style.display = "none";
       hintEl.textContent = "";
 
-      // 建立碎片容器
-      const shatterBox = document.createElement("div");
-      shatterBox.className = "shatter-container";
+      // ── Phase 1：裂痕 + 微震（0-400ms）──
+      cupWrapper.classList.add("stress");
 
-      // 產生碎片（三角形 SVG）
-      const shardColors = [
-        "rgba(180,180,180,0.5)",
-        "rgba(200,210,220,0.6)",
-        "rgba(160,170,180,0.4)",
-        "rgba(220,225,230,0.5)",
-        "rgba(190,200,210,0.45)",
+      // 在杯子上疊加裂痕線
+      const crackSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      crackSvg.setAttribute("viewBox", "0 0 80 120");
+      crackSvg.classList.add("crack-line");
+
+      const crackPaths = [
+        { x1: 40, y1: 50, x2: 25, y2: 20 },
+        { x1: 40, y1: 50, x2: 60, y2: 15 },
+        { x1: 40, y1: 50, x2: 55, y2: 85 },
+        { x1: 40, y1: 50, x2: 20, y2: 90 },
+        { x1: 40, y1: 50, x2: 65, y2: 55 },
+        { x1: 35, y1: 45, x2: 18, y2: 55 },
       ];
-      const shardCount = 8;
 
-      for (let i = 0; i < shardCount; i++) {
-        const shard = document.createElement("div");
-        shard.className = "shard";
+      crackPaths.forEach((p, i) => {
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", p.x1);
+        line.setAttribute("y1", p.y1);
+        line.setAttribute("x2", p.x2);
+        line.setAttribute("y2", p.y2);
+        const len = Math.hypot(p.x2 - p.x1, p.y2 - p.y1);
+        line.style.strokeDasharray = len;
+        line.style.setProperty("--len", len);
+        line.style.animationDelay = (i * 50) + "ms";
+        crackSvg.appendChild(line);
+      });
 
-        // 隨機位置（大致在杯子範圍內）
-        const startX = 15 + Math.random() * 50;
-        const startY = 20 + Math.random() * 80;
-        shard.style.left = startX + "px";
-        shard.style.top = startY + "px";
+      cupWrapper.appendChild(crackSvg);
 
-        // 隨機飛散方向
-        const tx = (Math.random() - 0.5) * 160 + "px";
-        const ty = (Math.random() - 0.3) * 120 + "px";
-        const rot = (Math.random() - 0.5) * 360 + "deg";
-        shard.style.setProperty("--tx", tx);
-        shard.style.setProperty("--ty", ty);
-        shard.style.setProperty("--rot", rot);
-
-        // 碎片 SVG
-        const size = 12 + Math.random() * 16;
-        const color = shardColors[i % shardColors.length];
-        const p1 = `${Math.random() * size},0`;
-        const p2 = `${size},${size * (0.6 + Math.random() * 0.4)}`;
-        const p3 = `0,${size * (0.4 + Math.random() * 0.6)}`;
-
-        shard.innerHTML = `
-          <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-            <polygon points="${p1} ${p2} ${p3}" fill="${color}" stroke="rgba(160,160,160,0.6)" stroke-width="0.5"/>
-          </svg>
-        `;
-
-        shatterBox.appendChild(shard);
-      }
-
-      container.appendChild(shatterBox);
-
-      // 碎裂後淡出
+      // ── Phase 2：碎片飛散（400ms 後）──
       setTimeout(() => {
-        host.classList.remove("active");
-        shatterBox.remove();
-        cupWrapper.style.display = "";
-        setWaterLevel(0);
-        progressFg.style.strokeDashoffset = circumference;
-      }, 1200);
+        cupWrapper.style.display = "none";
+        cupWrapper.classList.remove("stress");
+        crackSvg.remove();
+
+        const shatterBox = document.createElement("div");
+        shatterBox.className = "shatter-container";
+
+        const shardColors = [
+          "rgba(180,190,200,0.55)",
+          "rgba(200,215,230,0.65)",
+          "rgba(160,175,190,0.45)",
+          "rgba(220,230,240,0.55)",
+          "rgba(190,205,215,0.5)",
+          "rgba(170,185,200,0.4)",
+        ];
+
+        // 產生 14 片碎片（三角形 + 四邊形）
+        const shardCount = 14;
+        for (let i = 0; i < shardCount; i++) {
+          const shard = document.createElement("div");
+          shard.className = "shard";
+
+          const startX = 12 + Math.random() * 56;
+          const startY = 15 + Math.random() * 90;
+          shard.style.left = startX + "px";
+          shard.style.top = startY + "px";
+
+          // 飛散方向（帶重力感）
+          const tx = (Math.random() - 0.5) * 180 + "px";
+          const ty = (Math.random() * 0.7 + 0.3) * 140 + "px"; // 偏向下方
+          const rot = (Math.random() - 0.5) * 540 + "deg";
+          const delay = Math.random() * 120 + "ms";
+          const dur = (0.5 + Math.random() * 0.4) + "s";
+
+          shard.style.setProperty("--tx", tx);
+          shard.style.setProperty("--ty", ty);
+          shard.style.setProperty("--rot", rot);
+          shard.style.setProperty("--delay", delay);
+          shard.style.setProperty("--dur", dur);
+
+          const size = 8 + Math.random() * 18;
+          const color = shardColors[i % shardColors.length];
+          const isQuad = Math.random() > 0.4;
+
+          let points;
+          if (isQuad) {
+            // 四邊形碎片
+            points = [
+              `${Math.random() * size * 0.4},${Math.random() * size * 0.3}`,
+              `${size * (0.5 + Math.random() * 0.5)},${Math.random() * size * 0.4}`,
+              `${size * (0.6 + Math.random() * 0.4)},${size * (0.6 + Math.random() * 0.4)}`,
+              `${Math.random() * size * 0.3},${size * (0.5 + Math.random() * 0.5)}`,
+            ].join(" ");
+          } else {
+            // 三角形碎片
+            points = [
+              `${Math.random() * size},0`,
+              `${size},${size * (0.5 + Math.random() * 0.5)}`,
+              `0,${size * (0.4 + Math.random() * 0.6)}`,
+            ].join(" ");
+          }
+
+          shard.innerHTML = `
+            <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+              <polygon points="${points}" fill="${color}" stroke="rgba(180,190,200,0.7)" stroke-width="0.5"/>
+            </svg>
+          `;
+          shatterBox.appendChild(shard);
+        }
+
+        // 產生 6 個粉塵粒子
+        for (let i = 0; i < 6; i++) {
+          const dust = document.createElement("div");
+          dust.className = "dust";
+          dust.style.left = (20 + Math.random() * 40) + "px";
+          dust.style.top = (30 + Math.random() * 60) + "px";
+          dust.style.setProperty("--size", (2 + Math.random() * 3) + "px");
+          dust.style.setProperty("--tx", (Math.random() - 0.5) * 60 + "px");
+          dust.style.setProperty("--ty", (Math.random() * 40 + 20) + "px");
+          dust.style.setProperty("--delay", (Math.random() * 200 + 100) + "ms");
+          dust.style.setProperty("--dur", (0.8 + Math.random() * 0.6) + "s");
+          shatterBox.appendChild(dust);
+        }
+
+        container.appendChild(shatterBox);
+
+        // ── Phase 3：清除（~1600ms 後）──
+        setTimeout(() => {
+          host.classList.remove("active");
+          shatterBox.remove();
+          cupWrapper.style.display = "";
+          setWaterLevel(0);
+          progressFg.style.strokeDashoffset = circumference;
+        }, 1200);
+      }, 400);
     }
 
     // ===== 長按邏輯 =====

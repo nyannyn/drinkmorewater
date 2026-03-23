@@ -8,6 +8,7 @@
     "storage",
     "scripting",
     "offscreen",
+    "notifications",
     "idle"
   ],
   "host_permissions": [

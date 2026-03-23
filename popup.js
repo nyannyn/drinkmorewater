@@ -7,6 +7,10 @@ const $goalLabel = document.getElementById("goalLabel");
 const $goalPct = document.getElementById("goalPct");
 const $dailyGoal = document.getElementById("dailyGoal");
 const $weeklyChart = document.getElementById("weeklyChart");
+const $soundToggle = document.getElementById("soundToggle");
+const $volumeSlider = document.getElementById("volumeSlider");
+const $volumeLabel = document.getElementById("volumeLabel");
+const $volumeRow = document.getElementById("volumeRow");
 
 const DAY_NAMES = ["日", "一", "二", "三", "四", "五", "六"];
 
@@ -18,6 +22,10 @@ function loadStatus() {
     $intervalMin.value = res.intervalMin;
     $enabledToggle.checked = res.enabled;
     $dailyGoal.value = res.dailyGoalMl;
+    $soundToggle.checked = res.soundEnabled;
+    $volumeSlider.value = res.soundVolume;
+    $volumeLabel.textContent = res.soundVolume + "%";
+    $volumeRow.style.display = res.soundEnabled ? "" : "none";
 
     // 更新目標進度
     const goal = res.dailyGoalMl || 2000;
@@ -99,6 +107,29 @@ $dailyGoal.addEventListener("change", () => {
     chrome.runtime.sendMessage({ type: "SET_DAILY_GOAL", dailyGoalMl: val });
     loadStatus();
   }
+});
+
+// 音效設定
+$soundToggle.addEventListener("change", () => {
+  const enabled = $soundToggle.checked;
+  $volumeRow.style.display = enabled ? "" : "none";
+  chrome.runtime.sendMessage({
+    type: "SET_SOUND_SETTINGS",
+    soundEnabled: enabled,
+    soundVolume: parseInt($volumeSlider.value, 10),
+  });
+});
+
+$volumeSlider.addEventListener("input", () => {
+  $volumeLabel.textContent = $volumeSlider.value + "%";
+});
+
+$volumeSlider.addEventListener("change", () => {
+  chrome.runtime.sendMessage({
+    type: "SET_SOUND_SETTINGS",
+    soundEnabled: $soundToggle.checked,
+    soundVolume: parseInt($volumeSlider.value, 10),
+  });
 });
 
 // 立即測試

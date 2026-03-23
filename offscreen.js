@@ -1,7 +1,12 @@
 // 清脆的「叮！」音效 — 使用 Web Audio API
-function playDingSound() {
+function playDingSound(volume = 1) {
   const ctx = new AudioContext();
   const now = ctx.currentTime;
+
+  // 主音量節點
+  const masterGain = ctx.createGain();
+  masterGain.gain.setValueAtTime(volume, now);
+  masterGain.connect(ctx.destination);
 
   // 主音：高頻 sine wave（清脆的叮）
   const osc1 = ctx.createOscillator();
@@ -12,7 +17,7 @@ function playDingSound() {
   gain1.gain.setValueAtTime(0.4, now);
   gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
   osc1.connect(gain1);
-  gain1.connect(ctx.destination);
+  gain1.connect(masterGain);
   osc1.start(now);
   osc1.stop(now + 0.6);
 
@@ -25,7 +30,7 @@ function playDingSound() {
   gain2.gain.setValueAtTime(0.15, now);
   gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
   osc2.connect(gain2);
-  gain2.connect(ctx.destination);
+  gain2.connect(masterGain);
   osc2.start(now);
   osc2.stop(now + 0.3);
 
@@ -39,13 +44,13 @@ function playDingSound() {
   gain3.gain.setValueAtTime(0.3, now + 0.15);
   gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
   osc3.connect(gain3);
-  gain3.connect(ctx.destination);
+  gain3.connect(masterGain);
   osc3.start(now + 0.15);
   osc3.stop(now + 0.7);
 }
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "PLAY_DING") {
-    playDingSound();
+    playDingSound(msg.volume ?? 1);
   }
 });

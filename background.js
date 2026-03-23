@@ -65,8 +65,10 @@ async function ensureOffscreenDocument() {
 }
 
 async function playDingSound() {
+  const { soundEnabled = true, soundVolume = 80 } = await chrome.storage.local.get(["soundEnabled", "soundVolume"]);
+  if (!soundEnabled) return;
   await ensureOffscreenDocument();
-  chrome.runtime.sendMessage({ type: "PLAY_DING" });
+  chrome.runtime.sendMessage({ type: "PLAY_DING", volume: soundVolume / 100 });
 }
 
 // ===== 跨日重設（含每週記錄） =====
@@ -116,6 +118,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     playDingSound().then(() => sendResponse({ ok: true }));
     return true;
   }
+  if (msg.type === "SET_SOUND_SETTINGS") {
+    chrome.storage.local.set({
+      soundEnabled: msg.soundEnabled,
+      soundVolume: msg.soundVolume,
+    }).then(() => sendResponse({ ok: true }));
+    return true;
+  }
   if (msg.type === "TEST_REMINDER") {
     notifyActiveTab().then(() => sendResponse({ ok: true }));
     return true;
@@ -155,6 +164,8 @@ async function getStatus() {
     "intervalMin",
     "enabled",
     "dailyGoalMl",
+    "soundEnabled",
+    "soundVolume",
   ]);
   return {
     todayMl: data.todayMl ?? 0,
@@ -162,6 +173,8 @@ async function getStatus() {
     intervalMin: data.intervalMin ?? DEFAULT_INTERVAL_MIN,
     enabled: data.enabled ?? true,
     dailyGoalMl: data.dailyGoalMl ?? DEFAULT_DAILY_GOAL_ML,
+    soundEnabled: data.soundEnabled ?? true,
+    soundVolume: data.soundVolume ?? 80,
   };
 }
 

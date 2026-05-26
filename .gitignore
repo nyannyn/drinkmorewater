@@ -3,3 +3,5 @@ Thumbs.db
 *.crx
 *.pem
 .claude/
+node_modules/
+dist/

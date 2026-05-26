@@ -17,15 +17,14 @@
       user-select: none;
     }
 
-    body {
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding-bottom: 24px;
-    }
+    body { position: relative; }
 
-    /* 整體淡入（取代擴充版的 :host opacity 切換） */
+    /* 整體淡入（取代擴充版的 :host opacity 切換）。
+       錨定於視窗右下角，視窗左上的空間留給碎裂碎片飛散。 */
     .drink-container {
+      position: absolute;
+      right: 28px;
+      bottom: 24px;
       display: flex;
       flex-direction: column;
       align-items: center;

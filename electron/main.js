@@ -106,16 +106,18 @@ function positionCupWindow() {
   if (!cupWindow) return;
   const { workArea } = screen.getPrimaryDisplay();
   const [w, h] = cupWindow.getSize();
+  // 視窗貼齊工作區右下角；水杯靠視窗右下（由 cup.html padding 決定離角距離），
+  // 視窗左上的多餘空間則留給碎裂時往螢幕內側飛散的碎片，避免被裁切。
   cupWindow.setPosition(
-    Math.round(workArea.x + workArea.width - w - 24),
-    Math.round(workArea.y + workArea.height - h - 24)
+    Math.round(workArea.x + workArea.width - w),
+    Math.round(workArea.y + workArea.height - h)
   );
 }
 
 function createCupWindow() {
   cupWindow = new BrowserWindow({
-    width: 200,
-    height: 240,
+    width: 300,
+    height: 300,
     show: false,
     frame: false,
     transparent: true,

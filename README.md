@@ -1,6 +1,6 @@
 # 💧 喝水提醒 Drink Water Reminder（桌面版）
 
-一款常駐系統托盤的喝水提醒軟體，時間到會在桌面右下角浮現一個搖晃的水杯，長按 3 秒喝水，並追蹤每日 / 每週飲水量。以 [Electron](https://www.electronjs.org/) 打包成可下載安裝的 Windows 應用程式。
+一款常駐系統托盤的喝水提醒軟體，時間到會在桌面右下角浮現一個搖晃的水杯，長按 3 秒喝水，並追蹤每日 / 每週飲水量。以 [Electron](https://www.electronjs.org/) 打包成可下載安裝的 **Windows / Linux** 應用程式。
 
 > 本專案原為 Chrome 擴充功能，已改寫為桌面應用程式。原擴充程式的水杯動畫、音效與統計邏輯皆完整保留。
 
@@ -38,6 +38,19 @@ npm run dist:win
 
 > ⚠️ 建議在 **Windows** 上執行打包。在 Linux / macOS 上產生 Windows 安裝程式需額外安裝 wine 等工具。
 
+## 打包成 Linux 安裝包
+
+```bash
+npm run dist:linux
+```
+
+於 `dist/` 產出（x64）：
+
+- `drink-water-reminder-x.y.z-x86_64.AppImage` — 免安裝，`chmod +x` 後直接執行，適用大多數發行版
+- `drink-water-reminder-x.y.z-amd64.deb` — Debian / Ubuntu 安裝包（`sudo apt install ./檔名.deb`）
+
+> ℹ️ 在 GNOME 桌面上系統托盤需安裝 [AppIndicator](https://extensions.gnome.org/extension/615/appindicator-support/) 擴充才會顯示圖示；KDE / XFCE 等多數環境內建支援。透明懸浮水杯需要啟用桌面合成（compositor），大多數現代桌面預設開啟。
+
 ## 使用方式
 
 | 操作 | 說明 |
@@ -62,7 +75,8 @@ drinkmorewater/
 │   ├── cup.html / cup.js          # 透明懸浮水杯視窗（移植自 content.js + offscreen.js）
 │   └── settings.html / settings.js# 設定 / 統計視窗（移植自 popup.html/js）
 ├── build/
-│   ├── icon.png            # App / 托盤圖示（256px 水滴）
+│   ├── icon.png            # App / 托盤圖示（512px 水滴，Windows / 通用）
+│   ├── icons/              # Linux 多尺寸圖示集（16~512px）
 │   └── make-icons.js       # 純 Node 圖示產生器
 └── (manifest.json, background.js, content.js ... 為原 Chrome 擴充版檔案，保留供對照)
 ```

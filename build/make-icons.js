@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
 
-const SIZE = 256;
+const SIZE = 512;
 
 function encodePNG(width, height, rgba) {
   function chunk(type, data) {
@@ -62,53 +62,62 @@ function lerp(a, b, t) {
   return Math.round(a + (b - a) * t);
 }
 
-const rgba = Buffer.alloc(SIZE * SIZE * 4);
-const cx = SIZE / 2;
-const r = SIZE * 0.30; // 底部圓半徑
-const cyCircle = SIZE * 0.62; // 圓心
-const top = SIZE * 0.12; // 水滴尖端
+// 以指定尺寸畫出水滴，回傳 PNG buffer
+function render(size) {
+  const rgba = Buffer.alloc(size * size * 4);
+  const cx = size / 2;
+  const r = size * 0.3; // 底部圓半徑
+  const cyCircle = size * 0.62; // 圓心
+  const top = size * 0.12; // 水滴尖端
 
-function insideDrop(x, y) {
-  // 底部圓
-  if ((x - cx) ** 2 + (y - cyCircle) ** 2 <= r * r) return true;
-  // 上方錐形（尖端 → 圓心兩側）
-  if (y >= top && y <= cyCircle) {
-    const halfW = r * ((y - top) / (cyCircle - top));
-    if (Math.abs(x - cx) <= halfW) return true;
-  }
-  return false;
-}
+  const insideDrop = (x, y) => {
+    if ((x - cx) ** 2 + (y - cyCircle) ** 2 <= r * r) return true;
+    if (y >= top && y <= cyCircle) {
+      const halfW = r * ((y - top) / (cyCircle - top));
+      if (Math.abs(x - cx) <= halfW) return true;
+    }
+    return false;
+  };
 
-for (let y = 0; y < SIZE; y++) {
-  for (let x = 0; x < SIZE; x++) {
-    const i = (y * SIZE + x) * 4;
-    if (insideDrop(x, y)) {
-      // 由上到下的藍色漸層
-      const t = Math.min(Math.max((y - top) / (cyCircle + r - top), 0), 1);
-      let R = lerp(0x81, 0x01, t); // 81d4fa -> 0177bd 概念
-      let G = lerp(0xd4, 0x77, t);
-      let B = lerp(0xfa, 0xbd, t);
-      // 左上高光
-      const hx = cx - r * 0.35;
-      const hy = cyCircle - r * 0.35;
-      const hd = Math.sqrt((x - hx) ** 2 + (y - hy) ** 2);
-      if (hd < r * 0.45) {
-        const hl = 1 - hd / (r * 0.45);
-        R = lerp(R, 255, hl * 0.8);
-        G = lerp(G, 255, hl * 0.8);
-        B = lerp(B, 255, hl * 0.8);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      if (insideDrop(x, y)) {
+        const t = Math.min(Math.max((y - top) / (cyCircle + r - top), 0), 1);
+        let R = lerp(0x81, 0x01, t);
+        let G = lerp(0xd4, 0x77, t);
+        let B = lerp(0xfa, 0xbd, t);
+        const hx = cx - r * 0.35;
+        const hy = cyCircle - r * 0.35;
+        const hd = Math.sqrt((x - hx) ** 2 + (y - hy) ** 2);
+        if (hd < r * 0.45) {
+          const hl = 1 - hd / (r * 0.45);
+          R = lerp(R, 255, hl * 0.8);
+          G = lerp(G, 255, hl * 0.8);
+          B = lerp(B, 255, hl * 0.8);
+        }
+        rgba[i] = R;
+        rgba[i + 1] = G;
+        rgba[i + 2] = B;
+        rgba[i + 3] = 255;
+      } else {
+        rgba[i + 3] = 0;
       }
-      rgba[i] = R;
-      rgba[i + 1] = G;
-      rgba[i + 2] = B;
-      rgba[i + 3] = 255;
-    } else {
-      rgba[i + 3] = 0; // 透明
     }
   }
+  return encodePNG(size, size, rgba);
 }
 
-const out = encodePNG(SIZE, SIZE, rgba);
-const dest = path.join(__dirname, "icon.png");
-fs.writeFileSync(dest, out);
-console.log("wrote", dest, out.length, "bytes");
+// 主圖示（Windows / 通用）
+const main = render(SIZE);
+fs.writeFileSync(path.join(__dirname, "icon.png"), main);
+console.log("wrote icon.png", main.length, "bytes");
+
+// Linux 用多尺寸 icon set（electron-builder linux.icon 指向此資料夾）
+const iconsDir = path.join(__dirname, "icons");
+fs.mkdirSync(iconsDir, { recursive: true });
+for (const s of [16, 32, 48, 64, 128, 256, 512]) {
+  const buf = render(s);
+  fs.writeFileSync(path.join(iconsDir, `${s}x${s}.png`), buf);
+  console.log(`wrote icons/${s}x${s}.png`, buf.length, "bytes");
+}

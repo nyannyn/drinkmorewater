@@ -1,0 +1,58 @@
+{
+  "name": "drink-water-reminder",
+  "version": "1.1.0",
+  "description": "定時提醒你喝水，追蹤每日飲水量 — 桌面版",
+  "main": "electron/main.js",
+  "author": "drinkmorewater",
+  "homepage": "https://github.com/nyannyn/drinkmorewater",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.drinkmorewater.app",
+    "productName": "喝水提醒",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "renderer/**/*",
+      "build/icon.png"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "喝水提醒"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "build/icons",
+      "category": "Utility",
+      "maintainer": "drinkmorewater <noreply@drinkmorewater.app>",
+      "synopsis": "定時提醒你喝水，追蹤每日飲水量",
+      "executableName": "drink-water-reminder",
+      "artifactName": "${name}-${version}-${arch}.${ext}"
+    }
+  }
+}

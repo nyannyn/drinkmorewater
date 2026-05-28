@@ -12,6 +12,7 @@ const {
 } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const { autoUpdater } = require("electron-updater");
 const store = require("./store");
 
 // ===== 常數 =====
@@ -364,6 +365,38 @@ function registerPowerMonitor() {
   powerMonitor.on("resume", resume);
 }
 
+// ===== 自動更新 =====
+function setupAutoUpdater() {
+  autoUpdater.autoDownload = false;
+  autoUpdater.on("update-available", (info) => {
+    dialog
+      .showMessageBox({
+        type: "info",
+        title: "有新版本可用",
+        message: `發現新版本 v${info.version}，是否立即下載更新？`,
+        buttons: ["下載更新", "稍後再說"],
+        defaultId: 0,
+      })
+      .then(({ response }) => {
+        if (response === 0) autoUpdater.downloadUpdate();
+      });
+  });
+  autoUpdater.on("update-downloaded", () => {
+    dialog
+      .showMessageBox({
+        type: "info",
+        title: "更新已就緒",
+        message: "更新已下載完成，重啟後即可套用新版本。",
+        buttons: ["立即重啟", "稍後"],
+        defaultId: 0,
+      })
+      .then(({ response }) => {
+        if (response === 0) autoUpdater.quitAndInstall();
+      });
+  });
+  autoUpdater.checkForUpdates().catch(() => {});
+}
+
 // ===== 啟動 =====
 app.whenReady().then(() => {
   // 初始化預設值（移植 onInstalled）
@@ -379,6 +412,7 @@ app.whenReady().then(() => {
   createTray();
   createCupWindow();
   scheduleReminder();
+  setupAutoUpdater();
 });
 
 // 常駐托盤：關閉所有視窗不結束 App

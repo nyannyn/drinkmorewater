@@ -1,0 +1,96 @@
+name: Build & Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - run: npm run dist:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate SHA256 checksums
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem dist -Include *.exe,*.yml -Recurse
+          $checksums = foreach ($f in $files) {
+            $hash = (Get-FileHash $f.FullName -Algorithm SHA256).Hash
+            "$hash  $($f.Name)"
+          }
+          $checksums | Out-File -FilePath dist/SHA256SUMS.txt -Encoding utf8
+          Write-Host "=== SHA256 Checksums ==="
+          Get-Content dist/SHA256SUMS.txt
+
+      - name: Upload to VirusTotal & get links
+        shell: pwsh
+        if: env.VT_API_KEY != ''
+        env:
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+        run: |
+          $exeFiles = Get-ChildItem dist -Filter *.exe
+          $vtLinks = @()
+          foreach ($f in $exeFiles) {
+            $hash = (Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLower()
+            $link = "https://www.virustotal.com/gui/file/$hash"
+            Write-Host "Uploading $($f.Name) to VirusTotal..."
+            try {
+              # For files > 32MB, request a special upload URL
+              if ($f.Length -gt 32MB) {
+                Write-Host "  File is large ($([math]::Round($f.Length/1MB, 1)) MB), using large file endpoint..."
+                $uploadUrlResp = Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files/upload_url" `
+                  -Method Get `
+                  -Headers @{ "x-apikey" = $env:VT_API_KEY }
+                $uploadUrl = $uploadUrlResp.data
+              } else {
+                $uploadUrl = "https://www.virustotal.com/api/v3/files"
+              }
+              Invoke-RestMethod -Uri $uploadUrl `
+                -Method Post `
+                -Headers @{ "x-apikey" = $env:VT_API_KEY } `
+                -Form @{ file = Get-Item $f.FullName }
+              Write-Host "  Upload OK -> $link"
+            } catch {
+              Write-Host "  Upload failed: $($_.Exception.Message)"
+              Write-Host "  Providing hash link only -> $link"
+            }
+            $vtLinks += "- [$($f.Name)]($link)"
+          }
+          $vtLinks -join "`n" | Out-File -FilePath dist/VT_LINKS.md -Encoding utf8
+
+      - name: Prepare release body
+        id: notes
+        shell: pwsh
+        run: |
+          $body = "## Checksums (SHA256)`n``````n"
+          $body += Get-Content dist/SHA256SUMS.txt -Raw
+          $body += "```````n`n"
+          $body += "## VirusTotal Scan`n"
+          if (Test-Path dist/VT_LINKS.md) {
+            $body += Get-Content dist/VT_LINKS.md -Raw
+          } else {
+            $body += "_VirusTotal scan skipped (no API key configured)_`n"
+          }
+          $body | Out-File -FilePath dist/RELEASE_BODY.md -Encoding utf8
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: dist/RELEASE_BODY.md
+          files: |
+            dist/*.exe
+            dist/latest.yml
+            dist/SHA256SUMS.txt

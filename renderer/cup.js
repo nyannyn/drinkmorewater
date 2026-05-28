@@ -4,27 +4,42 @@ const MAX_ML = 300;
 const TICK_INTERVAL = 50;
 const SHATTER_TIMEOUT_MS = 60000; // 1 分鐘不理會自動碎裂
 
-const CUP_TOP = 14;
-const CUP_BOTTOM = 118;
-const CUP_HEIGHT = CUP_BOTTOM - CUP_TOP;
-
 // ===== 元素參照 =====
 const body = document.body;
 const container = document.querySelector(".drink-container");
 const cupWrapper = document.querySelector(".cup-wrapper");
-const waterRect = document.querySelector(".water-rect");
-const waterWave = document.querySelector(".water-wave");
+const cupSvg = document.querySelector(".cup-svg");
 const progressFg = document.querySelector(".progress-ring .fg");
 const hintEl = document.querySelector(".hint");
-const bubbles = document.querySelectorAll(".bubble");
+
+// 套用樣式後重新查詢的水位元素
+let waterRect = null;
+let waterWave = null;
+let bubbles = [];
+let currentStyle = window.getCupStyle("classic");
 
 const circumference = 2 * Math.PI * 13;
 progressFg.setAttribute("stroke-dasharray", circumference);
 progressFg.setAttribute("stroke-dashoffset", circumference);
 
+function applyCupStyle(styleId) {
+  const style = window.getCupStyle(styleId);
+  if (style === currentStyle && waterRect) return; // 已套用，無需重渲
+  currentStyle = style;
+  cupSvg.setAttribute("viewBox", style.viewBox);
+  cupSvg.innerHTML = style.svg;
+  waterRect = cupSvg.querySelector(".water-rect");
+  waterWave = cupSvg.querySelector(".water-wave");
+  bubbles = cupSvg.querySelectorAll(".bubble");
+  setWaterLevel(0);
+}
+
 function setWaterLevel(pct) {
-  const waterH = CUP_HEIGHT * pct;
-  const waterY = CUP_BOTTOM - waterH;
+  if (!waterRect) return;
+  const { waterTop, waterBottom } = currentStyle;
+  const height = waterBottom - waterTop;
+  const waterH = height * pct;
+  const waterY = waterBottom - waterH;
   waterRect.setAttribute("y", waterY);
   waterRect.setAttribute("height", waterH);
   if (waterWave) {
@@ -39,7 +54,8 @@ function setWaterLevel(pct) {
   });
 }
 
-setWaterLevel(0);
+// 啟動時先套用預設樣式，後續每次提醒會用最新偏好覆蓋
+applyCupStyle("classic");
 
 // ===== 狀態 =====
 let isThirsty = false;
@@ -103,7 +119,8 @@ async function maybePlayDing() {
 }
 
 // ===== 啟動口渴模式 =====
-function activateThirstMode() {
+function activateThirstMode(payload) {
+  if (payload && payload.cupStyle) applyCupStyle(payload.cupStyle);
   if (isThirsty) return;
   isThirsty = true;
 
@@ -354,4 +371,4 @@ document.addEventListener("keydown", (e) => {
 });
 
 // ===== 接收提醒 =====
-window.cupApi.onReminder(() => activateThirstMode());
+window.cupApi.onReminder((payload) => activateThirstMode(payload));

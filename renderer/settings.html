@@ -399,6 +399,19 @@
     .theme-card[data-theme="playful"] .preview { background: linear-gradient(135deg, #fff0f5, #ff8fb3); }
     .theme-card[data-theme="monochrome"] .preview { background: linear-gradient(135deg, #fff, #000); }
 
+    /* Cup style cards */
+    .cup-card .preview {
+      width: 100%; height: 64px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, var(--accent-light), var(--bg-card));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-inset);
+      overflow: hidden;
+    }
+    .cup-card .preview svg { width: 56px; height: 80px; display: block; }
+    [data-theme="monochrome"] .cup-card .preview { border: 1px solid #000; }
+
     .pref-section { margin-bottom: 4px; }
     .pref-section-title {
       font-size: 12px; font-weight: 700; color: var(--text-sub);
@@ -534,6 +547,12 @@
   <!-- Preferences Tab -->
   <div class="tab-panel" id="panel-prefs">
     <div class="pref-section">
+      <div class="pref-section-title" id="prefCupTitle"></div>
+      <div class="theme-grid" id="cupStyleGrid"></div>
+      <p class="pref-note" id="cupStyleNote"></p>
+    </div>
+
+    <div class="pref-section">
       <div class="pref-section-title" id="prefThemeTitle"></div>
       <div class="theme-grid">
         <div class="theme-card selected" data-theme="default">
@@ -598,6 +617,7 @@
     </div>
   </div>
 
+  <script src="cup-styles.js"></script>
   <script src="settings.js"></script>
 </body>
 </html>

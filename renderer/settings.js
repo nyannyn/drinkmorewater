@@ -22,6 +22,13 @@ const I18N = {
     prefThemeTitle: "介面風格",
     prefLangTitle: "語言",
     prefGeneralTitle: "一般",
+    prefCupTitle: "水杯樣式",
+    cupStyleNote: "下次提醒時會以新樣式顯示，按「立即測試」可立刻預覽。",
+    cupClassic: "毛玻璃杯",
+    cupMug: "馬克杯",
+    cupBoba: "珍奶杯",
+    cupFlask: "燒瓶",
+    cupBottle: "運動水壺",
     themeDefault: "黏土風",
     themeDark: "深色",
     themeFlat: "扁平",
@@ -56,6 +63,13 @@ const I18N = {
     prefThemeTitle: "界面风格",
     prefLangTitle: "语言",
     prefGeneralTitle: "一般",
+    prefCupTitle: "水杯样式",
+    cupStyleNote: "下次提醒时会以新样式显示，按「立即测试」可立刻预览。",
+    cupClassic: "毛玻璃杯",
+    cupMug: "马克杯",
+    cupBoba: "珍奶杯",
+    cupFlask: "烧瓶",
+    cupBottle: "运动水壶",
     themeDefault: "黏土风",
     themeDark: "深色",
     themeFlat: "扁平",
@@ -90,6 +104,13 @@ const I18N = {
     prefThemeTitle: "THEME",
     prefLangTitle: "LANGUAGE",
     prefGeneralTitle: "GENERAL",
+    prefCupTitle: "CUP STYLE",
+    cupStyleNote: "Applied at the next reminder. Tap “Test now” to preview immediately.",
+    cupClassic: "Glass",
+    cupMug: "Mug",
+    cupBoba: "Boba",
+    cupFlask: "Flask",
+    cupBottle: "Bottle",
     themeDefault: "Clay",
     themeDark: "Dark",
     themeFlat: "Flat",
@@ -124,6 +145,13 @@ const I18N = {
     prefThemeTitle: "テーマ",
     prefLangTitle: "言語",
     prefGeneralTitle: "一般",
+    prefCupTitle: "コップのスタイル",
+    cupStyleNote: "次回のリマインドから反映されます。「テスト」で今すぐ確認できます。",
+    cupClassic: "グラス",
+    cupMug: "マグカップ",
+    cupBoba: "タピオカ",
+    cupFlask: "フラスコ",
+    cupBottle: "ボトル",
     themeDefault: "クレイ",
     themeDark: "ダーク",
     themeFlat: "フラット",
@@ -184,18 +212,62 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
 // ===== Theme =====
 function applyTheme(theme) {
   document.body.setAttribute("data-theme", theme);
-  document.querySelectorAll(".theme-card").forEach((card) => {
+  document.querySelectorAll(".theme-card[data-theme]").forEach((card) => {
     card.classList.toggle("selected", card.dataset.theme === theme);
   });
 }
 
-document.querySelectorAll(".theme-card").forEach((card) => {
+document.querySelectorAll(".theme-card[data-theme]").forEach((card) => {
   card.addEventListener("click", () => {
     const theme = card.dataset.theme;
     applyTheme(theme);
     window.api.setPrefs({ theme });
   });
 });
+
+// ===== Cup style =====
+const cupLabels = {
+  classic: "cupClassic",
+  mug: "cupMug",
+  boba: "cupBoba",
+  flask: "cupFlask",
+  bottle: "cupBottle",
+};
+
+function renderCupStyleCards() {
+  const grid = document.getElementById("cupStyleGrid");
+  if (!grid || !window.CUP_STYLE_ORDER) return;
+  grid.innerHTML = "";
+  window.CUP_STYLE_ORDER.forEach((id) => {
+    const style = window.CUP_STYLES[id];
+    if (!style) return;
+    const card = document.createElement("div");
+    card.className = "theme-card cup-card";
+    card.dataset.cup = id;
+    card.innerHTML = `
+      <div class="preview">
+        <svg viewBox="${style.viewBox}" xmlns="http://www.w3.org/2000/svg">${style.svg}</svg>
+      </div>
+      <span data-cup-label="${id}"></span>
+    `;
+    card.addEventListener("click", () => applyCupStyle(id, true));
+    grid.appendChild(card);
+  });
+}
+
+function applyCupStyle(id, save = false) {
+  document.querySelectorAll(".cup-card").forEach((card) => {
+    card.classList.toggle("selected", card.dataset.cup === id);
+  });
+  if (save) window.api.setPrefs({ cupStyle: id });
+}
+
+function applyCupStyleLabels() {
+  document.querySelectorAll("[data-cup-label]").forEach((el) => {
+    const key = cupLabels[el.dataset.cupLabel];
+    if (key) el.textContent = t(key);
+  });
+}
 
 // ===== i18n apply =====
 function applyLang(lang) {
@@ -219,6 +291,9 @@ function applyLang(lang) {
   document.getElementById("prefThemeTitle").textContent = t("prefThemeTitle");
   document.getElementById("prefLangTitle").textContent = t("prefLangTitle");
   document.getElementById("prefGeneralTitle").textContent = t("prefGeneralTitle");
+  document.getElementById("prefCupTitle").textContent = t("prefCupTitle");
+  document.getElementById("cupStyleNote").textContent = t("cupStyleNote");
+  applyCupStyleLabels();
   document.getElementById("themeDefaultLabel").textContent = t("themeDefault");
   document.getElementById("themeDarkLabel").textContent = t("themeDark");
   document.getElementById("themeFlatLabel").textContent = t("themeFlat");
@@ -342,6 +417,7 @@ async function loadPrefs() {
   if (!prefs) return;
 
   applyTheme(prefs.theme || "default");
+  applyCupStyle(prefs.cupStyle || "classic");
   $langSelect.value = prefs.lang || "zh-Hant";
   applyLang(prefs.lang || "zh-Hant");
 
@@ -359,6 +435,7 @@ function refresh() {
 }
 
 // ===== Init =====
+renderCupStyleCards();
 loadPrefs().then(() => refresh());
 
 window.api.onStatusChanged(() => refresh());

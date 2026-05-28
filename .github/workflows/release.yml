@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  build-win:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,9 +31,9 @@ jobs:
             $hash = (Get-FileHash $f.FullName -Algorithm SHA256).Hash
             "$hash  $($f.Name)"
           }
-          $checksums | Out-File -FilePath dist/SHA256SUMS.txt -Encoding utf8
-          Write-Host "=== SHA256 Checksums ==="
-          Get-Content dist/SHA256SUMS.txt
+          $checksums | Out-File -FilePath dist/SHA256SUMS-win.txt -Encoding utf8
+          Write-Host "=== SHA256 Checksums (Windows) ==="
+          Get-Content dist/SHA256SUMS-win.txt
 
       - name: Upload to VirusTotal & get links
         shell: pwsh
@@ -48,7 +48,6 @@ jobs:
             $link = "https://www.virustotal.com/gui/file/$hash"
             Write-Host "Uploading $($f.Name) to VirusTotal..."
             try {
-              # For files > 32MB, request a special upload URL
               if ($f.Length -gt 32MB) {
                 Write-Host "  File is large ($([math]::Round($f.Length/1MB, 1)) MB), using large file endpoint..."
                 $uploadUrlResp = Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files/upload_url" `
@@ -71,20 +70,74 @@ jobs:
           }
           $vtLinks -join "`n" | Out-File -FilePath dist/VT_LINKS.md -Encoding utf8
 
-      - name: Prepare release body
-        id: notes
-        shell: pwsh
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-win
+          path: |
+            dist/*.exe
+            dist/latest.yml
+            dist/SHA256SUMS-win.txt
+            dist/VT_LINKS.md
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - run: npm run dist:linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate SHA256 checksums
         run: |
-          $body = "## Checksums (SHA256)`n``````n"
-          $body += Get-Content dist/SHA256SUMS.txt -Raw
-          $body += "```````n`n"
-          $body += "## VirusTotal Scan`n"
-          if (Test-Path dist/VT_LINKS.md) {
-            $body += Get-Content dist/VT_LINKS.md -Raw
-          } else {
-            $body += "_VirusTotal scan skipped (no API key configured)_`n"
-          }
-          $body | Out-File -FilePath dist/RELEASE_BODY.md -Encoding utf8
+          cd dist
+          sha256sum *.AppImage *.deb latest-linux.yml > SHA256SUMS-linux.txt
+          echo "=== SHA256 Checksums (Linux) ==="
+          cat SHA256SUMS-linux.txt
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-linux
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/latest-linux.yml
+            dist/SHA256SUMS-linux.txt
+
+  release:
+    needs: [build-win, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Prepare release body
+        run: |
+          {
+            echo "## Checksums (SHA256)"
+            echo '```'
+            cat dist/SHA256SUMS-win.txt
+            cat dist/SHA256SUMS-linux.txt
+            echo '```'
+            echo ""
+            echo "## VirusTotal Scan"
+            if [ -f dist/VT_LINKS.md ]; then
+              cat dist/VT_LINKS.md
+            else
+              echo "_VirusTotal scan skipped (no API key configured)_"
+            fi
+          } > dist/RELEASE_BODY.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -92,5 +145,9 @@ jobs:
           body_path: dist/RELEASE_BODY.md
           files: |
             dist/*.exe
+            dist/*.AppImage
+            dist/*.deb
             dist/latest.yml
-            dist/SHA256SUMS.txt
+            dist/latest-linux.yml
+            dist/SHA256SUMS-win.txt
+            dist/SHA256SUMS-linux.txt

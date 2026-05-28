@@ -19,24 +19,27 @@ const SHARED_WATER_DEFS = `
 `;
 
 // 共用水體 + 波浪 + 氣泡（位置在 cup-clip 內就會被遮罩，所以可放心橫跨 0~90）
-const WATER_LAYER = `
-  <g clip-path="url(#cup-clip)">
-    <rect class="water-rect" x="0" y="118" width="90" height="0" fill="url(#water-grad)" />
-    <g class="wave-group">
-      <path class="water-wave"
-            d="M0 118 Q12 115 22 118 T45 118 T68 118 T90 118 L90 120 L0 120 Z"
-            fill="rgba(255,255,255,0.25)" />
+function makeWaterLayer(gradId = "water-grad") {
+  return `
+    <g clip-path="url(#cup-clip)">
+      <rect class="water-rect" x="0" y="118" width="90" height="0" fill="url(#${gradId})" />
+      <g class="wave-group">
+        <path class="water-wave"
+              d="M0 118 Q12 115 22 118 T45 118 T68 118 T90 118 L90 120 L0 120 Z"
+              fill="rgba(255,255,255,0.25)" />
+      </g>
+      <circle class="bubble" cx="32" cy="100" r="1.5" fill="rgba(255,255,255,0.5)"
+              style="--dur:2.5s;--delay:0s;--rise:-25px" />
+      <circle class="bubble" cx="48" cy="105" r="1" fill="rgba(255,255,255,0.4)"
+              style="--dur:3s;--delay:0.8s;--rise:-30px" />
+      <circle class="bubble" cx="40" cy="95" r="2" fill="rgba(255,255,255,0.35)"
+              style="--dur:2.8s;--delay:1.5s;--rise:-35px" />
+      <circle class="bubble" cx="42" cy="100" r="1.2" fill="rgba(255,255,255,0.45)"
+              style="--dur:3.2s;--delay:0.3s;--rise:-28px" />
     </g>
-    <circle class="bubble" cx="32" cy="100" r="1.5" fill="rgba(255,255,255,0.5)"
-            style="--dur:2.5s;--delay:0s;--rise:-25px" />
-    <circle class="bubble" cx="48" cy="105" r="1" fill="rgba(255,255,255,0.4)"
-            style="--dur:3s;--delay:0.8s;--rise:-30px" />
-    <circle class="bubble" cx="40" cy="95" r="2" fill="rgba(255,255,255,0.35)"
-            style="--dur:2.8s;--delay:1.5s;--rise:-35px" />
-    <circle class="bubble" cx="42" cy="100" r="1.2" fill="rgba(255,255,255,0.45)"
-            style="--dur:3.2s;--delay:0.3s;--rise:-28px" />
-  </g>
-`;
+  `;
+}
+const WATER_LAYER = makeWaterLayer();
 
 // ─────────────────────────────────────────────
 // 1. 經典毛玻璃杯（原版）
@@ -162,7 +165,11 @@ const BOBA = {
       <clipPath id="cup-clip">
         <path d="M22 30 L66 30 L60 116 Q59 120 54 120 L34 120 Q29 120 28 116 Z" />
       </clipPath>
-      ${SHARED_WATER_DEFS}
+      <linearGradient id="boba-grad" x1="0" y1="0" x2="0.1" y2="1">
+        <stop offset="0%" stop-color="#e8caa0" stop-opacity="0.9" />
+        <stop offset="50%" stop-color="#b88761" stop-opacity="0.95" />
+        <stop offset="100%" stop-color="#6b4a2e" stop-opacity="0.97" />
+      </linearGradient>
     </defs>
     <!-- 吸管 -->
     <rect x="48" y="-2" width="6" height="36" rx="1.5" fill="#ec4899" />
@@ -174,7 +181,7 @@ const BOBA = {
     <path d="M18 30 L70 30 Q70 18 60 14 Q54 10 44 10 Q34 10 30 14 Q18 18 18 30 Z"
           fill="rgba(230,238,245,0.55)" stroke="rgba(120,130,140,0.7)" stroke-width="1.6" />
     <ellipse cx="34" cy="20" rx="7" ry="2.5" fill="rgba(255,255,255,0.7)" />
-    ${WATER_LAYER}
+    ${makeWaterLayer("boba-grad")}
     <!-- 珍珠（位於水層之上，永遠看得到，像漂浮的 boba） -->
     <g clip-path="url(#cup-clip)">
       <circle cx="35" cy="112" r="2.4" fill="#3a2418" />

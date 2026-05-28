@@ -92,8 +92,6 @@ const CLASSIC = {
           fill="url(#highlight-r)" />
     <ellipse cx="45" cy="12" rx="31" ry="5" fill="url(#rim-grad)"
              stroke="rgba(180,195,210,0.45)" stroke-width="1.5" />
-    <ellipse cx="45" cy="12" rx="27" ry="3.5" fill="none"
-             stroke="rgba(220,230,240,0.3)" stroke-width="0.8" />
     <path d="M19 112 L71 112 L69 119 Q68 122 64 122 L26 122 Q22 122 21 119 Z"
           fill="rgba(180,195,210,0.15)" stroke="rgba(170,185,200,0.3)" stroke-width="1" />
     <path d="M22 114 L68 114 L67 118 Q66 120 63 120 L27 120 Q24 120 23 118 Z"
@@ -142,7 +140,6 @@ const MUG = {
           fill="url(#mug-body)" stroke="#bfc5cc" stroke-width="1.5" />
     <!-- 杯口 -->
     <ellipse cx="41" cy="30" rx="21" ry="4.5" fill="#f1f3f5" stroke="#bfc5cc" stroke-width="1.5" />
-    <ellipse cx="41" cy="30" rx="18" ry="3" fill="#dde1e6" />
     ${WATER_LAYER}
     <!-- 側邊高光 -->
     <path d="M25 38 L26 100" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round" />
@@ -224,7 +221,6 @@ const FLASK = {
     <!-- 瓶口 -->
     <ellipse cx="45" cy="14" rx="11" ry="3.2" fill="rgba(220,230,240,0.45)"
              stroke="rgba(110,130,150,0.85)" stroke-width="1.6" />
-    <ellipse cx="45" cy="14" rx="8" ry="1.8" fill="rgba(180,200,220,0.35)" />
     <!-- 刻度線 -->
     <g stroke="rgba(110,130,150,0.7)" stroke-width="1" fill="none" stroke-linecap="round">
       <line x1="22" y1="104" x2="28" y2="104" />

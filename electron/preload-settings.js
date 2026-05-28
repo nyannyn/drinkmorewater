@@ -11,6 +11,9 @@ contextBridge.exposeInMainWorld("api", {
   testReminder: () => ipcRenderer.invoke("test-reminder"),
   exportData: () => ipcRenderer.invoke("export-data"),
   resetData: () => ipcRenderer.invoke("reset-data"),
+  getPrefs: () => ipcRenderer.invoke("get-prefs"),
+  setPrefs: (prefs) => ipcRenderer.invoke("set-prefs", prefs),
+  drinkNow: (ml) => ipcRenderer.invoke("drink-now", ml),
   // 水杯喝水後主行程通知刷新
   onStatusChanged: (cb) => ipcRenderer.on("status-changed", () => cb()),
 });

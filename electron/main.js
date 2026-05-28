@@ -203,8 +203,8 @@ function createTray() {
 // ===== 業務邏輯（移植自 background.js） =====
 function handleDrinkComplete(ml) {
   resetDailyIfNeeded();
-  const { todayMl = 0, todayCups = 0 } = store.get(["todayMl", "todayCups"]);
-  const addMl = ml ?? DRINK_ML;
+  const { todayMl = 0, todayCups = 0, drinkMl = DRINK_ML } = store.get(["todayMl", "todayCups", "drinkMl"]);
+  const addMl = ml ?? drinkMl;
   const newMl = todayMl + addMl;
   const newCups = todayCups + 1;
   store.set({ todayMl: newMl, todayCups: newCups });
@@ -316,6 +316,11 @@ function registerIpc() {
     triggerCup();
     return { ok: true };
   });
+  ipcMain.handle("drink-now", (_e, ml) => {
+    const result = handleDrinkComplete(ml);
+    if (settingsWindow) settingsWindow.webContents.send("status-changed");
+    return result;
+  });
   ipcMain.handle("export-data", async () => {
     const payload = exportPayload();
     const { canceled, filePath } = await dialog.showSaveDialog(settingsWindow, {
@@ -334,6 +339,27 @@ function registerIpc() {
       "soundVolume",
     ]);
     return { soundEnabled, soundVolume };
+  });
+  ipcMain.handle("get-prefs", () => {
+    const d = store.get(["theme", "lang", "autoStart", "drinkMl"]);
+    return {
+      theme: d.theme ?? "light",
+      lang: d.lang ?? "zh-Hant",
+      autoStart: d.autoStart ?? false,
+      drinkMl: d.drinkMl ?? DRINK_ML,
+    };
+  });
+  ipcMain.handle("set-prefs", (_e, prefs) => {
+    const updates = {};
+    if (prefs.theme != null) updates.theme = prefs.theme;
+    if (prefs.lang != null) updates.lang = prefs.lang;
+    if (prefs.drinkMl != null) updates.drinkMl = prefs.drinkMl;
+    if (prefs.autoStart != null) {
+      updates.autoStart = prefs.autoStart;
+      app.setLoginItemSettings({ openAtLogin: prefs.autoStart });
+    }
+    store.set(updates);
+    return { ok: true };
   });
 
   // 水杯視窗（send）
@@ -412,6 +438,11 @@ app.whenReady().then(() => {
   createTray();
   createCupWindow();
   scheduleReminder();
+
+  // 同步開機自動啟動設定
+  const { autoStart = false } = store.get(["autoStart"]);
+  app.setLoginItemSettings({ openAtLogin: autoStart });
+
   setupAutoUpdater();
 });
 

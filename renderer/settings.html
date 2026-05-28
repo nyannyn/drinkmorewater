@@ -3,216 +3,599 @@
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://fonts.googleapis.com https://fonts.gstatic.com;">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Playfair+Display:wght@400;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
   <style>
+    /* =========================================
+       1. Theme Variables
+       ========================================= */
+    :root {
+      --bg-body: #FFFFFF;
+      --bg-app: #F8F9FA;
+      --bg-card: #FFFFFF;
+      --text-main: #343A40;
+      --text-sub: #868E96;
+      --accent-color: #A5D8FF;
+      --accent-light: #F1F3F5;
+      --btn-primary-bg: #A5D8FF;
+      --btn-primary-text: #343A40;
+      --btn-secondary-bg: #FFFFFF;
+      --color-pink: #FFB8D1;
+      --color-yellow: #FFE066;
+      --shadow-card: 12px 12px 24px rgba(0,0,0,0.06), inset -6px -6px 12px rgba(0,0,0,0.03), inset 6px 6px 12px rgba(255,255,255,0.8);
+      --shadow-btn-primary: 8px 8px 16px rgba(165,216,255,0.4), inset -4px -4px 8px rgba(0,0,0,0.1), inset 4px 4px 8px rgba(255,255,255,0.5);
+      --shadow-btn-secondary: var(--shadow-card);
+      --shadow-inset: inset 4px 4px 8px rgba(0,0,0,0.03), inset -4px -4px 8px rgba(255,255,255,0.8);
+      --shadow-bar: inset -4px 0 8px rgba(0,0,0,0.08);
+      --border: none;
+      --radius-lg: 24px;
+      --radius-sm: 20px;
+      --font-family: 'Quicksand', 'Segoe UI', system-ui, sans-serif;
+      --font-mono: inherit;
+      --transition-speed: 0.4s;
+      --btn-transition: 0.1s;
+      --svg-clay-opacity: 1;
+    }
+
+    [data-theme="dark"] {
+      --bg-body: #000000;
+      --bg-app: #121212;
+      --bg-card: #1e1e1e;
+      --text-main: #ffffff;
+      --text-sub: #aaaaaa;
+      --accent-color: #4da3ff;
+      --accent-light: #2c3e50;
+      --btn-primary-bg: #4da3ff;
+      --btn-primary-text: #ffffff;
+      --btn-secondary-bg: #2a2a2a;
+      --shadow-card: 0 8px 24px rgba(0,0,0,0.5);
+      --shadow-btn-primary: 0 4px 12px rgba(77, 163, 255, 0.4);
+      --shadow-btn-secondary: 0 4px 12px rgba(0,0,0,0.5);
+      --shadow-inset: inset 0 2px 8px rgba(0,0,0,0.5);
+      --shadow-bar: none;
+      --border: 1px solid #333;
+      --svg-clay-opacity: 0;
+    }
+
+    [data-theme="flat"] {
+      --bg-body: #e5e7eb;
+      --bg-app: #f9fafb;
+      --bg-card: #ffffff;
+      --text-main: #111827;
+      --text-sub: #6b7280;
+      --accent-color: #3b82f6;
+      --accent-light: #e5e7eb;
+      --btn-primary-bg: #3b82f6;
+      --btn-primary-text: #ffffff;
+      --btn-secondary-bg: #ffffff;
+      --shadow-card: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      --shadow-btn-primary: 0 4px 6px -1px rgba(59,130,246,0.4);
+      --shadow-btn-secondary: 0 2px 4px rgba(0,0,0,0.05);
+      --shadow-inset: none;
+      --shadow-bar: none;
+      --border: 1px solid #e5e7eb;
+      --svg-clay-opacity: 0;
+    }
+
+    [data-theme="playful"] {
+      --bg-body: #ffe4e6;
+      --bg-app: #fff0f5;
+      --bg-card: #ffffff;
+      --text-main: #4a4a4a;
+      --text-sub: #9ca3af;
+      --accent-color: #ff8fb3;
+      --accent-light: #ffe4e6;
+      --btn-primary-bg: #ff8fb3;
+      --btn-primary-text: #ffffff;
+      --btn-secondary-bg: #ffffff;
+      --shadow-card: 4px 4px 0px #ffb3c6;
+      --shadow-btn-primary: 4px 4px 0px #ffb3c6;
+      --shadow-btn-secondary: 4px 4px 0px #ffb3c6;
+      --shadow-inset: none;
+      --shadow-bar: none;
+      --border: 3px solid #ffb3c6;
+      --radius-lg: 32px;
+      --radius-sm: 24px;
+      --svg-clay-opacity: 0;
+    }
+
+    [data-theme="monochrome"] {
+      --bg-body: #cccccc;
+      --bg-app: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --text-main: #000000;
+      --text-sub: #525252;
+      --accent-color: #000000;
+      --accent-light: #E5E5E5;
+      --btn-primary-bg: #000000;
+      --btn-primary-text: #FFFFFF;
+      --btn-secondary-bg: #FFFFFF;
+      --shadow-card: none;
+      --shadow-btn-primary: none;
+      --shadow-btn-secondary: none;
+      --shadow-inset: none;
+      --shadow-bar: none;
+      --border: 2px solid #000000;
+      --radius-lg: 0px;
+      --radius-sm: 0px;
+      --font-family: 'Playfair Display', Georgia, serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --transition-speed: 0ms;
+      --btn-transition: 0ms;
+      --svg-clay-opacity: 0;
+      --color-pink: #000000;
+      --color-yellow: #000000;
+    }
+
+    /* =========================================
+       2. Global Layout
+       ========================================= */
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
-      padding: 20px;
-      color: #333;
+      background-color: var(--bg-app);
+      font-family: var(--font-family);
+      color: var(--text-main);
       min-height: 100vh;
-    }
-    h1 {
-      font-size: 18px;
-      text-align: center;
-      color: #0277bd;
-      margin-bottom: 16px;
+      transition: background-color 0.3s;
+      overflow-x: hidden;
     }
 
-    .stats {
-      text-align: center;
-      margin-bottom: 16px;
-      padding: 12px;
-      background: rgba(255,255,255,0.6);
-      border-radius: 12px;
-    }
-    .stats .amount { font-size: 28px; font-weight: 700; color: #0288d1; }
-    .stats .sub { font-size: 13px; color: #666; margin-top: 4px; }
-    .goal-progress {
-      margin-top: 8px;
-      background: rgba(0,0,0,0.06);
-      border-radius: 6px;
-      height: 10px;
-      overflow: hidden;
-    }
-    .goal-progress-bar {
-      height: 100%;
-      border-radius: 6px;
-      background: linear-gradient(90deg, #4fc3f7, #0288d1);
-      transition: width 0.4s ease;
-      min-width: 0;
-    }
-    .goal-label { font-size: 11px; color: #888; margin-top: 3px; }
-
-    .weekly {
-      margin-bottom: 14px;
-      padding: 12px;
-      background: rgba(255,255,255,0.6);
-      border-radius: 12px;
-    }
-    .weekly h2 { font-size: 13px; font-weight: 600; color: #0277bd; margin-bottom: 10px; }
-    .chart {
+    /* =========================================
+       3. Tab Bar (top)
+       ========================================= */
+    .tab-bar {
       display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      height: 80px;
-      gap: 4px;
+      background: var(--bg-card);
+      border-bottom: var(--border);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
-    .chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-    .chart-bar-wrap { width: 100%; height: 60px; display: flex; align-items: flex-end; justify-content: center; }
-    .chart-bar { width: 100%; max-width: 24px; border-radius: 4px 4px 0 0; min-height: 2px; transition: height 0.4s ease; }
-    .chart-bar.reached { background: linear-gradient(180deg, #4fc3f7, #0288d1); }
-    .chart-bar.missed { background: linear-gradient(180deg, #ffcc80, #ff9800); }
-    .chart-day { font-size: 10px; color: #888; }
-    .chart-ml { font-size: 9px; color: #666; min-height: 12px; }
-
-    .settings { border-top: 1px solid rgba(0,0,0,0.1); padding-top: 12px; }
-    .setting-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-      font-size: 13px;
-    }
-    .setting-row label { color: #555; }
-    .setting-row select, .setting-row input[type="number"] {
-      padding: 4px 8px;
-      border: 1px solid #b2ebf2;
-      border-radius: 6px;
-      font-size: 13px;
-      background: #fff;
-    }
-    .setting-row input[type="number"] { width: 70px; text-align: center; }
-    .toggle-row, .volume-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 13px;
-      color: #555;
-      margin-bottom: 10px;
-    }
-    .volume-row input[type="range"] { width: 100px; accent-color: #4fc3f7; }
-    .volume-row .vol-label { font-size: 11px; color: #888; min-width: 32px; text-align: right; }
-    .switch { position: relative; width: 42px; height: 24px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      inset: 0;
-      background: #ccc;
-      border-radius: 24px;
-      transition: 0.3s;
-    }
-    .slider::before {
-      content: "";
-      position: absolute;
-      width: 18px; height: 18px;
-      left: 3px; bottom: 3px;
-      background: #fff;
-      border-radius: 50%;
-      transition: 0.3s;
-    }
-    .switch input:checked + .slider { background: #4fc3f7; }
-    .switch input:checked + .slider::before { transform: translateX(18px); }
-    .test-btn {
-      display: block;
-      width: 100%;
-      margin-top: 12px;
-      padding: 8px;
-      background: #ff8f00;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .test-btn:hover { background: #ff6f00; }
-    .data-actions { display: flex; gap: 8px; margin-top: 8px; }
-    .data-btn {
+    .tab-btn {
       flex: 1;
-      padding: 7px;
-      border: 1px solid #b2ebf2;
+      padding: 14px 0;
+      border: none;
+      background: none;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--text-sub);
+      border-bottom: 3px solid transparent;
+      transition: color var(--transition-speed), border-color var(--transition-speed);
+    }
+    .tab-btn.active {
+      color: var(--text-main);
+      border-bottom-color: var(--accent-color);
+    }
+    .tab-panel { display: none; padding: 20px; }
+    .tab-panel.active { display: flex; flex-direction: column; gap: 16px; }
+
+    /* =========================================
+       4. Components
+       ========================================= */
+
+    /* Header */
+    .header { text-align: center; padding: 8px 0; }
+    .drop-svg-container {
+      width: 36px; height: 42px;
+      margin: 0 auto 10px;
+      filter: drop-shadow(8px 8px 16px rgba(0,0,0,0.06));
+      transition: all var(--transition-speed);
+    }
+    .clay-drop-path { fill: var(--accent-color); transition: fill var(--transition-speed); }
+    .svg-clay-effect { opacity: var(--svg-clay-opacity); transition: opacity var(--transition-speed); }
+    .header h1 { font-size: 20px; font-weight: 700; color: var(--text-main); }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      border: var(--border);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all var(--transition-speed) ease;
+    }
+
+    .amount { font-size: 42px; font-weight: 700; line-height: 1; color: var(--text-main); }
+    .amount span { font-size: 18px; opacity: 0.6; font-weight: 600; }
+    .subtitle { font-size: 13px; font-weight: 600; color: var(--text-sub); margin-top: 8px; }
+
+    /* Progress Bar */
+    .progress-track {
+      width: 100%;
+      height: 16px;
+      background: var(--accent-light);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-inset);
+      border: var(--border);
+      overflow: hidden;
+      margin-top: 12px;
+      margin-bottom: 4px;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent-color);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-bar);
+      transition: width 0.8s ease, background-color var(--transition-speed);
+    }
+
+    /* Action Buttons */
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn {
+      border: var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      font-family: inherit;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all var(--btn-transition) ease;
+    }
+    .btn-primary {
+      background: var(--btn-primary-bg);
+      color: var(--btn-primary-text);
+      box-shadow: var(--shadow-btn-primary);
+    }
+    .btn-secondary {
+      background: var(--btn-secondary-bg);
+      color: var(--text-main);
+      box-shadow: var(--shadow-btn-secondary);
+    }
+    .btn:active { transform: scale(0.95); }
+    .btn-large { width: 100%; font-size: 15px; padding: 16px; }
+    .btn-danger {
+      background: var(--btn-secondary-bg);
+      color: #d32f2f;
+      box-shadow: var(--shadow-btn-secondary);
+    }
+
+    /* Chart */
+    .chart-card { align-items: stretch; }
+    .chart-title {
+      font-size: 13px; font-weight: 700; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px; color: var(--text-main);
+    }
+    .chart-title-icon { width: 5px; height: 14px; background: var(--accent-color); border-radius: 3px; }
+    .bars {
+      display: flex; align-items: flex-end; gap: 8px; height: 70px; padding: 0 4px;
+    }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .bar-wrap { width: 100%; height: 55px; display: flex; align-items: flex-end; justify-content: center; }
+    .bar {
+      width: 100%; max-width: 28px;
+      background: var(--accent-light);
+      border-radius: 6px;
+      box-shadow: var(--shadow-inset);
+      border: var(--border);
+      min-height: 2px;
+      transition: height 0.6s ease;
+    }
+    .bar.reached { background: var(--accent-color); border: none; box-shadow: var(--shadow-bar); }
+    .bar-day { font-size: 10px; color: var(--text-sub); }
+    .bar-ml { font-size: 9px; color: var(--text-sub); min-height: 12px; }
+
+    /* Settings items */
+    .settings-group { display: flex; flex-direction: column; gap: 10px; }
+    .setting-item {
+      background: var(--bg-card);
+      padding: 14px 16px;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-card);
+      border: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all var(--transition-speed) ease;
+    }
+    .setting-info {
+      display: flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: 13px; color: var(--text-main);
+    }
+    .dot-pink { width: 6px; height: 6px; background: var(--color-pink); border-radius: 50%; }
+    .dot-yellow { width: 6px; height: 6px; background: var(--color-yellow); border-radius: 50%; }
+    .dot-blue { width: 6px; height: 6px; background: var(--accent-color); border-radius: 50%; }
+
+    /* Toggle */
+    .toggle {
+      width: 46px; height: 26px;
+      background: var(--accent-light);
+      border-radius: 13px;
+      box-shadow: var(--shadow-inset);
+      border: var(--border);
+      position: relative;
+      cursor: pointer;
+      transition: background var(--transition-speed);
+      flex-shrink: 0;
+    }
+    .toggle.on { background: var(--accent-color); }
+    .toggle-knob {
+      width: 18px; height: 18px;
+      background: var(--bg-card);
+      border-radius: 50%;
+      position: absolute;
+      top: 50%; left: 4px;
+      transform: translateY(-50%);
+      box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+      transition: transform 0.2s, background var(--transition-speed);
+    }
+    [data-theme="monochrome"] .toggle-knob { border: 2px solid #000; }
+    .toggle.on .toggle-knob { transform: translate(20px, -50%); }
+
+    /* Select */
+    .setting-select {
+      padding: 6px 10px;
+      border: var(--border);
       border-radius: 8px;
+      font-family: inherit;
       font-size: 12px;
       font-weight: 600;
+      background: var(--bg-card);
+      color: var(--text-main);
       cursor: pointer;
-      background: #fff;
-      color: #0288d1;
+      outline: none;
+      box-shadow: var(--shadow-inset);
     }
-    .data-btn:hover { background: #e0f7fa; }
-    .data-btn.danger { color: #d32f2f; border-color: #ffcdd2; }
-    .data-btn.danger:hover { background: #ffebee; }
-    .info { margin-top: 12px; font-size: 11px; color: #999; text-align: center; line-height: 1.5; }
+    [data-theme="default"] .setting-select { border: 1px solid #dee2e6; }
+
+    /* Number input */
+    .setting-number {
+      width: 70px;
+      padding: 6px 8px;
+      border: var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      background: var(--bg-card);
+      color: var(--text-main);
+      outline: none;
+      box-shadow: var(--shadow-inset);
+    }
+    [data-theme="default"] .setting-number { border: 1px solid #dee2e6; }
+
+    /* Volume slider */
+    .volume-wrap {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .volume-wrap input[type="range"] { width: 80px; accent-color: var(--accent-color); }
+    .volume-wrap .vol-label { font-size: 11px; color: var(--text-sub); min-width: 30px; }
+
+    /* Theme cards in preferences */
+    .theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .theme-grid.row2 { grid-template-columns: repeat(2, 1fr); margin-top: 8px; }
+    .theme-card {
+      padding: 10px 6px;
+      border: 2px solid transparent;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-main);
+      background: var(--bg-card);
+      box-shadow: var(--shadow-card);
+      transition: border-color 0.2s, transform 0.1s;
+    }
+    .theme-card:hover { transform: scale(1.03); }
+    .theme-card.selected { border-color: var(--accent-color); }
+    .theme-card .preview {
+      width: 100%; height: 28px;
+      border-radius: 6px; margin-bottom: 6px;
+    }
+    .theme-card[data-theme="default"] .preview { background: linear-gradient(135deg, #F8F9FA, #A5D8FF); }
+    .theme-card[data-theme="dark"] .preview { background: linear-gradient(135deg, #1a1a2e, #4da3ff); }
+    .theme-card[data-theme="flat"] .preview { background: linear-gradient(135deg, #f9fafb, #3b82f6); }
+    .theme-card[data-theme="playful"] .preview { background: linear-gradient(135deg, #fff0f5, #ff8fb3); }
+    .theme-card[data-theme="monochrome"] .preview { background: linear-gradient(135deg, #fff, #000); }
+
+    .pref-section { margin-bottom: 4px; }
+    .pref-section-title {
+      font-size: 12px; font-weight: 700; color: var(--text-sub);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 10px;
+    }
+    .pref-note { font-size: 11px; color: var(--text-sub); margin-top: 6px; padding-left: 16px; }
+
+    /* Monochrome overrides */
+    [data-theme="monochrome"] .header { border-bottom: 4px solid #000; padding-bottom: 12px; }
+    [data-theme="monochrome"] h1 { font-size: 24px; letter-spacing: -0.05em; }
+    [data-theme="monochrome"] .amount { font-family: var(--font-mono); font-weight: 400; }
+    [data-theme="monochrome"] .subtitle,
+    [data-theme="monochrome"] .setting-info,
+    [data-theme="monochrome"] .chart-title {
+      font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    [data-theme="monochrome"] .chart-title-icon { display: none; }
+    [data-theme="monochrome"] .progress-track { border: 2px solid #000; }
+    [data-theme="monochrome"] .progress-fill { border-right: 2px solid #000; }
+    [data-theme="monochrome"] .btn {
+      font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    [data-theme="monochrome"] .btn-primary:hover { background: #fff; color: #000; }
+    [data-theme="monochrome"] .btn-secondary:hover { background: #000; color: #fff; }
+    [data-theme="monochrome"] .dot-pink,
+    [data-theme="monochrome"] .dot-yellow { border-radius: 0; }
+    [data-theme="monochrome"] .theme-card { border-radius: 0; }
   </style>
 </head>
-<body>
-  <h1>💧 喝水提醒</h1>
-
-  <div class="stats">
-    <div class="amount"><span id="todayMl">0</span> ml</div>
-    <div class="sub">今日已喝 <span id="todayCups">0</span> 次</div>
-    <div class="goal-progress">
-      <div class="goal-progress-bar" id="goalBar" style="width:0%"></div>
-    </div>
-    <div class="goal-label">目標 <span id="goalLabel">2000</span> ml（<span id="goalPct">0</span>%）</div>
+<body data-theme="default">
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="main" id="tabMain"></button>
+    <button class="tab-btn" data-tab="prefs" id="tabPrefs"></button>
   </div>
 
-  <div class="weekly">
-    <h2>📊 過去 7 天</h2>
-    <div class="chart" id="weeklyChart"></div>
-  </div>
+  <!-- Main Tab -->
+  <div class="tab-panel active" id="panel-main">
+    <!-- Header -->
+    <div class="header">
+      <div class="drop-svg-container">
+        <svg viewBox="0 0 44 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path class="clay-drop-path" d="M22 0C22 0 44 22.4183 44 34C44 43.9411 34.1503 52 22 52C9.84974 52 0 43.9411 0 34C0 22.4183 22 0 22 0Z"/>
+          <path class="svg-clay-effect" d="M38 34C38 41.1797 30.8366 47 22 47C13.1634 47 6 41.1797 6 34C6 26.8203 22 10 22 10C22 10 38 26.8203 38 34Z" fill="white" fill-opacity="0.3"/>
+          <path class="svg-clay-effect" d="M12 34C12 30 22 20 22 20C22 20 32 30 32 34C32 38 28 42 22 42C16 42 12 38 12 34Z" fill="black" fill-opacity="0.05"/>
+        </svg>
+      </div>
+      <h1 id="titleMain"></h1>
+    </div>
 
-  <div class="settings">
-    <div class="setting-row">
-      <label>提醒間隔</label>
-      <select id="intervalMin">
-        <option value="15">15 分鐘</option>
-        <option value="30" selected>30 分鐘</option>
-        <option value="45">45 分鐘</option>
-        <option value="60">60 分鐘</option>
-      </select>
+    <!-- Progress Card -->
+    <div class="card">
+      <div class="amount"><span id="todayMl">0</span> <span>ml</span></div>
+      <div class="subtitle" id="subToday"></div>
+      <div class="progress-track">
+        <div class="progress-fill" id="goalBar"></div>
+      </div>
+      <div class="subtitle" style="margin-top:4px; font-size:11px;" id="goalLabelWrap"></div>
     </div>
-    <div class="setting-row">
-      <label>每日目標 (ml)</label>
-      <input type="number" id="dailyGoal" value="2000" min="500" max="5000" step="100">
+
+    <!-- Quick Actions -->
+    <div class="actions">
+      <button class="btn btn-primary" id="drinkBtn"></button>
+      <button class="btn btn-secondary" id="testBtn"></button>
     </div>
-    <div class="toggle-row">
-      <label>啟用提醒</label>
-      <label class="switch">
-        <input type="checkbox" id="enabledToggle" checked>
-        <span class="slider"></span>
-      </label>
+
+    <!-- Weekly Chart -->
+    <div class="card chart-card">
+      <div class="chart-title">
+        <div class="chart-title-icon"></div>
+        <span id="weeklyTitle"></span>
+        <div style="flex:1"></div>
+        <div class="dot-pink"></div>
+        <div class="dot-yellow"></div>
+      </div>
+      <div class="bars" id="weeklyChart"></div>
     </div>
-    <div class="toggle-row">
-      <label>音效</label>
-      <label class="switch">
-        <input type="checkbox" id="soundToggle" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div class="volume-row" id="volumeRow">
-      <label>音量</label>
-      <div style="display:flex;align-items:center;gap:6px;">
-        <input type="range" id="volumeSlider" min="0" max="100" value="80">
-        <span class="vol-label" id="volumeLabel">80%</span>
+
+    <!-- Settings -->
+    <div class="settings-group">
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="dot-pink"></div>
+          <span id="labelInterval"></span>
+        </div>
+        <select class="setting-select" id="intervalMin">
+          <option value="15">15 min</option>
+          <option value="30" selected>30 min</option>
+          <option value="45">45 min</option>
+          <option value="60">60 min</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="dot-yellow"></div>
+          <span id="labelGoal"></span>
+        </div>
+        <input type="number" class="setting-number" id="dailyGoal" value="2000" min="500" max="5000" step="100">
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="dot-blue"></div>
+          <span id="labelEnabled"></span>
+        </div>
+        <div class="toggle on" id="enabledToggle"><div class="toggle-knob"></div></div>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="dot-pink"></div>
+          <span id="labelSound"></span>
+        </div>
+        <div class="toggle" id="soundToggle"><div class="toggle-knob"></div></div>
+      </div>
+      <div class="setting-item" id="volumeRow">
+        <div class="setting-info">
+          <div class="dot-yellow"></div>
+          <span id="labelVolume"></span>
+        </div>
+        <div class="volume-wrap">
+          <input type="range" id="volumeSlider" min="0" max="100" value="80">
+          <span class="vol-label" id="volumeLabel">80%</span>
+        </div>
       </div>
     </div>
+
+    <!-- Data actions -->
+    <div class="actions">
+      <button class="btn btn-secondary" id="exportBtn"></button>
+      <button class="btn btn-danger" id="resetBtn"></button>
+    </div>
   </div>
 
-  <button class="test-btn" id="testBtn">立即測試提醒</button>
+  <!-- Preferences Tab -->
+  <div class="tab-panel" id="panel-prefs">
+    <div class="pref-section">
+      <div class="pref-section-title" id="prefThemeTitle"></div>
+      <div class="theme-grid">
+        <div class="theme-card selected" data-theme="default">
+          <div class="preview"></div>
+          <span id="themeDefaultLabel"></span>
+        </div>
+        <div class="theme-card" data-theme="dark">
+          <div class="preview"></div>
+          <span id="themeDarkLabel"></span>
+        </div>
+        <div class="theme-card" data-theme="flat">
+          <div class="preview"></div>
+          <span id="themeFlatLabel"></span>
+        </div>
+      </div>
+      <div class="theme-grid row2">
+        <div class="theme-card" data-theme="playful">
+          <div class="preview"></div>
+          <span id="themePlayfulLabel"></span>
+        </div>
+        <div class="theme-card" data-theme="monochrome">
+          <div class="preview"></div>
+          <span id="themeMonoLabel"></span>
+        </div>
+      </div>
+    </div>
 
-  <div class="data-actions">
-    <button class="data-btn" id="exportBtn">匯出資料</button>
-    <button class="data-btn danger" id="resetBtn">重置紀錄</button>
-  </div>
+    <div class="pref-section">
+      <div class="pref-section-title" id="prefLangTitle"></div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="dot-blue"></div>
+          <span id="labelLang"></span>
+        </div>
+        <select class="setting-select" id="langSelect">
+          <option value="zh-Hant">繁體中文</option>
+          <option value="zh-Hans">简体中文</option>
+          <option value="en">English</option>
+          <option value="ja">日本語</option>
+        </select>
+      </div>
+    </div>
 
-  <div class="info">
-    💧 提醒時間到：右下角浮現搖晃的水杯<br>
-    🥤 長按杯子 3 秒 或按 Space / Enter 喝水<br>
-    ⏰ 1 分鐘未理會：杯子自動碎裂消失
+    <div class="pref-section">
+      <div class="pref-section-title" id="prefGeneralTitle"></div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="dot-pink"></div>
+          <span id="labelAutoStart"></span>
+        </div>
+        <div class="toggle" id="autoStartToggle"><div class="toggle-knob"></div></div>
+      </div>
+      <p class="pref-note" id="autoStartNote"></p>
+      <div class="setting-item" style="margin-top:8px;">
+        <div class="setting-info">
+          <div class="dot-yellow"></div>
+          <span id="labelDrinkMl"></span>
+        </div>
+        <input type="number" class="setting-number" id="drinkMl" value="300" min="50" max="1000" step="50">
+      </div>
+      <p class="pref-note" id="drinkMlNote"></p>
+    </div>
   </div>
 
   <script src="settings.js"></script>

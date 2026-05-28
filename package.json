@@ -54,10 +54,15 @@
       "executableName": "drink-water-reminder",
       "artifactName": "${name}-${version}-${arch}.${ext}"
     },
-    "publish": [{
-      "provider": "github",
-      "owner": "nyannyn",
-      "repo": "drinkmorewater"
-    }]
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "nyannyn",
+        "repo": "drinkmorewater"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.3"
   }
 }

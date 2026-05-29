@@ -1,6 +1,6 @@
 # 💧 喝水提醒 Drink Water Reminder（桌面版）
 
-一款常駐系統托盤的喝水提醒軟體，時間到會在桌面右下角浮現一個搖晃的水杯，長按 3 秒喝水，並追蹤每日 / 每週飲水量。以 [Electron](https://www.electronjs.org/) 打包成可下載安裝的 **Windows / Linux** 應用程式。
+一款常駐系統托盤的喝水提醒軟體，時間到會在桌面右下角浮現一個搖晃的水杯，長按 3 秒喝水，並追蹤每日 / 每週飲水量。以 [Electron](https://www.electronjs.org/) 打包成可下載安裝的 **Windows / Linux / macOS** 應用程式。
 
 > 本專案原為 Chrome 擴充功能，已改寫為桌面應用程式。原擴充程式的水杯動畫、音效與統計邏輯皆完整保留。
 
@@ -50,6 +50,19 @@ npm run dist:linux
 - `drink-water-reminder-x.y.z-amd64.deb` — Debian / Ubuntu 安裝包（`sudo apt install ./檔名.deb`）
 
 > ℹ️ 在 GNOME 桌面上系統托盤需安裝 [AppIndicator](https://extensions.gnome.org/extension/615/appindicator-support/) 擴充才會顯示圖示；KDE / XFCE 等多數環境內建支援。透明懸浮水杯需要啟用桌面合成（compositor），大多數現代桌面預設開啟。
+
+## 打包成 macOS 應用程式
+
+```bash
+npm run dist:mac
+```
+
+於 `dist/` 產出（同時支援 Intel / Apple Silicon）：
+
+- `drink-water-reminder-x.y.z-x64.dmg` / `drink-water-reminder-x.y.z-arm64.dmg` — DMG 安裝映像
+- `drink-water-reminder-x.y.z-x64.zip` / `drink-water-reminder-x.y.z-arm64.zip` — ZIP 壓縮包（auto-updater 使用）
+
+> ⚠️ 建議在 **macOS** 上執行打包。本 App 以選單列 (menu bar) 形式常駐，不會在 Dock 出現圖示。未經簽署的版本首次開啟需在「系統設定 → 隱私權與安全性」允許執行。
 
 ## 使用方式
 

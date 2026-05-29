@@ -20,15 +20,16 @@
     body { position: relative; }
 
     /* 整體淡入（取代擴充版的 :host opacity 切換）。
-       錨定於視窗右下角，視窗左上的空間留給碎裂碎片飛散。 */
+       錨定於視窗右下角：杯子貼右下，hint 從右往左延伸，避免遮到杯子。
+       視窗左上的空間留給碎裂碎片飛散。 */
     .drink-container {
       position: absolute;
       right: 28px;
       bottom: 24px;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 10px;
+      align-items: flex-end;
+      gap: 20px;
       opacity: 0;
       transition: opacity 0.4s ease;
     }

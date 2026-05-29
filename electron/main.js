@@ -428,6 +428,9 @@ function setupAutoUpdater() {
 
 // ===== 啟動 =====
 app.whenReady().then(() => {
+  // macOS: 隱藏 dock 圖示，純選單列 app（對應 Win/Linux 的 tray-only 行為）
+  if (process.platform === "darwin" && app.dock) app.dock.hide();
+
   // 初始化預設值（移植 onInstalled）
   const init = store.get(["intervalMin", "enabled"]);
   store.set({

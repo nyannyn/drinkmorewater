@@ -10,7 +10,8 @@
     "start": "electron .",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win",
-    "dist:linux": "electron-builder --linux"
+    "dist:linux": "electron-builder --linux",
+    "dist:mac": "electron-builder --mac"
   },
   "devDependencies": {
     "electron": "^31.0.0",
@@ -53,6 +54,24 @@
       "synopsis": "定時提醒你喝水，追蹤每日飲水量",
       "executableName": "drink-water-reminder",
       "artifactName": "${name}-${version}-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.healthcare-fitness",
+      "artifactName": "${name}-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "喝水提醒"
     },
     "publish": [
       {

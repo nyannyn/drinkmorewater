@@ -90,7 +90,8 @@ function triggerCup() {
   positionCupWindow();
   cupWindow.showInactive(); // 不搶焦點
   cupWindow.setIgnoreMouseEvents(false);
-  cupWindow.webContents.send("reminder");
+  const { cupStyle = "classic" } = store.get(["cupStyle"]);
+  cupWindow.webContents.send("reminder", { cupStyle });
 
   if (Notification.isSupported()) {
     new Notification({
@@ -341,12 +342,13 @@ function registerIpc() {
     return { soundEnabled, soundVolume };
   });
   ipcMain.handle("get-prefs", () => {
-    const d = store.get(["theme", "lang", "autoStart", "drinkMl"]);
+    const d = store.get(["theme", "lang", "autoStart", "drinkMl", "cupStyle"]);
     return {
       theme: d.theme ?? "light",
       lang: d.lang ?? "zh-Hant",
       autoStart: d.autoStart ?? false,
       drinkMl: d.drinkMl ?? DRINK_ML,
+      cupStyle: d.cupStyle ?? "classic",
     };
   });
   ipcMain.handle("set-prefs", (_e, prefs) => {
@@ -354,6 +356,7 @@ function registerIpc() {
     if (prefs.theme != null) updates.theme = prefs.theme;
     if (prefs.lang != null) updates.lang = prefs.lang;
     if (prefs.drinkMl != null) updates.drinkMl = prefs.drinkMl;
+    if (prefs.cupStyle != null) updates.cupStyle = prefs.cupStyle;
     if (prefs.autoStart != null) {
       updates.autoStart = prefs.autoStart;
       app.setLoginItemSettings({ openAtLogin: prefs.autoStart });
@@ -425,6 +428,9 @@ function setupAutoUpdater() {
 
 // ===== 啟動 =====
 app.whenReady().then(() => {
+  // macOS: 隱藏 dock 圖示，純選單列 app（對應 Win/Linux 的 tray-only 行為）
+  if (process.platform === "darwin" && app.dock) app.dock.hide();
+
   // 初始化預設值（移植 onInstalled）
   const init = store.get(["intervalMin", "enabled"]);
   store.set({

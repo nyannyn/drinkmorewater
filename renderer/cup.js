@@ -4,6 +4,18 @@ const MAX_ML = 300;
 const TICK_INTERVAL = 50;
 const SHATTER_TIMEOUT_MS = 60000; // 1 分鐘不理會自動碎裂
 
+// ===== 水杯提示多語（隨提醒 payload 帶入 lang，與設定視窗語言一致） =====
+const CUP_I18N = {
+  "zh-Hant": { hold: "🥤 長按杯子或按 Space 喝水！", holding: "💧 繼續按住...", more: "😤 再按久一點！" },
+  "zh-Hans": { hold: "🥤 长按杯子或按 Space 喝水！", holding: "💧 继续按住...", more: "😤 再按久一点！" },
+  en: { hold: "🥤 Hold the cup or press Space to drink!", holding: "💧 Keep holding...", more: "😤 Hold a bit longer!" },
+  ja: { hold: "🥤 コップを長押し or Space で水を飲む！", holding: "💧 押し続けて...", more: "😤 もう少し長く！" },
+};
+let cupLang = "zh-Hant";
+function ct(key) {
+  return (CUP_I18N[cupLang] || CUP_I18N["zh-Hant"])[key];
+}
+
 // ===== 元素參照 =====
 const body = document.body;
 const container = document.querySelector(".drink-container");
@@ -65,8 +77,17 @@ let holdTimer = null;
 let shatterTimer = null;
 
 // ===== 叮！音效（移植自 offscreen.js，喝滿時播放） =====
+// 共用單一 AudioContext：每次喝滿都 new 會在數次後撞到瀏覽器的 context 數量上限，
+// 導致「叮」聲永久失效。改為延遲建立、重複使用，並在被暫停時喚醒。
+let sharedAudioCtx = null;
+function getAudioCtx() {
+  if (!sharedAudioCtx) sharedAudioCtx = new AudioContext();
+  if (sharedAudioCtx.state === "suspended") sharedAudioCtx.resume();
+  return sharedAudioCtx;
+}
+
 function playDingSound(volume = 1) {
-  const ctx = new AudioContext();
+  const ctx = getAudioCtx();
   const now = ctx.currentTime;
 
   const masterGain = ctx.createGain();
@@ -121,6 +142,7 @@ async function maybePlayDing() {
 // ===== 啟動口渴模式 =====
 function activateThirstMode(payload) {
   if (payload && payload.cupStyle) applyCupStyle(payload.cupStyle);
+  if (payload && payload.lang) cupLang = payload.lang;
   if (isThirsty) return;
   isThirsty = true;
 
@@ -130,7 +152,7 @@ function activateThirstMode(payload) {
 
   setWaterLevel(0);
   progressFg.style.strokeDashoffset = circumference;
-  hintEl.textContent = "🥤 長按杯子或按 Space 喝水！";
+  hintEl.textContent = ct("hold");
 
   clearTimeout(shatterTimer);
   shatterTimer = setTimeout(() => {
@@ -313,7 +335,7 @@ function startHold(e) {
   isHolding = true;
   holdStart = Date.now();
   cupWrapper.classList.remove("shaking");
-  hintEl.textContent = "💧 繼續按住...";
+  hintEl.textContent = ct("holding");
 
   holdTimer = setInterval(() => {
     const elapsed = Date.now() - holdStart;
@@ -347,7 +369,7 @@ function endHold() {
     setWaterLevel(0);
     progressFg.style.strokeDashoffset = circumference;
     cupWrapper.classList.add("shaking");
-    hintEl.textContent = "😤 再按久一點！";
+    hintEl.textContent = ct("more");
 
     clearTimeout(shatterTimer);
     shatterTimer = setTimeout(() => {

@@ -23,6 +23,51 @@ const IDLE_AWAY_SEC = 5 * 60; // 離開超過 5 分鐘視為不在位，略過�
 
 const ICON_PATH = path.join(__dirname, "..", "build", "icon.png");
 
+// ===== 主行程多語（通知 / 托盤）— 與設定視窗語言一致 =====
+const MAIN_I18N = {
+  "zh-Hant": {
+    notifyTitle: "💧 該喝水了！",
+    notifyBody: "你已經很久沒喝水了，記得補充水分哦！",
+    traySettings: "開啟設定 / 統計",
+    trayTest: "立即提醒（測試）",
+    trayEnable: "啟用提醒",
+    trayQuit: "結束",
+    trayTip: (ml, goal) => `喝水提醒 — 今日 ${ml} / ${goal} ml`,
+  },
+  "zh-Hans": {
+    notifyTitle: "💧 该喝水了！",
+    notifyBody: "你已经很久没喝水了，记得补充水分哦！",
+    traySettings: "打开设置 / 统计",
+    trayTest: "立即提醒（测试）",
+    trayEnable: "启用提醒",
+    trayQuit: "退出",
+    trayTip: (ml, goal) => `喝水提醒 — 今日 ${ml} / ${goal} ml`,
+  },
+  en: {
+    notifyTitle: "💧 Time to drink!",
+    notifyBody: "You haven't had water in a while — stay hydrated!",
+    traySettings: "Open settings / stats",
+    trayTest: "Remind now (test)",
+    trayEnable: "Enable reminders",
+    trayQuit: "Quit",
+    trayTip: (ml, goal) => `Drink Water — Today ${ml} / ${goal} ml`,
+  },
+  ja: {
+    notifyTitle: "💧 水を飲む時間です！",
+    notifyBody: "しばらく水を飲んでいません。水分補給を忘れずに！",
+    traySettings: "設定 / 統計を開く",
+    trayTest: "今すぐ通知（テスト）",
+    trayEnable: "通知を有効化",
+    trayQuit: "終了",
+    trayTip: (ml, goal) => `水飲みリマインダー — 本日 ${ml} / ${goal} ml`,
+  },
+};
+
+function mt(key) {
+  const { lang = "zh-Hant" } = store.get(["lang"]);
+  return MAIN_I18N[lang]?.[key] ?? MAIN_I18N["zh-Hant"][key];
+}
+
 let tray = null;
 let cupWindow = null;
 let settingsWindow = null;
@@ -90,13 +135,13 @@ function triggerCup() {
   positionCupWindow();
   cupWindow.showInactive(); // 不搶焦點
   cupWindow.setIgnoreMouseEvents(false);
-  const { cupStyle = "classic" } = store.get(["cupStyle"]);
-  cupWindow.webContents.send("reminder", { cupStyle });
+  const { cupStyle = "classic", lang = "zh-Hant" } = store.get(["cupStyle", "lang"]);
+  cupWindow.webContents.send("reminder", { cupStyle, lang });
 
   if (Notification.isSupported()) {
     new Notification({
-      title: "💧 該喝水了！",
-      body: "你已經很久沒喝水了，記得補充水分哦！",
+      title: mt("notifyTitle"),
+      body: mt("notifyBody"),
       icon: ICON_PATH,
       silent: true,
     }).show();
@@ -106,7 +151,9 @@ function triggerCup() {
 // ===== 水杯視窗 =====
 function positionCupWindow() {
   if (!cupWindow) return;
-  const { workArea } = screen.getPrimaryDisplay();
+  // 彈在游標所在的螢幕，而非永遠主螢幕（多螢幕情境避免漏看）
+  const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+  const { workArea } = display;
   const [w, h] = cupWindow.getSize();
   // 視窗貼齊工作區右下角；水杯靠視窗右下（由 cup.html padding 決定離角距離），
   // 視窗左上的多餘空間則留給碎裂時往螢幕內側飛散的碎片，避免被裁切。
@@ -170,16 +217,16 @@ function openSettings() {
 function buildTrayMenu() {
   const { enabled = true } = store.get(["enabled"]);
   return Menu.buildFromTemplate([
-    { label: "開啟設定 / 統計", click: () => openSettings() },
-    { label: "立即提醒（測試）", click: () => triggerCup() },
+    { label: mt("traySettings"), click: () => openSettings() },
+    { label: mt("trayTest"), click: () => triggerCup() },
     {
-      label: "啟用提醒",
+      label: mt("trayEnable"),
       type: "checkbox",
       checked: enabled,
       click: () => toggleEnabled(),
     },
     { type: "separator" },
-    { label: "結束", click: () => quitApp() },
+    { label: mt("trayQuit"), click: () => quitApp() },
   ]);
 }
 
@@ -189,7 +236,7 @@ function refreshTray() {
     "todayMl",
     "dailyGoalMl",
   ]);
-  tray.setToolTip(`喝水提醒 — 今日 ${todayMl} / ${dailyGoalMl} ml`);
+  tray.setToolTip(mt("trayTip")(todayMl, dailyGoalMl));
   tray.setContextMenu(buildTrayMenu());
 }
 
@@ -362,6 +409,7 @@ function registerIpc() {
       app.setLoginItemSettings({ openAtLogin: prefs.autoStart });
     }
     store.set(updates);
+    if (prefs.lang != null) refreshTray(); // 語言改變即時更新托盤選單 / tooltip
     return { ok: true };
   });
 

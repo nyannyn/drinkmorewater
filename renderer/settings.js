@@ -40,6 +40,9 @@ const I18N = {
     labelDrinkMl: "每次飲水量 (ml)",
     drinkMlNote: "每次長按水杯記錄的毫升數。",
     intervalOpts: ["15 分鐘", "30 分鐘", "45 分鐘", "60 分鐘"],
+    cancel: "取消",
+    confirmOk: "確定重置",
+    goalDone: "🎉 今日目標達成！",
   },
   "zh-Hans": {
     tabMain: "统计",
@@ -81,6 +84,9 @@ const I18N = {
     labelDrinkMl: "每次饮水量 (ml)",
     drinkMlNote: "每次长按水杯记录的毫升数。",
     intervalOpts: ["15 分钟", "30 分钟", "45 分钟", "60 分钟"],
+    cancel: "取消",
+    confirmOk: "确定重置",
+    goalDone: "🎉 今日目标达成！",
   },
   en: {
     tabMain: "Stats",
@@ -122,6 +128,9 @@ const I18N = {
     labelDrinkMl: "Drink amount (ml)",
     drinkMlNote: "Milliliters recorded per drink action.",
     intervalOpts: ["15 min", "30 min", "45 min", "60 min"],
+    cancel: "Cancel",
+    confirmOk: "Reset",
+    goalDone: "🎉 Daily goal reached!",
   },
   ja: {
     tabMain: "統計",
@@ -163,6 +172,9 @@ const I18N = {
     labelDrinkMl: "1回の量 (ml)",
     drinkMlNote: "1回あたりの記録量。",
     intervalOpts: ["15 分", "30 分", "45 分", "60 分"],
+    cancel: "キャンセル",
+    confirmOk: "リセット",
+    goalDone: "🎉 目標達成！",
   },
 };
 
@@ -178,6 +190,7 @@ const $todayMl = document.getElementById("todayMl");
 const $intervalMin = document.getElementById("intervalMin");
 const $enabledToggle = document.getElementById("enabledToggle");
 const $goalBar = document.getElementById("goalBar");
+const $goalBadge = document.getElementById("goalBadge");
 const $dailyGoal = document.getElementById("dailyGoal");
 const $weeklyChart = document.getElementById("weeklyChart");
 const $soundToggle = document.getElementById("soundToggle");
@@ -190,12 +203,24 @@ const $drinkMl = document.getElementById("drinkMl");
 const $drinkBtn = document.getElementById("drinkBtn");
 
 // ===== Toggle helper =====
+function setToggle(el, on) {
+  el.classList.toggle("on", on);
+  el.setAttribute("aria-checked", on ? "true" : "false");
+}
+
 function bindToggle(el, initialState, onChange) {
-  if (initialState) el.classList.add("on");
-  else el.classList.remove("on");
-  el.addEventListener("click", () => {
-    el.classList.toggle("on");
-    onChange(el.classList.contains("on"));
+  setToggle(el, initialState);
+  const fire = () => {
+    const next = !el.classList.contains("on");
+    setToggle(el, next);
+    onChange(next);
+  };
+  el.addEventListener("click", fire);
+  el.addEventListener("keydown", (e) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      fire();
+    }
   });
 }
 
@@ -322,13 +347,19 @@ bindToggle($autoStartToggle, false, (on) => {
 });
 
 // ===== Drink ml =====
+function clampInt(raw, min, max, fallback, step) {
+  let v = parseInt(raw, 10);
+  if (Number.isNaN(v)) v = fallback;
+  if (step) v = Math.round(v / step) * step;
+  return Math.min(max, Math.max(min, v));
+}
+
 $drinkMl.addEventListener("change", () => {
-  const val = parseInt($drinkMl.value, 10);
-  if (val >= 50 && val <= 1000) {
-    currentDrinkMl = val;
-    $drinkBtn.textContent = t("drinkBtn")(val);
-    window.api.setPrefs({ drinkMl: val });
-  }
+  const val = clampInt($drinkMl.value, 50, 1000, currentDrinkMl, 50);
+  $drinkMl.value = val;
+  currentDrinkMl = val;
+  $drinkBtn.textContent = t("drinkBtn")(val);
+  window.api.setPrefs({ drinkMl: val });
 });
 
 // ===== Drink button =====
@@ -345,10 +376,8 @@ async function loadStatus() {
   $intervalMin.value = res.intervalMin;
 
   // Sync toggles
-  if (res.enabled) $enabledToggle.classList.add("on");
-  else $enabledToggle.classList.remove("on");
-  if (res.soundEnabled) $soundToggle.classList.add("on");
-  else $soundToggle.classList.remove("on");
+  setToggle($enabledToggle, !!res.enabled);
+  setToggle($soundToggle, !!res.soundEnabled);
 
   $dailyGoal.value = res.dailyGoalMl;
   $volumeSlider.value = res.soundVolume;
@@ -356,9 +385,17 @@ async function loadStatus() {
   $volumeRow.style.display = res.soundEnabled ? "" : "none";
 
   const goal = res.dailyGoalMl || 2000;
-  const pct = Math.min(Math.round((res.todayMl / goal) * 100), 100);
+  const rawPct = (res.todayMl / goal) * 100;
+  const pct = Math.min(Math.round(rawPct), 100);
   $goalBar.style.width = pct + "%";
   document.getElementById("goalLabelWrap").textContent = t("goalLabel")(goal, pct);
+
+  // 達標慶祝（B2）
+  const reached = res.todayMl >= goal;
+  const card = $goalBadge.closest(".card");
+  if (card) card.classList.toggle("goal-reached", reached);
+  $goalBar.classList.toggle("full", reached);
+  $goalBadge.textContent = reached ? t("goalDone") : "";
 }
 
 async function loadWeeklyStats() {
@@ -376,9 +413,11 @@ function renderWeeklyChart(log, goalMl) {
   }
 
   const days = t("days");
-  const maxMl = Math.max(goalMl, ...log.map((d) => d.ml), 1);
+  // 「過去 7 天」：最多取最近 7 筆（含今日），對齊標題文案
+  const recent = log.slice(-7);
+  const maxMl = Math.max(goalMl, ...recent.map((d) => d.ml), 1);
 
-  log.forEach((entry) => {
+  recent.forEach((entry) => {
     const d = new Date(entry.date);
     const dayName = days[d.getDay()];
     const barH = Math.max((entry.ml / maxMl) * 50, 2);
@@ -421,22 +460,23 @@ async function loadPrefs() {
   $langSelect.value = prefs.lang || "zh-Hant";
   applyLang(prefs.lang || "zh-Hant");
 
-  if (prefs.autoStart) $autoStartToggle.classList.add("on");
-  else $autoStartToggle.classList.remove("on");
+  setToggle($autoStartToggle, !!prefs.autoStart);
 
   currentDrinkMl = prefs.drinkMl || 300;
   $drinkMl.value = currentDrinkMl;
   $drinkBtn.textContent = t("drinkBtn")(currentDrinkMl);
 }
 
-function refresh() {
-  loadStatus();
-  loadWeeklyStats();
+async function refresh() {
+  await Promise.all([loadStatus(), loadWeeklyStats()]);
 }
 
 // ===== Init =====
 renderCupStyleCards();
-loadPrefs().then(() => refresh());
+loadPrefs()
+  .then(() => refresh())
+  .catch((e) => console.error(e))
+  .finally(() => document.body.classList.remove("preload"));
 
 window.api.onStatusChanged(() => refresh());
 
@@ -450,11 +490,10 @@ bindToggle($enabledToggle, true, () => {
 });
 
 $dailyGoal.addEventListener("change", () => {
-  const val = parseInt($dailyGoal.value, 10);
-  if (val >= 500 && val <= 5000) {
-    window.api.setDailyGoal(val);
-    loadStatus();
-  }
+  const val = clampInt($dailyGoal.value, 500, 5000, 2000, 100);
+  $dailyGoal.value = val;
+  window.api.setDailyGoal(val);
+  loadStatus();
 });
 
 bindToggle($soundToggle, false, (on) => {
@@ -478,8 +517,42 @@ document.getElementById("exportBtn").addEventListener("click", async () => {
   await window.api.exportData();
 });
 
+// ===== 主題化確認對話框（取代原生 confirm） =====
+const $confirmModal = document.getElementById("confirmModal");
+const $confirmMsg = document.getElementById("confirmMsg");
+const $confirmOk = document.getElementById("confirmOk");
+const $confirmCancel = document.getElementById("confirmCancel");
+
+function showConfirm(message) {
+  return new Promise((resolve) => {
+    $confirmMsg.textContent = message;
+    $confirmOk.textContent = t("confirmOk");
+    $confirmCancel.textContent = t("cancel");
+    $confirmModal.classList.add("show");
+    $confirmOk.focus();
+
+    const cleanup = (result) => {
+      $confirmModal.classList.remove("show");
+      $confirmOk.removeEventListener("click", onOk);
+      $confirmCancel.removeEventListener("click", onCancel);
+      $confirmModal.removeEventListener("click", onOverlay);
+      document.removeEventListener("keydown", onKey);
+      resolve(result);
+    };
+    const onOk = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    const onOverlay = (e) => { if (e.target === $confirmModal) cleanup(false); };
+    const onKey = (e) => { if (e.key === "Escape") cleanup(false); };
+
+    $confirmOk.addEventListener("click", onOk);
+    $confirmCancel.addEventListener("click", onCancel);
+    $confirmModal.addEventListener("click", onOverlay);
+    document.addEventListener("keydown", onKey);
+  });
+}
+
 document.getElementById("resetBtn").addEventListener("click", async () => {
-  if (!confirm(t("resetConfirm"))) return;
+  if (!(await showConfirm(t("resetConfirm")))) return;
   await window.api.resetData();
   refresh();
 });

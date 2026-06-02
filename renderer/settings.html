@@ -3,10 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://fonts.googleapis.com https://fonts.gstatic.com;">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Playfair+Display:wght@400;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data:;">
+  <link href="fonts.css" rel="stylesheet">
   <style>
     /* =========================================
        1. Theme Variables
@@ -440,9 +438,84 @@
     [data-theme="monochrome"] .dot-pink,
     [data-theme="monochrome"] .dot-yellow { border-radius: 0; }
     [data-theme="monochrome"] .theme-card { border-radius: 0; }
+
+    /* =========================================
+       5. v1.5 polish
+       ========================================= */
+
+    /* 防止首屏主題 / 開關閃爍：載入完成前隱藏，settings.js 移除 .preload */
+    body.preload { visibility: hidden; }
+
+    /* 卡片 / 設定項進場淡入 */
+    .tab-panel.active > * { animation: cardIn 0.4s ease both; }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    /* 達標慶祝 */
+    .goal-badge {
+      display: none;
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-color);
+    }
+    .card.goal-reached .goal-badge { display: block; animation: badgePop 0.5s ease; }
+    @keyframes badgePop {
+      0% { transform: scale(0.6); opacity: 0; }
+      60% { transform: scale(1.15); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .progress-fill.full {
+      background-image: linear-gradient(90deg, var(--accent-color), rgba(255,255,255,0.5), var(--accent-color));
+      background-size: 200% 100%;
+      animation: shimmer 2.2s linear infinite;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* 可及性：鍵盤聚焦環 */
+    .btn:focus-visible, .toggle:focus-visible, .setting-select:focus-visible,
+    .setting-number:focus-visible, .tab-btn:focus-visible, .theme-card:focus-visible,
+    input[type="range"]:focus-visible {
+      outline: 2px solid var(--accent-color);
+      outline-offset: 2px;
+    }
+
+    /* 主題化確認對話框（取代原生 confirm） */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: none; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal-overlay.show { display: flex; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      border: var(--border);
+      padding: 22px;
+      width: 280px;
+      text-align: center;
+      animation: cardIn 0.25s ease;
+    }
+    .modal-msg { font-size: 14px; font-weight: 600; margin-bottom: 18px; line-height: 1.5; }
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions .btn { flex: 1; }
+
+    /* 尊重系統「減少動態效果」偏好 */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+    }
   </style>
 </head>
-<body data-theme="default">
+<body data-theme="default" class="preload">
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="main" id="tabMain"></button>
     <button class="tab-btn" data-tab="prefs" id="tabPrefs"></button>
@@ -470,6 +543,7 @@
         <div class="progress-fill" id="goalBar"></div>
       </div>
       <div class="subtitle" style="margin-top:4px; font-size:11px;" id="goalLabelWrap"></div>
+      <div class="goal-badge" id="goalBadge"></div>
     </div>
 
     <!-- Quick Actions -->
@@ -516,14 +590,14 @@
           <div class="dot-blue"></div>
           <span id="labelEnabled"></span>
         </div>
-        <div class="toggle on" id="enabledToggle"><div class="toggle-knob"></div></div>
+        <div class="toggle on" id="enabledToggle" role="switch" tabindex="0" aria-checked="true"><div class="toggle-knob"></div></div>
       </div>
       <div class="setting-item">
         <div class="setting-info">
           <div class="dot-pink"></div>
           <span id="labelSound"></span>
         </div>
-        <div class="toggle" id="soundToggle"><div class="toggle-knob"></div></div>
+        <div class="toggle" id="soundToggle" role="switch" tabindex="0" aria-checked="false"><div class="toggle-knob"></div></div>
       </div>
       <div class="setting-item" id="volumeRow">
         <div class="setting-info">
@@ -603,7 +677,7 @@
           <div class="dot-pink"></div>
           <span id="labelAutoStart"></span>
         </div>
-        <div class="toggle" id="autoStartToggle"><div class="toggle-knob"></div></div>
+        <div class="toggle" id="autoStartToggle" role="switch" tabindex="0" aria-checked="false"><div class="toggle-knob"></div></div>
       </div>
       <p class="pref-note" id="autoStartNote"></p>
       <div class="setting-item" style="margin-top:8px;">
@@ -614,6 +688,17 @@
         <input type="number" class="setting-number" id="drinkMl" value="300" min="50" max="1000" step="50">
       </div>
       <p class="pref-note" id="drinkMlNote"></p>
+    </div>
+  </div>
+
+  <!-- 主題化確認對話框 -->
+  <div class="modal-overlay" id="confirmModal" role="dialog" aria-modal="true">
+    <div class="modal">
+      <div class="modal-msg" id="confirmMsg"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="confirmCancel"></button>
+        <button class="btn btn-danger" id="confirmOk"></button>
+      </div>
     </div>
   </div>
 

@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native (由 expo prebuild 產生，不入庫)
+/ios
+/android
+
+# macOS
+.DS_Store
+
+# Env / secrets
+.env*.local
+google-services.json
+GoogleService-Info.plist
+
+# Build artifacts
+*.ipa
+*.app

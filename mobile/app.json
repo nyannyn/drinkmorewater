@@ -2,7 +2,7 @@
   "expo": {
     "name": "喝水提醒",
     "slug": "drink-water-reminder",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "drinkwater",

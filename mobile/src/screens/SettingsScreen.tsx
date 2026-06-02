@@ -8,17 +8,18 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { AppData, INTERVAL_OPTIONS } from "../core/types";
-import { t } from "../i18n";
+import { AppData, DRINK_OPTIONS, INTERVAL_OPTIONS } from "../core/types";
+import { LANGUAGES, t } from "../i18n";
 
 interface Props {
   data: AppData;
   scheduledCount: number;
   onPatch: (patch: Partial<AppData>) => void;
   onReset: () => void;
+  onTest: () => void;
 }
 
-export default function SettingsScreen({ data, scheduledCount, onPatch, onReset }: Props) {
+export default function SettingsScreen({ data, scheduledCount, onPatch, onReset, onTest }: Props) {
   const s = t(data.lang);
   const [goal, setGoal] = useState(String(data.dailyGoalMl));
   const [start, setStart] = useState(data.activeStart);
@@ -88,6 +89,34 @@ export default function SettingsScreen({ data, scheduledCount, onPatch, onReset 
         keyboardType="number-pad"
       />
 
+      {/* 每次飲水量 */}
+      <Text style={styles.label}>{s.drinkAmount}</Text>
+      <View style={styles.chips}>
+        {DRINK_OPTIONS.map((ml) => (
+          <Pressable
+            key={ml}
+            style={[styles.chip, data.drinkMl === ml && styles.chipOn]}
+            onPress={() => onPatch({ drinkMl: ml })}
+          >
+            <Text style={[styles.chipText, data.drinkMl === ml && styles.chipTextOn]}>{ml}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* 語言 */}
+      <Text style={styles.label}>{s.language}</Text>
+      <View style={styles.chips}>
+        {LANGUAGES.map((l) => (
+          <Pressable
+            key={l.code}
+            style={[styles.chip, data.lang === l.code && styles.chipOn]}
+            onPress={() => onPatch({ lang: l.code })}
+          >
+            <Text style={[styles.chipText, data.lang === l.code && styles.chipTextOn]}>{l.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
       {/* 音效 */}
       <View style={styles.row}>
         <Text style={styles.label}>{s.sound}</Text>
@@ -95,6 +124,10 @@ export default function SettingsScreen({ data, scheduledCount, onPatch, onReset 
       </View>
 
       <Text style={styles.scheduled}>{s.scheduled(scheduledCount)}</Text>
+
+      <Pressable style={styles.testBtn} onPress={onTest}>
+        <Text style={styles.testText}>🔔 {s.testNotif}</Text>
+      </Pressable>
 
       <Pressable style={styles.resetBtn} onPress={confirmReset}>
         <Text style={styles.resetText}>{s.reset}</Text>
@@ -118,6 +151,16 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10, fontSize: 16 },
   hint: { color: "#999", fontSize: 12, marginTop: 4 },
   scheduled: { marginTop: 24, color: "#1B6FC4", fontSize: 14 },
+  testBtn: {
+    marginTop: 14,
+    alignSelf: "flex-start",
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#4DA3FF",
+  },
+  testText: { color: "#1B6FC4", fontSize: 15, fontWeight: "500" },
   resetBtn: { marginTop: 16, alignSelf: "flex-start" },
   resetText: { color: "#E5534B", fontSize: 15 },
 });

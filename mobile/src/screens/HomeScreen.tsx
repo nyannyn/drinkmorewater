@@ -30,7 +30,7 @@ export default function HomeScreen({ data, weekly, onDrink }: Props) {
       </Pressable>
 
       <Text style={styles.section}>{s.weekly}</Text>
-      <WeeklyChart log={weekly.log} dailyGoalMl={weekly.dailyGoalMl} />
+      <WeeklyChart log={weekly.log} dailyGoalMl={weekly.dailyGoalMl} lang={data.lang} />
     </View>
   );
 }

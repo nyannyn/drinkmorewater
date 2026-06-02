@@ -17,9 +17,10 @@
 | `setTimeout` 計時 | OS 預排本地通知 | `src/notifications/notify.ts` |
 | 系統托盤常駐 | App + 排程通知(免常駐) | — |
 | `powerMonitor` 鎖屏暫停 | 活躍時段設定(此區間外不發) | `src/core/schedule.ts` |
-| 原生 `Notification` | 本地通知 + 「我喝了」動作鈕 | `notify.ts` |
+| 原生 `Notification` | 本地通知 + 「我喝了」動作鈕（文字依語言本地化）| `notify.ts` |
 | `userData/data.json` | AsyncStorage | `src/core/storage.ts` |
 | 跨日重設 / 統計 | 同邏輯移植 | `src/core/tracking.ts` |
+| 4 語切換（繁中/簡中/英/日）| 設定頁切換、通知與週圖隨之本地化 | `src/i18n.ts` |
 
 ## 專案結構
 
@@ -78,4 +79,5 @@ npx eas submit --platform ios
 - **權限**:首次啟動會彈出系統授權窗;拒絕後需到「設定 → 喝水提醒 → 通知」手動開啟。
 - **64 則上限**:超過會被系統丟棄,故採滾動預排策略。
 - **動作鈕**:長按 / 下拉通知可見「我喝了 💧」,點了不開 App 即記錄並重排下一輪。
+- **測試通知**:設定頁的「傳送測試通知」會在數秒後送一則通知,方便在實機驗證送達、外觀、音效與動作鈕;切換語言後再按可比對 4 語外觀。
 - **勿擾模式 / 專注模式**:使用者層級的勿擾仍會壓制通知,屬預期行為。

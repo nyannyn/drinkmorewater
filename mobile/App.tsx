@@ -23,6 +23,7 @@ import {
   registerCategory,
   requestPermissions,
   rescheduleReminders,
+  sendTestNotification,
 } from "./src/notifications/notify";
 import { t } from "./src/i18n";
 
@@ -108,6 +109,10 @@ export default function App() {
     await reload();
   }, [reload]);
 
+  const onTest = useCallback(async () => {
+    await sendTestNotification();
+  }, []);
+
   const s = t(data.lang);
 
   if (!ready) {
@@ -127,7 +132,7 @@ export default function App() {
         {tab === "home" ? (
           <HomeScreen data={data} weekly={weekly} onDrink={onDrink} />
         ) : (
-          <SettingsScreen data={data} scheduledCount={scheduled} onPatch={onPatch} onReset={onReset} />
+          <SettingsScreen data={data} scheduledCount={scheduled} onPatch={onPatch} onReset={onReset} onTest={onTest} />
         )}
       </View>
 

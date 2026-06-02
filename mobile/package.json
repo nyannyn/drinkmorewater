@@ -1,6 +1,6 @@
 {
   "name": "drink-water-reminder-mobile",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "喝水提醒 — iOS 手機版（React Native / Expo），原生本地排程通知",
   "main": "index.ts",
   "scripts": {

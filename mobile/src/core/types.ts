@@ -44,3 +44,4 @@ export const DEFAULTS: AppData = {
 };
 
 export const INTERVAL_OPTIONS = [15, 30, 45, 60];
+export const DRINK_OPTIONS = [150, 200, 250, 300, 500];

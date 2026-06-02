@@ -48,6 +48,7 @@
 - 發版：推 tag `v*` → `.github/workflows/release.yml` 自動 build Win/Linux/macOS 並建 GitHub Release（含 SHA256 / VirusTotal；macOS 於 `macos-latest` 上產出未簽名 dmg/zip）。
 - 手機測試：`cd mobile && npm test`（純邏輯，免模擬器）；實機需 `expo run:ios` 或 EAS build（需 macOS 或 Expo 帳號）。
 - CI：`.github/workflows/ci.yml` 對 main 的 PR/push 跑手機版核心測試。
+- **iOS 雲端 build：`.github/workflows/ios.yml`（`macos-latest`）**。本 repo 為公開 → GitHub 託管 macOS runner **免費、無額度上限**（私有則 macOS 以 10× 扣額度）。流程：`npm install` → 核心測試 → `expo prebuild` → Xcode 編譯**未簽署 Release（iOS Simulator）** → 開模擬器、啟動、用 idb 點掉通知權限框、截圖上傳成 artifact `ios-simulator-screenshots`。整條不需 Apple 憑證，純驗證 build 鏈 + 看畫面用。一輪約 12–15 分。
 
 ## 開發慣例
 
@@ -65,6 +66,8 @@
 - UI 視覺改動無法在 Linux 容器驗證，發版前建議在 Windows/macOS `npm start` 冒煙（切 4 語 × 5 主題 × 5 杯款 + 喝滿/碎裂/達標）。
 - GNOME 需 AppIndicator 擴充才顯示托盤；透明水杯需桌面合成。
 - 手機通知須實機測試；iOS 64 則待發上限以滾動預排因應。
+- **iOS Release 打包需 `expo-asset` 相依**（已補進 `mobile/package.json`）。Release 的「Bundle React Native code and images」階段會跑 `expo export:embed`，缺 expo-asset 會報 `The required package expo-asset cannot be found`（exit 65）；Debug 不打包 JS 故不踩此雷。
+- iOS 模擬器要截到 Home 畫面，須先點掉啟動時的通知權限框：`App.tsx` 一掛載即 `requestPermissions()`，未回應前畫面停在 loading。CI 用 `idb ui tap` 找「Allow/允許」按鈕座標點掉（`xcrun simctl privacy` 不支援授予通知權限）。
 
 ## 待辦
 

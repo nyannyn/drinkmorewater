@@ -112,8 +112,42 @@ jobs:
             dist/latest-linux.yml
             dist/SHA256SUMS-linux.txt
 
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - run: npm run dist:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 未設定 Apple 簽署憑證時，關閉自動簽署，產出未簽名版本
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Generate SHA256 checksums
+        run: |
+          cd dist
+          shasum -a 256 *.dmg *.zip latest-mac.yml > SHA256SUMS-mac.txt
+          echo "=== SHA256 Checksums (macOS) ==="
+          cat SHA256SUMS-mac.txt
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-mac
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/latest-mac.yml
+            dist/SHA256SUMS-mac.txt
+
   release:
-    needs: [build-win, build-linux]
+    needs: [build-win, build-linux, build-mac]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -129,6 +163,7 @@ jobs:
             echo '```'
             cat dist/SHA256SUMS-win.txt
             cat dist/SHA256SUMS-linux.txt
+            cat dist/SHA256SUMS-mac.txt
             echo '```'
             echo ""
             echo "## VirusTotal Scan"
@@ -147,7 +182,11 @@ jobs:
             dist/*.exe
             dist/*.AppImage
             dist/*.deb
+            dist/*.dmg
+            dist/*.zip
             dist/latest.yml
             dist/latest-linux.yml
+            dist/latest-mac.yml
             dist/SHA256SUMS-win.txt
             dist/SHA256SUMS-linux.txt
+            dist/SHA256SUMS-mac.txt

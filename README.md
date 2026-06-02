@@ -6,6 +6,19 @@
 >
 > 📱 **iOS 手機版**（React Native / Expo，原生本地排程通知）位於 [`mobile/`](mobile/README.md)。
 
+## 下載安裝
+
+前往 [**GitHub Releases**](https://github.com/nyannyn/drinkmorewater/releases/latest) 頁面下載最新版本：
+
+| 作業系統 | 檔案 | 說明 |
+|---|---|---|
+| **Windows** | `喝水提醒 Setup x.y.z.exe` | 雙擊執行安裝程式，完成後從開始選單啟動 |
+| **Windows（免安裝）** | `喝水提醒 x.y.z.exe` | 下載後直接雙擊即可使用，不需安裝 |
+| **Linux** | `.AppImage` | `chmod +x` 後直接執行，適用大多數發行版 |
+| **Linux (Debian/Ubuntu)** | `.deb` | `sudo apt install ./檔名.deb` |
+
+> 💡 安裝完成後，應用程式會常駐在系統托盤（Windows 工作列右下角 / Linux 通知區域）。左鍵點擊托盤圖示可開啟設定與統計面板。
+
 ## 功能
 
 - **定時提醒** — 可自訂間隔（15 / 30 / 45 / 60 分鐘）

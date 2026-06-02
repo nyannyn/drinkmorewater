@@ -22,6 +22,7 @@ const DEFAULT_DAILY_GOAL_ML = 2000;
 const IDLE_AWAY_SEC = 5 * 60; // 離開超過 5 分鐘視為不在位，略過該次提醒
 
 const ICON_PATH = path.join(__dirname, "..", "build", "icon.png");
+const NOTIF_ICON_PATH = path.join(__dirname, "..", "build", "notification.png");
 
 // ===== 主行程多語（通知 / 托盤）— 與設定視窗語言一致 =====
 const MAIN_I18N = {
@@ -132,34 +133,46 @@ function fireReminder() {
 // 顯示水杯 + 系統通知
 function triggerCup() {
   if (!cupWindow) createCupWindow();
-  positionCupWindow();
-  cupWindow.showInactive(); // 不搶焦點
-  cupWindow.setIgnoreMouseEvents(false);
-  const { cupStyle = "classic", lang = "zh-Hant" } = store.get(["cupStyle", "lang"]);
-  cupWindow.webContents.send("reminder", { cupStyle, lang });
 
-  if (Notification.isSupported()) {
-    new Notification({
+  const { bannerEnabled = true } = store.get(["bannerEnabled"]);
+  const { cupStyle = "classic", lang = "zh-Hant", holdSpeed = 1 } = store.get(["cupStyle", "lang", "holdSpeed"]);
+
+  if (bannerEnabled && Notification.isSupported()) {
+    // 水杯往上偏移避開通知，同時顯示
+    positionCupWindow(false);
+    cupWindow.showInactive();
+    cupWindow.setIgnoreMouseEvents(false);
+    cupWindow.webContents.send("reminder", { cupStyle, lang, holdSpeed });
+
+    const notif = new Notification({
       title: mt("notifyTitle"),
       body: mt("notifyBody"),
-      icon: ICON_PATH,
+      icon: NOTIF_ICON_PATH,
       silent: true,
-    }).show();
+    });
+    notif.show();
+    setTimeout(() => notif.close(), 3000);
+  } else {
+    // 無橫幅，水杯直接貼右下角
+    positionCupWindow(true);
+    cupWindow.showInactive();
+    cupWindow.setIgnoreMouseEvents(false);
+    cupWindow.webContents.send("reminder", { cupStyle, lang, holdSpeed });
   }
 }
 
 // ===== 水杯視窗 =====
-function positionCupWindow() {
+function positionCupWindow(bottomCorner) {
   if (!cupWindow) return;
   // 彈在游標所在的螢幕，而非永遠主螢幕（多螢幕情境避免漏看）
   const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   const { workArea } = display;
   const [w, h] = cupWindow.getSize();
-  // 視窗貼齊工作區右下角；水杯靠視窗右下（由 cup.html padding 決定離角距離），
-  // 視窗左上的多餘空間則留給碎裂時往螢幕內側飛散的碎片，避免被裁切。
+  // 有橫幅通知時往上偏移避開 toast；關閉橫幅時貼齊右下角
+  const notifyOffset = (!bottomCorner && process.platform === "win32") ? 120 : 0;
   cupWindow.setPosition(
     Math.round(workArea.x + workArea.width - w),
-    Math.round(workArea.y + workArea.height - h)
+    Math.round(workArea.y + workArea.height - h - notifyOffset)
   );
 }
 
@@ -184,7 +197,6 @@ function createCupWindow() {
   });
   cupWindow.setAlwaysOnTop(true, "screen-saver");
   cupWindow.loadFile(path.join(__dirname, "..", "renderer", "cup.html"));
-  positionCupWindow();
 }
 
 // ===== 設定視窗（由原 popup 改寫） =====
@@ -389,13 +401,15 @@ function registerIpc() {
     return { soundEnabled, soundVolume };
   });
   ipcMain.handle("get-prefs", () => {
-    const d = store.get(["theme", "lang", "autoStart", "drinkMl", "cupStyle"]);
+    const d = store.get(["theme", "lang", "autoStart", "drinkMl", "cupStyle", "holdSpeed", "bannerEnabled"]);
     return {
       theme: d.theme ?? "light",
       lang: d.lang ?? "zh-Hant",
       autoStart: d.autoStart ?? false,
       drinkMl: d.drinkMl ?? DRINK_ML,
       cupStyle: d.cupStyle ?? "classic",
+      holdSpeed: d.holdSpeed ?? 1,
+      bannerEnabled: d.bannerEnabled ?? true,
     };
   });
   ipcMain.handle("set-prefs", (_e, prefs) => {
@@ -404,6 +418,8 @@ function registerIpc() {
     if (prefs.lang != null) updates.lang = prefs.lang;
     if (prefs.drinkMl != null) updates.drinkMl = prefs.drinkMl;
     if (prefs.cupStyle != null) updates.cupStyle = prefs.cupStyle;
+    if (prefs.holdSpeed != null) updates.holdSpeed = prefs.holdSpeed;
+    if (prefs.bannerEnabled != null) updates.bannerEnabled = prefs.bannerEnabled;
     if (prefs.autoStart != null) {
       updates.autoStart = prefs.autoStart;
       app.setLoginItemSettings({ openAtLogin: prefs.autoStart });

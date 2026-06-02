@@ -15,6 +15,7 @@
     "dist:mac": "electron-builder --mac"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "electron": "^31.0.0",
     "electron-builder": "^24.13.3"
   },
@@ -28,7 +29,8 @@
     "files": [
       "electron/**/*",
       "renderer/**/*",
-      "build/icon.png"
+      "build/icon.png",
+      "build/notification.png"
     ],
     "win": {
       "target": [
@@ -60,11 +62,17 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         },
         {
           "target": "zip",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "icon": "build/icon.png",

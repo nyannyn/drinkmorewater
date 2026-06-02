@@ -9,7 +9,8 @@ const I18N = {
     weeklyTitle: "過去 7 天",
     labelInterval: "提醒間隔",
     labelGoal: "每日目標 (ml)",
-    labelEnabled: "提醒通知",
+    labelEnabled: "定時提醒",
+    enabledNote: "關閉後不會出現水杯與橫幅通知。",
     labelSound: "音效回饋",
     labelVolume: "音量",
     drinkBtn: (ml) => `+${ml} ml`,
@@ -39,6 +40,9 @@ const I18N = {
     autoStartNote: "開啟後，電腦開機時自動在背景啟動提醒。",
     labelDrinkMl: "每次飲水量 (ml)",
     drinkMlNote: "每次長按水杯記錄的毫升數。",
+    labelHoldSpeed: "長按速度",
+    holdSpeedNote: "倍率越高，長按喝水越快完成。",
+    labelBanner: "橫幅通知",
     intervalOpts: ["15 分鐘", "30 分鐘", "45 分鐘", "60 分鐘"],
     cancel: "取消",
     confirmOk: "確定重置",
@@ -53,14 +57,15 @@ const I18N = {
     weeklyTitle: "过去 7 天",
     labelInterval: "提醒间隔",
     labelGoal: "每日目标 (ml)",
-    labelEnabled: "提醒通知",
-    labelSound: "音效回馈",
+    labelEnabled: "定时提醒",
+    enabledNote: "关闭后不会出现水杯与横幅通知。",
+    labelSound: "音效反馈",
     labelVolume: "音量",
     drinkBtn: (ml) => `+${ml} ml`,
     testBtn: "立即测试",
     exportBtn: "导出数据",
     resetBtn: "重置记录",
-    resetConfirm: "确定要重置所有饮水记录吗？此操作无法撤销。",
+    resetConfirm: "确定要重置所有饮水记录吗？此操作无法恢复。",
     noData: "暂无历史数据",
     days: ["日", "一", "二", "三", "四", "五", "六"],
     prefThemeTitle: "界面风格",
@@ -83,6 +88,9 @@ const I18N = {
     autoStartNote: "开启后，电脑开机时自动在背景启动提醒。",
     labelDrinkMl: "每次饮水量 (ml)",
     drinkMlNote: "每次长按水杯记录的毫升数。",
+    labelHoldSpeed: "长按速度",
+    holdSpeedNote: "倍率越高，长按喝水越快完成。",
+    labelBanner: "横幅通知",
     intervalOpts: ["15 分钟", "30 分钟", "45 分钟", "60 分钟"],
     cancel: "取消",
     confirmOk: "确定重置",
@@ -97,7 +105,8 @@ const I18N = {
     weeklyTitle: "Last 7 Days",
     labelInterval: "Interval",
     labelGoal: "Daily goal (ml)",
-    labelEnabled: "Notifications",
+    labelEnabled: "Reminders",
+    enabledNote: "When off, no cup or banner notification will appear.",
     labelSound: "Sound",
     labelVolume: "Volume",
     drinkBtn: (ml) => `+${ml} ml`,
@@ -127,6 +136,9 @@ const I18N = {
     autoStartNote: "Start the reminder when your computer boots.",
     labelDrinkMl: "Drink amount (ml)",
     drinkMlNote: "Milliliters recorded per drink action.",
+    labelHoldSpeed: "Hold speed",
+    holdSpeedNote: "Higher = faster to complete a long-press drink.",
+    labelBanner: "Banner notification",
     intervalOpts: ["15 min", "30 min", "45 min", "60 min"],
     cancel: "Cancel",
     confirmOk: "Reset",
@@ -141,7 +153,8 @@ const I18N = {
     weeklyTitle: "過去 7 日間",
     labelInterval: "間隔",
     labelGoal: "1日の目標 (ml)",
-    labelEnabled: "通知",
+    labelEnabled: "リマインダー",
+    enabledNote: "オフにするとコップもバナー通知も表示されません。",
     labelSound: "サウンド",
     labelVolume: "音量",
     drinkBtn: (ml) => `+${ml} ml`,
@@ -171,6 +184,9 @@ const I18N = {
     autoStartNote: "PC起動時にバックグラウンドで起動します。",
     labelDrinkMl: "1回の量 (ml)",
     drinkMlNote: "1回あたりの記録量。",
+    labelHoldSpeed: "長押し速度",
+    holdSpeedNote: "倍率が高いほど長押しが早く完了します。",
+    labelBanner: "バナー通知",
     intervalOpts: ["15 分", "30 分", "45 分", "60 分"],
     cancel: "キャンセル",
     confirmOk: "リセット",
@@ -201,6 +217,9 @@ const $langSelect = document.getElementById("langSelect");
 const $autoStartToggle = document.getElementById("autoStartToggle");
 const $drinkMl = document.getElementById("drinkMl");
 const $drinkBtn = document.getElementById("drinkBtn");
+const $holdSpeedSlider = document.getElementById("holdSpeedSlider");
+const $holdSpeedLabel = document.getElementById("holdSpeedLabel");
+const $bannerToggle = document.getElementById("bannerToggle");
 
 // ===== Toggle helper =====
 function setToggle(el, on) {
@@ -306,6 +325,8 @@ function applyLang(lang) {
   document.getElementById("labelInterval").textContent = t("labelInterval");
   document.getElementById("labelGoal").textContent = t("labelGoal");
   document.getElementById("labelEnabled").textContent = t("labelEnabled");
+  document.getElementById("enabledNote").textContent = t("enabledNote");
+  document.getElementById("labelBanner").textContent = t("labelBanner");
   document.getElementById("labelSound").textContent = t("labelSound");
   document.getElementById("labelVolume").textContent = t("labelVolume");
   $drinkBtn.textContent = t("drinkBtn")(currentDrinkMl);
@@ -329,6 +350,8 @@ function applyLang(lang) {
   document.getElementById("autoStartNote").textContent = t("autoStartNote");
   document.getElementById("labelDrinkMl").textContent = t("labelDrinkMl");
   document.getElementById("drinkMlNote").textContent = t("drinkMlNote");
+  document.getElementById("labelHoldSpeed").textContent = t("labelHoldSpeed");
+  document.getElementById("holdSpeedNote").textContent = t("holdSpeedNote");
 
   const opts = t("intervalOpts");
   $intervalMin.querySelectorAll("option").forEach((opt, i) => { opt.textContent = opts[i]; });
@@ -360,6 +383,15 @@ $drinkMl.addEventListener("change", () => {
   currentDrinkMl = val;
   $drinkBtn.textContent = t("drinkBtn")(val);
   window.api.setPrefs({ drinkMl: val });
+});
+
+$holdSpeedSlider.addEventListener("input", () => {
+  $holdSpeedLabel.textContent = $holdSpeedSlider.value + "x";
+});
+$holdSpeedSlider.addEventListener("change", () => {
+  const speed = parseFloat($holdSpeedSlider.value);
+  $holdSpeedLabel.textContent = speed + "x";
+  window.api.setPrefs({ holdSpeed: speed });
 });
 
 // ===== Drink button =====
@@ -465,6 +497,12 @@ async function loadPrefs() {
   currentDrinkMl = prefs.drinkMl || 300;
   $drinkMl.value = currentDrinkMl;
   $drinkBtn.textContent = t("drinkBtn")(currentDrinkMl);
+
+  const speed = prefs.holdSpeed || 1;
+  $holdSpeedSlider.value = speed;
+  $holdSpeedLabel.textContent = speed + "x";
+
+  setToggle($bannerToggle, prefs.bannerEnabled !== false);
 }
 
 async function refresh() {
@@ -487,6 +525,10 @@ $intervalMin.addEventListener("change", () => {
 
 bindToggle($enabledToggle, true, () => {
   window.api.toggleEnabled();
+});
+
+bindToggle($bannerToggle, true, (on) => {
+  window.api.setPrefs({ bannerEnabled: on });
 });
 
 $dailyGoal.addEventListener("change", () => {

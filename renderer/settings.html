@@ -585,12 +585,20 @@
         </div>
         <input type="number" class="setting-number" id="dailyGoal" value="2000" min="500" max="5000" step="100">
       </div>
-      <div class="setting-item">
+      <div class="setting-item" style="flex-wrap:wrap;">
         <div class="setting-info">
           <div class="dot-blue"></div>
           <span id="labelEnabled"></span>
         </div>
         <div class="toggle on" id="enabledToggle" role="switch" tabindex="0" aria-checked="true"><div class="toggle-knob"></div></div>
+        <p class="pref-note" id="enabledNote" style="width:100%;margin-top:6px;margin-bottom:0;padding-left:16px;"></p>
+      </div>
+      <div class="setting-item">
+        <div class="setting-info">
+          <div class="dot-blue"></div>
+          <span id="labelBanner"></span>
+        </div>
+        <div class="toggle on" id="bannerToggle" role="switch" tabindex="0" aria-checked="true"><div class="toggle-knob"></div></div>
       </div>
       <div class="setting-item">
         <div class="setting-info">
@@ -688,6 +696,17 @@
         <input type="number" class="setting-number" id="drinkMl" value="300" min="50" max="1000" step="50">
       </div>
       <p class="pref-note" id="drinkMlNote"></p>
+      <div class="setting-item" style="margin-top:8px;">
+        <div class="setting-info">
+          <div class="dot-yellow"></div>
+          <span id="labelHoldSpeed"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="range" id="holdSpeedSlider" min="1" max="5" step="0.5" value="1" style="width:90px;accent-color:var(--accent-color);">
+          <span id="holdSpeedLabel" style="font-size:12px;min-width:28px;color:var(--text-sub);">1x</span>
+        </div>
+      </div>
+      <p class="pref-note" id="holdSpeedNote"></p>
     </div>
   </div>
 

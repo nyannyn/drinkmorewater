@@ -1,5 +1,6 @@
 // ===== 常數 =====
-const HOLD_DURATION_MS = 3000; // 長按 3 秒 = 300ml
+const BASE_HOLD_DURATION_MS = 3000; // 基礎長按時長 3 秒
+let holdDurationMs = BASE_HOLD_DURATION_MS;
 const MAX_ML = 300;
 const TICK_INTERVAL = 50;
 const SHATTER_TIMEOUT_MS = 60000; // 1 分鐘不理會自動碎裂
@@ -143,6 +144,7 @@ async function maybePlayDing() {
 function activateThirstMode(payload) {
   if (payload && payload.cupStyle) applyCupStyle(payload.cupStyle);
   if (payload && payload.lang) cupLang = payload.lang;
+  if (payload && payload.holdSpeed) holdDurationMs = BASE_HOLD_DURATION_MS / payload.holdSpeed;
   if (isThirsty) return;
   isThirsty = true;
 
@@ -339,7 +341,7 @@ function startHold(e) {
 
   holdTimer = setInterval(() => {
     const elapsed = Date.now() - holdStart;
-    const progress = Math.min(elapsed / HOLD_DURATION_MS, 1);
+    const progress = Math.min(elapsed / holdDurationMs, 1);
 
     setWaterLevel(progress);
     progressFg.style.strokeDashoffset = circumference * (1 - progress);
@@ -357,7 +359,7 @@ function endHold() {
   if (!isHolding) return;
 
   const elapsed = Date.now() - holdStart;
-  const progress = Math.min(elapsed / HOLD_DURATION_MS, 1);
+  const progress = Math.min(elapsed / holdDurationMs, 1);
 
   isHolding = false;
   clearInterval(holdTimer);

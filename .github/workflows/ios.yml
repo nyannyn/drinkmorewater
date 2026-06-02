@@ -149,3 +149,60 @@ jobs:
           name: ios-simulator-screenshots
           path: screenshots/
           if-no-files-found: warn
+
+  package-ipa:
+    name: 打包未簽署 .ipa（供 Sideloadly / SideStore 重簽）
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 安裝相依
+        working-directory: mobile
+        run: npm install
+
+      - name: Prebuild（產生 ios/ 原生專案並安裝 Pods）
+        working-directory: mobile
+        run: npx expo prebuild --platform ios
+
+      - name: Xcode 編譯（未簽署，Release，iOS 實機 arm64）
+        working-directory: mobile/ios
+        run: |
+          set -eo pipefail
+          WORKSPACE=$(ls -d *.xcworkspace | head -n1)
+          SCHEME=$(xcodebuild -list -json -workspace "$WORKSPACE" \
+            | python3 -c "import json,sys; print(json.load(sys.stdin)['workspace']['schemes'][0])")
+          echo "Workspace=$WORKSPACE  Scheme=$SCHEME"
+          # 為實機 (iphoneos) 編譯但完全不簽署；簽署交給 Sideloadly / SideStore 用使用者的 Apple ID 完成
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: 打包成 .ipa（Payload/）
+        working-directory: mobile/ios
+        run: |
+          set -eo pipefail
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          echo "App bundle: $APP"
+          rm -rf payload && mkdir -p payload/Payload
+          cp -R "$APP" payload/Payload/
+          ( cd payload && zip -qr "$GITHUB_WORKSPACE/drinkwater-unsigned.ipa" Payload )
+          ls -lh "$GITHUB_WORKSPACE/drinkwater-unsigned.ipa"
+
+      - name: 上傳未簽署 .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: drinkwater-unsigned.ipa
+          if-no-files-found: error

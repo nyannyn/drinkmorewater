@@ -16,9 +16,10 @@ interface Props {
   scheduledCount: number;
   onPatch: (patch: Partial<AppData>) => void;
   onReset: () => void;
+  onTest: () => void;
 }
 
-export default function SettingsScreen({ data, scheduledCount, onPatch, onReset }: Props) {
+export default function SettingsScreen({ data, scheduledCount, onPatch, onReset, onTest }: Props) {
   const s = t(data.lang);
   const [goal, setGoal] = useState(String(data.dailyGoalMl));
   const [start, setStart] = useState(data.activeStart);
@@ -124,6 +125,10 @@ export default function SettingsScreen({ data, scheduledCount, onPatch, onReset 
 
       <Text style={styles.scheduled}>{s.scheduled(scheduledCount)}</Text>
 
+      <Pressable style={styles.testBtn} onPress={onTest}>
+        <Text style={styles.testText}>🔔 {s.testNotif}</Text>
+      </Pressable>
+
       <Pressable style={styles.resetBtn} onPress={confirmReset}>
         <Text style={styles.resetText}>{s.reset}</Text>
       </Pressable>
@@ -146,6 +151,16 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10, fontSize: 16 },
   hint: { color: "#999", fontSize: 12, marginTop: 4 },
   scheduled: { marginTop: 24, color: "#1B6FC4", fontSize: 14 },
+  testBtn: {
+    marginTop: 14,
+    alignSelf: "flex-start",
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#4DA3FF",
+  },
+  testText: { color: "#1B6FC4", fontSize: 15, fontWeight: "500" },
   resetBtn: { marginTop: 16, alignSelf: "flex-start" },
   resetText: { color: "#E5534B", fontSize: 15 },
 });

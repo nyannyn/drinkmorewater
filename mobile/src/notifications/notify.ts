@@ -95,3 +95,25 @@ export async function rescheduleReminders(): Promise<number> {
 export async function cancelAllReminders() {
   await Notifications.cancelAllScheduledNotificationsAsync();
 }
+
+// 立即測試：數秒後送一則通知，方便在實機驗證送達、外觀、音效與
+// 「我喝了」動作鈕。用目前語言文字；切語言後再按即可比對 4 語外觀。
+// 不影響既有排程（用獨立的一次性 TIME_INTERVAL trigger）。
+export async function sendTestNotification(delaySec = 3): Promise<void> {
+  const data = await loadData();
+  await registerCategory(data.lang);
+  const s = t(data.lang);
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: s.notifyTitle,
+      body: s.notifyBody,
+      sound: data.soundEnabled,
+      categoryIdentifier: CATEGORY_ID,
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: Math.max(1, delaySec),
+      repeats: false,
+    },
+  });
+}

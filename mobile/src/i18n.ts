@@ -20,6 +20,7 @@ export interface Strings {
   drinkAmount: string;
   sound: string;
   language: string;
+  testNotif: string;
   weekly: string;
   reset: string;
   resetConfirm: string;
@@ -53,6 +54,7 @@ const STRINGS: Record<string, Strings> = {
     drinkAmount: "每次飲水量 (ml)",
     sound: "通知音效",
     language: "語言",
+    testNotif: "傳送測試通知",
     weekly: "過去 7 天",
     reset: "重置資料",
     resetConfirm: "確定要清除所有飲水資料嗎？",
@@ -82,6 +84,7 @@ const STRINGS: Record<string, Strings> = {
     drinkAmount: "每次饮水量 (ml)",
     sound: "通知音效",
     language: "语言",
+    testNotif: "发送测试通知",
     weekly: "过去 7 天",
     reset: "重置数据",
     resetConfirm: "确定要清除所有饮水数据吗？",
@@ -111,6 +114,7 @@ const STRINGS: Record<string, Strings> = {
     drinkAmount: "Drink amount (ml)",
     sound: "Notification sound",
     language: "Language",
+    testNotif: "Send test notification",
     weekly: "Last 7 days",
     reset: "Reset data",
     resetConfirm: "Clear all hydration data?",
@@ -140,6 +144,7 @@ const STRINGS: Record<string, Strings> = {
     drinkAmount: "1回の量 (ml)",
     sound: "通知音",
     language: "言語",
+    testNotif: "テスト通知を送信",
     weekly: "過去 7 日間",
     reset: "リセット",
     resetConfirm: "すべての記録を消去しますか？",

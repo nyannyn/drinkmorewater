@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  mobile-core-tests:
+    name: 手機版核心邏輯測試
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # 排程/統計純邏輯不依賴外部套件，免 npm install，直接以 node 型別剝離執行。
+      - name: Run mobile core unit tests
+        working-directory: mobile
+        run: node --experimental-strip-types --test "src/core/__tests__/*.test.ts"

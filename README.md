@@ -16,8 +16,12 @@
 | **Windows（免安裝）** | `喝水提醒 x.y.z.exe` | 下載後直接雙擊即可使用，不需安裝 |
 | **Linux** | `.AppImage` | `chmod +x` 後直接執行，適用大多數發行版 |
 | **Linux (Debian/Ubuntu)** | `.deb` | `sudo apt install ./檔名.deb` |
+| **macOS (Apple Silicon)** | `drink-water-reminder-x.y.z-arm64.dmg` | M 系列晶片，開啟 DMG 後拖入「應用程式」 |
+| **macOS (Intel)** | `drink-water-reminder-x.y.z-x64.dmg` | Intel 晶片，開啟 DMG 後拖入「應用程式」 |
 
-> 💡 安裝完成後，應用程式會常駐在系統托盤（Windows 工作列右下角 / Linux 通知區域）。左鍵點擊托盤圖示可開啟設定與統計面板。
+> 💡 安裝完成後，應用程式會常駐在系統托盤（Windows 工作列右下角 / Linux 通知區域 / macOS 選單列）。左鍵點擊托盤圖示可開啟設定與統計面板。
+>
+> 🍎 macOS 版未經 Apple 簽署，首次開啟若被擋下，請至「系統設定 → 隱私權與安全性」按「仍要開啟」，或在 App 上按右鍵選「打開」。
 
 ## 功能
 

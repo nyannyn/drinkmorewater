@@ -14,7 +14,7 @@
 | 技術 | Electron 31，vanilla HTML/CSS/JS | React Native / Expo（TypeScript）|
 | 位置 | `electron/` + `renderer/` | `mobile/` |
 | 提醒機制 | 主行程 `setTimeout` 計時 | `expo-notifications` 預排 OS 本地通知 |
-| 狀態 | 已發行（release.yml 出 Win/Linux）| 尚未上架（需 macOS / EAS build）|
+| 狀態 | 已發行（release.yml 出 Win/Linux/macOS）| 尚未上架（需 macOS / EAS build）|
 
 ## 桌面版架構
 
@@ -45,7 +45,7 @@
 
 - 桌面開發：`npm start`（自動熱重載；`DRINK_DEV=0` 關閉）。
 - 桌面打包：`npm run dist:win|dist:linux|dist:mac`。
-- 發版：推 tag `v*` → `.github/workflows/release.yml` 自動 build Win/Linux 並建 GitHub Release（含 SHA256 / VirusTotal）。
+- 發版：推 tag `v*` → `.github/workflows/release.yml` 自動 build Win/Linux/macOS 並建 GitHub Release（含 SHA256 / VirusTotal；macOS 於 `macos-latest` 上產出未簽名 dmg/zip）。
 - 手機測試：`cd mobile && npm test`（純邏輯，免模擬器）；實機需 `expo run:ios` 或 EAS build（需 macOS 或 Expo 帳號）。
 - CI：`.github/workflows/ci.yml` 對 main 的 PR/push 跑手機版核心測試。
 

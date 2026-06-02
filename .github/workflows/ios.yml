@@ -1,0 +1,63 @@
+name: iOS Build (unsigned)
+
+# 在 GitHub 託管的 macOS runner 上實際編譯 iOS app。
+# 產出未簽署的模擬器版（CODE_SIGNING_ALLOWED=NO），故不需 Apple 開發者憑證，
+# 用來驗證整條 Expo prebuild → Xcode 編譯鏈在 CI 上可行。
+# 公開 repo 使用 GitHub 託管 runner（含 macOS）免費、無額度上限。
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: iOS 編譯（未簽署 / 模擬器）
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 顯示建置環境
+        run: |
+          echo "=== macOS ==="
+          sw_vers
+          echo "=== Xcode ==="
+          xcodebuild -version
+          echo "=== Node / npm ==="
+          node -v && npm -v
+
+      - name: 安裝相依
+        working-directory: mobile
+        run: npm install
+
+      - name: 核心邏輯單元測試
+        working-directory: mobile
+        run: node --experimental-strip-types --test "src/core/__tests__/*.test.ts"
+
+      - name: Prebuild（產生 ios/ 原生專案並安裝 Pods）
+        working-directory: mobile
+        run: npx expo prebuild --platform ios
+
+      - name: Xcode 編譯（未簽署，iOS Simulator）
+        working-directory: mobile/ios
+        run: |
+          set -eo pipefail
+          WORKSPACE=$(ls -d *.xcworkspace | head -n1)
+          SCHEME=$(xcodebuild -list -json -workspace "$WORKSPACE" \
+            | python3 -c "import json,sys; print(json.load(sys.stdin)['workspace']['schemes'][0])")
+          echo "Workspace=$WORKSPACE  Scheme=$SCHEME"
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build

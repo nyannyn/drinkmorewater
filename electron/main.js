@@ -428,6 +428,11 @@ function setupAutoUpdater() {
 
 // ===== 啟動 =====
 app.whenReady().then(() => {
+  // 開發熱重載：未打包時啟用（DRINK_DEV=0 可關閉）；正式打包版不載入。
+  if (!app.isPackaged && process.env.DRINK_DEV !== "0") {
+    require("./dev-reload").enableDevReload();
+  }
+
   // macOS: 隱藏 dock 圖示，純選單列 app（對應 Win/Linux 的 tray-only 行為）
   if (process.platform === "darwin" && app.dock) app.dock.hide();
 

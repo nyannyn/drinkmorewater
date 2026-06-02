@@ -27,6 +27,17 @@ npm install      # 安裝相依（會下載 Electron 二進位，需網路）
 npm start        # 啟動 App（出現托盤水滴圖示）
 ```
 
+### 熱重載（開發測試）
+
+未打包執行（`npm start` / `npm run dev`）時會**自動啟用熱重載**，免裝任何額外工具：
+
+- 改 `renderer/`（水杯、設定畫面的 HTML / CSS / JS）→ 視窗**即時重載**
+- 改 `electron/`（`main.js` / `store.js` / preload）→ App **自動重啟**
+
+存檔即可看到變化。要暫時關閉熱重載：`DRINK_DEV=0 npm start`。正式打包版（`npm run dist:*`）不會載入此機制。
+
+> 💡 測試提醒最快的方式：托盤右鍵 →「立即提醒（測試）」可直接觸發水杯與系統通知，不必等計時器。
+
 ## 打包成 Windows 安裝程式
 
 ```bash

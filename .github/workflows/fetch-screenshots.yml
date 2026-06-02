@@ -1,0 +1,35 @@
+name: Fetch screenshots into repo
+
+# 一次性：把既有 run 的模擬器截圖 artifact 下載並 commit 進分支，
+# 方便在無法直連 artifact 儲存體的環境（如開發容器）直接取得圖檔。
+on:
+  push:
+    branches: ["claude/**"]
+    paths:
+      - ".github/workflows/fetch-screenshots.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios-simulator-screenshots
+          path: screenshots
+          run-id: 26838366604
+          repository: nyannyn/drinkmorewater
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit 截圖
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add screenshots
+          git commit -m "加入 iOS 模擬器截圖（供檢視）" || { echo "無變更"; exit 0; }
+          git push

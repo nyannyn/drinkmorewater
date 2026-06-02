@@ -3,6 +3,7 @@ Thumbs.db
 *.crx
 *.pem
 .claude/
+CLAUDE.local.md
 node_modules/
 dist/
 cup-styles-preview.*

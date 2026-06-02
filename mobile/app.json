@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "喝水提醒",
+    "slug": "drink-water-reminder",
+    "version": "1.4.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "drinkwater",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#E8F4FD"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.drinkmorewater.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "UIBackgroundModes": [],
+        "NSUserNotificationsUsageDescription": "用於在喝水時間提醒你補充水分。"
+      }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#4DA3FF"
+        }
+      ]
+    ]
+  }
+}

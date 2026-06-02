@@ -3,6 +3,8 @@
 一款常駐系統托盤的喝水提醒軟體，時間到會在桌面右下角浮現一個搖晃的水杯，長按 3 秒喝水，並追蹤每日 / 每週飲水量。以 [Electron](https://www.electronjs.org/) 打包成可下載安裝的 **Windows / Linux / macOS** 應用程式。
 
 > 本專案原為 Chrome 擴充功能，已改寫為桌面應用程式。原擴充程式的水杯動畫、音效與統計邏輯皆完整保留。
+>
+> 📱 **iOS 手機版**（React Native / Expo，原生本地排程通知）位於 [`mobile/`](mobile/README.md)。
 
 ## 功能
 

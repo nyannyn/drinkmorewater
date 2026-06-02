@@ -1,0 +1,28 @@
+{
+  "name": "drink-water-reminder-mobile",
+  "version": "1.4.0",
+  "description": "喝水提醒 — iOS 手機版（React Native / Expo），原生本地排程通知",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "ios": "expo run:ios",
+    "prebuild": "expo prebuild --platform ios",
+    "build:ios": "eas build --platform ios",
+    "test": "node --experimental-strip-types --test src/core/__tests__/*.test.ts"
+  },
+  "dependencies": {
+    "expo": "~52.0.0",
+    "expo-notifications": "~0.29.11",
+    "expo-device": "~7.0.1",
+    "expo-status-bar": "~2.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.5",
+    "@react-native-async-storage/async-storage": "1.23.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2",
+    "@types/react": "~18.3.12",
+    "typescript": "~5.3.3"
+  },
+  "private": true
+}

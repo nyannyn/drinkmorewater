@@ -3,6 +3,7 @@ import * as Device from "expo-device";
 import { Platform } from "react-native";
 import { loadData } from "../core/storage";
 import { computeReminderTimes } from "../core/schedule";
+import { t } from "../i18n";
 
 export const CATEGORY_ID = "drink-reminder";
 export const ACTION_DRANK = "DRANK";
@@ -19,12 +20,14 @@ export function configureForegroundHandler() {
   });
 }
 
-// 註冊通知類別：附「我喝了 💧」動作鈕，點了不必開 App 即可記錄。
-export async function registerCategory() {
+// 註冊通知類別：附「我喝了」動作鈕，點了不必開 App 即可記錄。
+// 動作鈕文字依語言本地化；語言切換後重排時會重新註冊。
+export async function registerCategory(lang?: string) {
+  const s = t(lang ?? (await loadData()).lang);
   await Notifications.setNotificationCategoryAsync(CATEGORY_ID, [
     {
       identifier: ACTION_DRANK,
-      buttonTitle: "我喝了 💧",
+      buttonTitle: s.drankAction,
       options: { opensAppToForeground: false },
     },
   ]);
@@ -61,6 +64,10 @@ export async function rescheduleReminders(): Promise<number> {
   const data = await loadData();
   if (!data.enabled) return 0;
 
+  // 重新註冊類別，確保「我喝了」動作鈕文字符合目前語言。
+  await registerCategory(data.lang);
+  const s = t(data.lang);
+
   const times = computeReminderTimes({
     now: new Date(),
     intervalMin: data.intervalMin,
@@ -71,8 +78,8 @@ export async function rescheduleReminders(): Promise<number> {
   for (const date of times) {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: "💧 該喝水了！",
-        body: "你已經很久沒喝水了，記得補充水分哦！",
+        title: s.notifyTitle,
+        body: s.notifyBody,
         sound: data.soundEnabled,
         categoryIdentifier: CATEGORY_ID,
       },

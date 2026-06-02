@@ -35,8 +35,9 @@
 
 ## 手機版架構（mobile/）
 
-- `src/core/` — 平台無關純邏輯：`schedule.ts`（排程時間計算、活躍時段、iOS 64 則上限）、`tracking.ts`（跨日重設/記錄/週統計）、`storage.ts`（AsyncStorage）、`types.ts`。含 `__tests__`（node:test，5 項）。
-- `src/notifications/notify.ts` — 權限、通知類別（「我喝了」動作鈕）、排程/取消。
+- `src/core/` — 平台無關純邏輯：`schedule.ts`（排程時間計算、活躍時段、iOS 64 則上限）、`tracking.ts`（跨日重設/記錄/週統計）、`storage.ts`（AsyncStorage）、`types.ts`。含 `__tests__`（node:test，schedule 5 項 + i18n 3 項）。
+- `src/i18n.ts` — 4 語字串表（繁中/簡中/英/日，沿用桌面語氣），含通知文字與週圖星期縮寫；設定頁可切換，通知/週圖隨語言本地化。
+- `src/notifications/notify.ts` — 權限、通知類別（「我喝了」動作鈕，文字本地化）、排程/取消。
 - `App.tsx` — 權限流程、通知回應監聽、進前景重排。
 - 關鍵：手機背景無法用 setTimeout → 預先算一批時間點交給 OS，進前景補排。
 

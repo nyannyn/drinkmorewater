@@ -8,8 +8,8 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { AppData, INTERVAL_OPTIONS } from "../core/types";
-import { t } from "../i18n";
+import { AppData, DRINK_OPTIONS, INTERVAL_OPTIONS } from "../core/types";
+import { LANGUAGES, t } from "../i18n";
 
 interface Props {
   data: AppData;
@@ -87,6 +87,34 @@ export default function SettingsScreen({ data, scheduledCount, onPatch, onReset 
         onEndEditing={() => onPatch({ dailyGoalMl: parseInt(goal, 10) || data.dailyGoalMl })}
         keyboardType="number-pad"
       />
+
+      {/* 每次飲水量 */}
+      <Text style={styles.label}>{s.drinkAmount}</Text>
+      <View style={styles.chips}>
+        {DRINK_OPTIONS.map((ml) => (
+          <Pressable
+            key={ml}
+            style={[styles.chip, data.drinkMl === ml && styles.chipOn]}
+            onPress={() => onPatch({ drinkMl: ml })}
+          >
+            <Text style={[styles.chipText, data.drinkMl === ml && styles.chipTextOn]}>{ml}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* 語言 */}
+      <Text style={styles.label}>{s.language}</Text>
+      <View style={styles.chips}>
+        {LANGUAGES.map((l) => (
+          <Pressable
+            key={l.code}
+            style={[styles.chip, data.lang === l.code && styles.chipOn]}
+            onPress={() => onPatch({ lang: l.code })}
+          >
+            <Text style={[styles.chipText, data.lang === l.code && styles.chipTextOn]}>{l.label}</Text>
+          </Pressable>
+        ))}
+      </View>
 
       {/* 音效 */}
       <View style={styles.row}>

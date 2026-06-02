@@ -7,8 +7,14 @@ name: iOS Build (unsigned)
 on:
   push:
     branches: [main, "claude/**"]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/ios.yml"
   pull_request:
     branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/ios.yml"
   workflow_dispatch:
 
 jobs:

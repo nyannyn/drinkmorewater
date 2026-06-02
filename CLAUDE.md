@@ -65,3 +65,10 @@
 - UI 視覺改動無法在 Linux 容器驗證，發版前建議在 Windows/macOS `npm start` 冒煙（切 4 語 × 5 主題 × 5 杯款 + 喝滿/碎裂/達標）。
 - GNOME 需 AppIndicator 擴充才顯示托盤；透明水杯需桌面合成。
 - 手機通知須實機測試；iOS 64 則待發上限以滾動預排因應。
+
+## 待辦
+
+- **macOS 簽署 + 公證**：目前 `release.yml` 的 `build-mac` 設 `CSC_IDENTITY_AUTO_DISCOVERY=false`，出的是**未簽名版**，使用者首次開啟需在「系統設定 → 隱私權與安全性」放行。若要正式簽署 + 公證（notarize），需在 repo Secrets 加：
+  - `CSC_LINK`（base64 的 Developer ID Application `.p12`）、`CSC_KEY_PASSWORD`（憑證密碼）
+  - Apple notarize 所需：`APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID`
+  - 並在 build 設定開啟 `mac.notarize` / hardened runtime + entitlements，移除上述 `CSC_IDENTITY_AUTO_DISCOVERY=false`。

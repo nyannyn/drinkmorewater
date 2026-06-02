@@ -74,6 +74,37 @@ npx eas submit --platform ios
 
 `ios/` 原生資料夾由 `npx expo prebuild` 產生,已列入 `.gitignore`(不入庫)。
 
+## 雲端 build（GitHub Actions，免 Mac）
+
+`.github/workflows/ios.yml` 會在 GitHub 託管的 `macos-latest` 上實際編譯本 app（公開 repo → macOS runner 免費、無額度上限）。只在 `mobile/**` 變動時觸發，也可在 Actions 頁手動 `Run workflow`。完成後產出兩個 artifact：
+
+| Artifact | 內容 | 用途 |
+|---|---|---|
+| `ios-simulator-screenshots` | 模擬器啟動截圖（`01-launch` / `02-home` / `03-settings`）| 看畫面 |
+| `ios-unsigned-ipa` | `drinkwater-unsigned.ipa`（未簽署實機版）| 自行用免費 Apple ID 側載 |
+
+整條不需任何 Apple 憑證（未簽署 Release，`CODE_SIGNING_ALLOWED=NO`）。
+
+### 怎麼下載 / 看截圖
+
+artifact 只能從 **github.com 網頁**下載（手機 GitHub App 不支援，改用瀏覽器並切「電腦版網站」）：
+
+1. 登入 GitHub → 進 **Actions** → 點該次 `iOS Build (unsigned)` run。
+2. 捲到頁面最下方 **Artifacts** 區，點 `ios-simulator-screenshots` 下載 zip。
+3. 解壓後得到 3 張 PNG，雙擊即可檢視。
+
+> 下載需登入且對 repo 有讀取權；artifact 預設保留約 90 天後過期。
+
+### 用未簽署 .ipa 側載到自己 iPhone（免費）
+
+1. 同上下載 `ios-unsigned-ipa` → 解壓得到 `drinkwater-unsigned.ipa`。
+2. 用免費 Apple ID 重簽安裝（擇一）：
+   - **Sideloadly**（Windows / Mac）：iPhone 接 USB → 拖入 .ipa → 填 Apple ID → Start。
+   - **SideStore**（裝置上自動續簽，首次仍需電腦設定一次）。
+3. 首次開啟前到「設定 → 一般 → VPN與裝置管理」信任開發者描述檔。
+
+> 免費簽署限制：**7 天到期**、一台機同時最多 3 個自簽 app。本 app 只用本地通知，不踩免費簽署「不能遠端推播」的限制，功能可正常運作。上 App Store / TestFlight 仍需 Apple Developer $99/年。
+
 ## iOS 通知注意事項
 
 - **權限**:首次啟動會彈出系統授權窗;拒絕後需到「設定 → 喝水提醒 → 通知」手動開啟。

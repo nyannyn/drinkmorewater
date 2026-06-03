@@ -1,0 +1,25 @@
+name: grab shots
+on:
+  push:
+    branches: ["tmp/**"]
+    paths: [".github/workflows/fetch-screenshots.yml"]
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios-simulator-screenshots
+          path: screenshots
+          run-id: 26859190227
+          repository: nyannyn/drinkmorewater
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add screenshots
+          git commit -m "tmp: iOS 截圖" || { echo "no changes"; exit 0; }
+          git push

@@ -50,6 +50,10 @@ jobs:
 
       - name: Xcode 編譯（未簽署，Release，iOS Simulator）
         working-directory: mobile/ios
+        # 截圖模式：JS bundle 內嵌時讀到此旗標 → App 跳過通知權限請求，
+        # 自動截圖才拍得到實際 UI（不影響 package-ipa 產出的正式 app）。
+        env:
+          EXPO_PUBLIC_SCREENSHOT: "1"
         run: |
           set -eo pipefail
           WORKSPACE=$(ls -d *.xcworkspace | head -n1)
@@ -94,13 +98,15 @@ jobs:
 
           xcrun simctl install "$UDID" "$APP"
           xcrun simctl launch "$UDID" "$BUNDLE_ID" || true
-          sleep 8
-          # 第一張：啟動畫面 / 權限詢問
-          xcrun simctl io "$UDID" screenshot "$OUT/01-launch.png" || true
+          # 截圖模式跳過權限框，等 RN 載入後直接是 Home 主畫面（含水杯 + 統計 + 週圖）
+          sleep 12
+          xcrun simctl io "$UDID" screenshot "$OUT/01-home.png" || true
 
-          # 用 idb 自動點掉通知權限對話框的「Allow / 允許」
+          # 安裝 idb，用來點底部「設定」分頁，截設定頁
           brew install idb-companion || true
-          pip3 install --quiet fb-idb || pip3 install --quiet --break-system-packages fb-idb || true
+          pipx install fb-idb 2>/dev/null || python3 -m pip install --user --break-system-packages fb-idb || true
+          export PATH="$HOME/.local/bin:$PATH"
+          idb list-targets || true
           if command -v idb >/dev/null 2>&1; then
             idb ui describe-all --udid "$UDID" --json > ui.json 2>/dev/null || true
             COORD=$(python3 -c "
@@ -110,35 +116,13 @@ jobs:
           except Exception:
               els=[]
           for e in els:
-              lbl=(e.get('AXLabel') or '')
-              if lbl in ('Allow','允許','允许','許可'):
+              if (e.get('AXLabel') or '') in ('設定','设置','Settings'):
                   f=e['frame']; print(int(f['x']+f['width']/2), int(f['y']+f['height']/2)); break
           ")
-            echo "Allow button coord: $COORD"
-            if [ -n "$COORD" ]; then idb ui tap --udid "$UDID" $COORD || true; fi
+            echo "Settings tab coord: $COORD"
+            if [ -n "$COORD" ]; then idb ui tap --udid "$UDID" $COORD || true; sleep 3; fi
           fi
-          sleep 6
-          # 第二張：應為 Home 主畫面
-          xcrun simctl io "$UDID" screenshot "$OUT/02-home.png" || true
-
-          # 切到設定分頁再截一張（點底部右側 tab，約螢幕下緣 3/4 寬處）
-          if command -v idb >/dev/null 2>&1; then
-            SIZE=$(xcrun simctl io "$UDID" enumerate 2>/dev/null | head -1 || true)
-            idb ui describe-all --udid "$UDID" --json > ui2.json 2>/dev/null || true
-            COORD2=$(python3 -c "
-          import json
-          try:
-              els=json.load(open('ui2.json'))
-          except Exception:
-              els=[]
-          for e in els:
-              if (e.get('AXLabel') or '') in ('設定','设置','Settings','設定 ','設置'):
-                  f=e['frame']; print(int(f['x']+f['width']/2), int(f['y']+f['height']/2)); break
-          ")
-            echo "Settings tab coord: $COORD2"
-            if [ -n "$COORD2" ]; then idb ui tap --udid "$UDID" $COORD2 || true; sleep 3; fi
-          fi
-          xcrun simctl io "$UDID" screenshot "$OUT/03-settings.png" || true
+          xcrun simctl io "$UDID" screenshot "$OUT/02-settings.png" || true
 
           ls -la "$OUT"
 

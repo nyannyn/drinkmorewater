@@ -56,10 +56,14 @@ export default function App() {
   useEffect(() => {
     (async () => {
       await registerCategory();
-      const granted = await requestPermissions();
-      if (!granted) {
-        const s = t(DEFAULTS.lang);
-        console.warn(s.permDenied);
+      // 截圖模式（EXPO_PUBLIC_SCREENSHOT=1，僅 CI 截圖 build 設定）跳過權限請求，
+      // 避免系統權限對話框擋住畫面，使自動截圖能拍到實際 UI。正式 build 不受影響。
+      if (process.env.EXPO_PUBLIC_SCREENSHOT !== "1") {
+        const granted = await requestPermissions();
+        if (!granted) {
+          const s = t(DEFAULTS.lang);
+          console.warn(s.permDenied);
+        }
       }
       await resetDailyIfNeeded();
       await reschedule();

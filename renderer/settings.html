@@ -708,6 +708,39 @@
       </div>
       <p class="pref-note" id="holdSpeedNote"></p>
     </div>
+
+    <!-- 跨裝置同步 -->
+    <div class="pref-section">
+      <div class="pref-section-title" id="prefSyncTitle"></div>
+      <p class="pref-note" id="syncDesc" style="padding-left:0;margin-bottom:10px;"></p>
+
+      <div class="setting-item" style="flex-direction:column;align-items:stretch;gap:8px;">
+        <span class="setting-info" id="labelSyncServer"></span>
+        <input type="text" class="setting-number" id="syncServerUrl" style="width:100%;text-align:left;" placeholder="https://your-server">
+      </div>
+
+      <div id="syncUnlinkedView" style="margin-top:10px;display:flex;flex-direction:column;gap:8px;">
+        <button class="btn btn-primary btn-large" id="syncCreateBtn"></button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="text" class="setting-number" id="syncCodeInput" style="flex:1;" inputmode="numeric" maxlength="6" placeholder="------">
+          <button class="btn btn-secondary" id="syncJoinBtn" style="white-space:nowrap;"></button>
+        </div>
+      </div>
+
+      <div id="syncLinkedView" style="margin-top:10px;display:none;flex-direction:column;gap:8px;">
+        <div class="setting-info" id="syncLinkedLabel" style="color:#2e9e5b;"></div>
+        <div id="syncCodeBox" style="display:none;text-align:center;padding:10px;background:var(--accent-light);border-radius:var(--radius-sm);">
+          <div id="syncIssuedCode" style="font-size:28px;font-weight:700;letter-spacing:6px;color:var(--accent-color);"></div>
+          <div class="pref-note" id="syncCodeHint" style="padding-left:0;"></div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" id="syncNowBtn" style="flex:1;"></button>
+          <button class="btn btn-secondary" id="syncCreateBtn2" style="flex:1;"></button>
+          <button class="btn btn-danger" id="syncUnlinkBtn" style="flex:1;"></button>
+        </div>
+      </div>
+      <p class="pref-note" id="syncError" style="color:#d32f2f;padding-left:0;display:none;"></p>
+    </div>
   </div>
 
   <!-- 主題化確認對話框 -->

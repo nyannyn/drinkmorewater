@@ -47,6 +47,16 @@ const I18N = {
     cancel: "取消",
     confirmOk: "確定重置",
     goalDone: "🎉 今日目標達成！",
+    prefSyncTitle: "跨裝置同步",
+    syncDesc: "與手機版／其他電腦共享飲水紀錄。",
+    labelSyncServer: "伺服器網址",
+    syncCreate: "產生配對碼",
+    syncJoin: "加入",
+    syncLinkedLabel: "✓ 已連動",
+    syncCodeHint: "在另一台裝置輸入此碼（10 分鐘內有效）",
+    syncNow: "立即同步",
+    syncUnlink: "解除連動",
+    syncError: "同步失敗，請確認網址與配對碼",
   },
   "zh-Hans": {
     tabMain: "统计",
@@ -95,6 +105,16 @@ const I18N = {
     cancel: "取消",
     confirmOk: "确定重置",
     goalDone: "🎉 今日目标达成！",
+    prefSyncTitle: "跨设备同步",
+    syncDesc: "与手机版／其他电脑共享饮水记录。",
+    labelSyncServer: "服务器网址",
+    syncCreate: "生成配对码",
+    syncJoin: "加入",
+    syncLinkedLabel: "✓ 已连动",
+    syncCodeHint: "在另一台设备输入此码（10 分钟内有效）",
+    syncNow: "立即同步",
+    syncUnlink: "解除连动",
+    syncError: "同步失败，请确认网址与配对码",
   },
   en: {
     tabMain: "Stats",
@@ -143,6 +163,16 @@ const I18N = {
     cancel: "Cancel",
     confirmOk: "Reset",
     goalDone: "🎉 Daily goal reached!",
+    prefSyncTitle: "CROSS-DEVICE SYNC",
+    syncDesc: "Share hydration data with the mobile app / other computers.",
+    labelSyncServer: "Server URL",
+    syncCreate: "Create pairing code",
+    syncJoin: "Join",
+    syncLinkedLabel: "✓ Linked",
+    syncCodeHint: "Enter this code on the other device (valid 10 min)",
+    syncNow: "Sync now",
+    syncUnlink: "Unlink",
+    syncError: "Sync failed — check the URL and code",
   },
   ja: {
     tabMain: "統計",
@@ -191,6 +221,16 @@ const I18N = {
     cancel: "キャンセル",
     confirmOk: "リセット",
     goalDone: "🎉 目標達成！",
+    prefSyncTitle: "デバイス間同期",
+    syncDesc: "スマホ版／他のPCと記録を共有します。",
+    labelSyncServer: "サーバー URL",
+    syncCreate: "ペアリングコード発行",
+    syncJoin: "参加",
+    syncLinkedLabel: "✓ 連携済み",
+    syncCodeHint: "別のデバイスでこのコードを入力（10 分間有効）",
+    syncNow: "今すぐ同期",
+    syncUnlink: "連携解除",
+    syncError: "同期に失敗しました。URL とコードを確認してください",
   },
 };
 
@@ -352,6 +392,17 @@ function applyLang(lang) {
   document.getElementById("drinkMlNote").textContent = t("drinkMlNote");
   document.getElementById("labelHoldSpeed").textContent = t("labelHoldSpeed");
   document.getElementById("holdSpeedNote").textContent = t("holdSpeedNote");
+
+  document.getElementById("prefSyncTitle").textContent = t("prefSyncTitle");
+  document.getElementById("syncDesc").textContent = t("syncDesc");
+  document.getElementById("labelSyncServer").textContent = t("labelSyncServer");
+  document.getElementById("syncCreateBtn").textContent = t("syncCreate");
+  document.getElementById("syncCreateBtn2").textContent = "+ " + t("syncCreate");
+  document.getElementById("syncJoinBtn").textContent = t("syncJoin");
+  document.getElementById("syncLinkedLabel").textContent = t("syncLinkedLabel");
+  document.getElementById("syncCodeHint").textContent = t("syncCodeHint");
+  document.getElementById("syncNowBtn").textContent = t("syncNow");
+  document.getElementById("syncUnlinkBtn").textContent = t("syncUnlink");
 
   const opts = t("intervalOpts");
   $intervalMin.querySelectorAll("option").forEach((opt, i) => { opt.textContent = opts[i]; });
@@ -598,3 +649,69 @@ document.getElementById("resetBtn").addEventListener("click", async () => {
   await window.api.resetData();
   refresh();
 });
+
+// ===== 跨裝置同步 =====
+const $syncServerUrl = document.getElementById("syncServerUrl");
+const $syncCodeInput = document.getElementById("syncCodeInput");
+const $syncError = document.getElementById("syncError");
+const $syncCodeBox = document.getElementById("syncCodeBox");
+const $syncIssuedCode = document.getElementById("syncIssuedCode");
+
+function setSyncView(linked) {
+  document.getElementById("syncUnlinkedView").style.display = linked ? "none" : "flex";
+  document.getElementById("syncLinkedView").style.display = linked ? "flex" : "none";
+  if (!linked) $syncCodeBox.style.display = "none";
+}
+
+function showSyncError(msg) {
+  $syncError.textContent = msg || t("syncError");
+  $syncError.style.display = msg === "" ? "none" : "block";
+}
+
+async function loadSyncStatus() {
+  const st = await window.api.syncStatus();
+  if (!st) return;
+  if (st.serverUrl) $syncServerUrl.value = st.serverUrl;
+  setSyncView(!!st.linked);
+}
+
+document.getElementById("syncCreateBtn").addEventListener("click", createCode);
+document.getElementById("syncCreateBtn2").addEventListener("click", createCode);
+async function createCode() {
+  showSyncError("");
+  const url = $syncServerUrl.value.trim();
+  if (!url) return showSyncError();
+  const res = await window.api.syncCreateCode(url);
+  if (!res || !res.ok) return showSyncError();
+  $syncIssuedCode.textContent = res.code;
+  $syncCodeBox.style.display = "block";
+  setSyncView(true);
+  refresh();
+}
+
+document.getElementById("syncJoinBtn").addEventListener("click", async () => {
+  showSyncError("");
+  const url = $syncServerUrl.value.trim();
+  const code = $syncCodeInput.value.trim();
+  if (!url || !code) return showSyncError();
+  const res = await window.api.syncClaimCode(url, code);
+  if (!res || !res.ok) return showSyncError();
+  $syncCodeInput.value = "";
+  setSyncView(true);
+  refresh();
+});
+
+document.getElementById("syncNowBtn").addEventListener("click", async () => {
+  showSyncError("");
+  const res = await window.api.syncNow();
+  if (!res || !res.ok) return showSyncError();
+  refresh();
+});
+
+document.getElementById("syncUnlinkBtn").addEventListener("click", async () => {
+  await window.api.syncUnlink();
+  setSyncView(false);
+  refresh();
+});
+
+loadSyncStatus();

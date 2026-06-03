@@ -14,6 +14,26 @@ const path = require("path");
 const fs = require("fs");
 const { autoUpdater } = require("electron-updater");
 const store = require("./store");
+const sync = require("./sync");
+
+// 同步後通知畫面與托盤刷新（fire-and-forget，失敗不影響離線使用）
+function triggerSync() {
+  sync
+    .sync()
+    .then((res) => {
+      if (res) {
+        refreshTray();
+        if (settingsWindow) settingsWindow.webContents.send("status-changed");
+      }
+    })
+    .catch(() => {});
+}
+
+// 設定變更：標記時間戳（供跨裝置 last-write-wins）並觸發同步
+function onSettingsChanged() {
+  sync.markSettingsChanged();
+  triggerSync();
+}
 
 // ===== 常數 =====
 const DEFAULT_INTERVAL_MIN = 30;
@@ -270,10 +290,12 @@ function handleDrinkComplete(ml) {
   store.set({ todayMl: newMl, todayCups: newCups });
   scheduleReminder(); // 喝完水重新計時
   refreshTray();
+  triggerSync(); // 推送本機新數據、拉回其他裝置
   return { todayMl: newMl, todayCups: newCups };
 }
 
-function getStatus() {
+// 顯示值疊加其他裝置貢獻（未連動時等同本機）。
+async function getStatus() {
   resetDailyIfNeeded();
   const d = store.get([
     "todayMl",
@@ -284,9 +306,10 @@ function getStatus() {
     "soundEnabled",
     "soundVolume",
   ]);
+  const disp = await sync.getDisplayTracking();
   return {
-    todayMl: d.todayMl ?? 0,
-    todayCups: d.todayCups ?? 0,
+    todayMl: disp.todayMl,
+    todayCups: disp.todayCups,
     intervalMin: d.intervalMin ?? DEFAULT_INTERVAL_MIN,
     enabled: d.enabled ?? true,
     dailyGoalMl: d.dailyGoalMl ?? DEFAULT_DAILY_GOAL_ML,
@@ -295,17 +318,13 @@ function getStatus() {
   };
 }
 
-function getWeeklyStats() {
+async function getWeeklyStats() {
   resetDailyIfNeeded();
-  const d = store.get(["weeklyLog", "todayMl", "todayCups", "lastDate", "dailyGoalMl"]);
-  const log = d.weeklyLog ?? [];
-  const today = {
-    date: d.lastDate ?? new Date().toDateString(),
-    ml: d.todayMl ?? 0,
-    cups: d.todayCups ?? 0,
-  };
+  const d = store.get(["dailyGoalMl"]);
+  const disp = await sync.getDisplayTracking();
+  const today = { date: disp.lastDate, ml: disp.todayMl, cups: disp.todayCups };
   return {
-    log: [...log, today],
+    log: [...disp.weeklyLog, today],
     dailyGoalMl: d.dailyGoalMl ?? DEFAULT_DAILY_GOAL_ML,
   };
 }
@@ -316,6 +335,7 @@ function toggleEnabled() {
   store.set({ enabled: next });
   scheduleReminder();
   refreshTray();
+  onSettingsChanged();
   if (settingsWindow) settingsWindow.webContents.send("status-changed");
   return { enabled: next };
 }
@@ -359,17 +379,20 @@ function registerIpc() {
     if (settings.intervalMin != null) {
       store.set({ intervalMin: settings.intervalMin });
       scheduleReminder();
+      onSettingsChanged();
     }
     return { ok: true };
   });
   ipcMain.handle("toggle-enabled", () => toggleEnabled());
   ipcMain.handle("set-sound-settings", (_e, { soundEnabled, soundVolume }) => {
     store.set({ soundEnabled, soundVolume });
+    onSettingsChanged();
     return { ok: true };
   });
   ipcMain.handle("set-daily-goal", (_e, dailyGoalMl) => {
     store.set({ dailyGoalMl });
     refreshTray();
+    onSettingsChanged();
     return { ok: true };
   });
   ipcMain.handle("test-reminder", () => {
@@ -426,6 +449,45 @@ function registerIpc() {
     }
     store.set(updates);
     if (prefs.lang != null) refreshTray(); // 語言改變即時更新托盤選單 / tooltip
+    // drinkMl / lang 屬於跨裝置同步的設定
+    if (prefs.drinkMl != null || prefs.lang != null) onSettingsChanged();
+    return { ok: true };
+  });
+
+  // ===== 跨裝置同步 IPC =====
+  ipcMain.handle("sync-status", async () => ({
+    linked: await sync.isLinked(),
+    serverUrl: await sync.getServerUrl(),
+  }));
+  ipcMain.handle("sync-create-code", async (_e, url) => {
+    try {
+      const { code } = await sync.createPairingCode(url);
+      triggerSync();
+      return { ok: true, code };
+    } catch (e) {
+      return { ok: false, error: String((e && e.message) || e) };
+    }
+  });
+  ipcMain.handle("sync-claim-code", async (_e, { url, code }) => {
+    try {
+      await sync.claimPairingCode(url, code);
+      triggerSync();
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: String((e && e.message) || e) };
+    }
+  });
+  ipcMain.handle("sync-now", async () => {
+    try {
+      await sync.sync();
+      refreshTray();
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: String((e && e.message) || e) };
+    }
+  });
+  ipcMain.handle("sync-unlink", async () => {
+    await sync.unlink();
     return { ok: true };
   });
 
@@ -513,6 +575,7 @@ app.whenReady().then(() => {
   createTray();
   createCupWindow();
   scheduleReminder();
+  triggerSync(); // 啟動時拉一次其他裝置數據
 
   // 同步開機自動啟動設定
   const { autoStart = false } = store.get(["autoStart"]);

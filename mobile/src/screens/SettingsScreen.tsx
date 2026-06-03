@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { AppData, DRINK_OPTIONS, INTERVAL_OPTIONS } from "../core/types";
 import { LANGUAGES, t } from "../i18n";
+import SyncSection from "./SyncSection";
 
 interface Props {
   data: AppData;
@@ -17,9 +18,10 @@ interface Props {
   onPatch: (patch: Partial<AppData>) => void;
   onReset: () => void;
   onTest: () => void;
+  onSynced: () => void;
 }
 
-export default function SettingsScreen({ data, scheduledCount, onPatch, onReset, onTest }: Props) {
+export default function SettingsScreen({ data, scheduledCount, onPatch, onReset, onTest, onSynced }: Props) {
   const s = t(data.lang);
   const [goal, setGoal] = useState(String(data.dailyGoalMl));
   const [start, setStart] = useState(data.activeStart);
@@ -122,6 +124,9 @@ export default function SettingsScreen({ data, scheduledCount, onPatch, onReset,
         <Text style={styles.label}>{s.sound}</Text>
         <Switch value={data.soundEnabled} onValueChange={(v) => onPatch({ soundEnabled: v })} />
       </View>
+
+      {/* 跨裝置同步 */}
+      <SyncSection lang={data.lang} onSynced={onSynced} />
 
       <Text style={styles.scheduled}>{s.scheduled(scheduledCount)}</Text>
 

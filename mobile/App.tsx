@@ -15,7 +15,8 @@ import * as Notifications from "expo-notifications";
 import HomeScreen from "./src/screens/HomeScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
 import { loadData, saveData } from "./src/core/storage";
-import { getWeeklyStats, handleDrinkComplete, resetDailyIfNeeded, resetData } from "./src/core/tracking";
+import { handleDrinkComplete, resetDailyIfNeeded, resetData } from "./src/core/tracking";
+import { getDisplayTracking, markSettingsChanged, runSync } from "./src/core/sync";
 import { AppData, DEFAULTS, DayLog } from "./src/core/types";
 import {
   ACTION_DRANK,
@@ -39,11 +40,24 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("home");
   const appState = useRef(AppState.currentState);
 
-  // 重新載入畫面資料（不重排通知）
+  // 重新載入畫面資料（不重排通知）。顯示值疊加其他裝置的貢獻（未連動時與本機相同）。
   const reload = useCallback(async () => {
-    setData(await loadData());
-    setWeekly(await getWeeklyStats());
+    const raw = await loadData();
+    const disp = await getDisplayTracking(raw);
+    setData({ ...raw, todayMl: disp.todayMl, todayCups: disp.todayCups, weeklyLog: disp.weeklyLog, lastDate: disp.lastDate });
+    setWeekly({
+      log: [...disp.weeklyLog, { date: disp.lastDate, ml: disp.todayMl, cups: disp.todayCups }],
+      dailyGoalMl: raw.dailyGoalMl,
+    });
   }, []);
+
+  // 與伺服器同步（若已連動）：拉回其他裝置數據、套用較新的遠端設定，再刷新畫面。
+  const doSync = useCallback(async () => {
+    const raw = await loadData();
+    const res = await runSync(raw);
+    if (res?.settingsToApply) await saveData(res.settingsToApply);
+    await reload();
+  }, [reload]);
 
   // 重排通知 + 更新畫面
   const reschedule = useCallback(async () => {
@@ -67,9 +81,10 @@ export default function App() {
       }
       await resetDailyIfNeeded();
       await reschedule();
+      await doSync();
       setReady(true);
     })();
-  }, [reschedule]);
+  }, [reschedule, doSync]);
 
   // 進前景：跨日重設並重排（補上背景期間消耗掉的通知）
   useEffect(() => {
@@ -77,11 +92,12 @@ export default function App() {
       if (appState.current.match(/inactive|background/) && next === "active") {
         await resetDailyIfNeeded();
         await reschedule();
+        await doSync();
       }
       appState.current = next;
     });
     return () => sub.remove();
-  }, [reschedule]);
+  }, [reschedule, doSync]);
 
   // 通知互動：按「我喝了」動作鈕或點通知 → 記錄並重排
   useEffect(() => {
@@ -90,22 +106,26 @@ export default function App() {
         await handleDrinkComplete();
       }
       await reschedule(); // 喝水後（或點開後）重排下一輪
+      await doSync();
       setTab("home");
     });
     return () => sub.remove();
-  }, [reschedule]);
+  }, [reschedule, doSync]);
 
   const onDrink = useCallback(async () => {
     await handleDrinkComplete();
     await reschedule();
-  }, [reschedule]);
+    await doSync();
+  }, [reschedule, doSync]);
 
   const onPatch = useCallback(
     async (patch: Partial<AppData>) => {
       await saveData(patch);
+      await markSettingsChanged(); // 標記設定變更，下次同步以較新時間戳覆蓋其他裝置
       await reschedule();
+      await doSync();
     },
-    [reschedule]
+    [reschedule, doSync]
   );
 
   const onReset = useCallback(async () => {
@@ -136,7 +156,7 @@ export default function App() {
         {tab === "home" ? (
           <HomeScreen data={data} weekly={weekly} onDrink={onDrink} />
         ) : (
-          <SettingsScreen data={data} scheduledCount={scheduled} onPatch={onPatch} onReset={onReset} onTest={onTest} />
+          <SettingsScreen data={data} scheduledCount={scheduled} onPatch={onPatch} onReset={onReset} onTest={onTest} onSynced={reload} />
         )}
       </View>
 

@@ -7,3 +7,7 @@ CLAUDE.local.md
 node_modules/
 dist/
 cup-styles-preview.*
+# 同步後端本機 DB
+server/*.sqlite
+server/*.sqlite-*
+server/data/

@@ -1,0 +1,19 @@
+# 從 repo 根目錄跑：docker compose -f server/docker-compose.yml up -d
+services:
+  sync:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    image: drinkwater-sync
+    container_name: drinkwater-sync
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    environment:
+      - PORT=8787
+      - DB_PATH=/data/data.sqlite
+    volumes:
+      - drinkwater-data:/data
+
+volumes:
+  drinkwater-data:

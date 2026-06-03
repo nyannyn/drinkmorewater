@@ -34,6 +34,24 @@
 - **系統托盤常駐** — 隨時開啟設定、立即測試、啟用 / 停用提醒
 - **閒置暫停** — 鎖屏 / 睡眠時自動暫停，回來後恢復
 - **資料匯出 / 重置** — 一鍵備份成 JSON
+- **跨裝置同步** — 桌面 ↔ 手機共享飲水紀錄（裝置配對碼，無需帳號）
+
+## 跨裝置同步（桌面 ↔ 手機）
+
+可選功能：把桌面與手機的飲水紀錄連動。多裝置各自離線記錄，同步後依日期正確加總，**不重複也不掉資料**；設定以最後變更為準。
+
+1. **自架後端**（零外部依賴，Node 22 內建 SQLite）：
+
+   ```bash
+   docker build -f server/Dockerfile -t drinkwater-sync .
+   docker run -d -p 8787:8787 -v drinkwater-data:/data drinkwater-sync
+   ```
+
+   建議擺在 HTTPS 反向代理後。詳見 [`server/README.md`](server/README.md)。
+
+2. **連動裝置**：在桌面「偏好 → 跨裝置同步」或手機「設定 → 跨裝置同步」填入伺服器網址，一台按「產生配對碼」，另一台輸入該 6 位碼即完成。
+
+> 不部署後端也完全不影響單機使用；同步純為加值選項。
 
 ## 開發 / 執行
 
@@ -112,11 +130,17 @@ drinkmorewater/
 ├── electron/
 │   ├── main.js             # 主行程：托盤、計時器、通知、IPC、閒置偵測
 │   ├── store.js            # JSON 檔資料儲存（取代 chrome.storage.local）
+│   ├── sync.js             # 同步層（包裝 shared/sync-client，store 為底）
 │   ├── preload-cup.js      # 水杯視窗 preload（contextBridge）
 │   └── preload-settings.js # 設定視窗 preload（contextBridge）
 ├── renderer/
 │   ├── cup.html / cup.js          # 透明懸浮水杯視窗（移植自 content.js + offscreen.js）
 │   └── settings.html / settings.js# 設定 / 統計視窗（移植自 popup.html/js）
+├── shared/                 # 跨平台共用純邏輯（桌面 / 手機 / 後端共用）
+│   ├── schema.js / tracking.js / merge.js / sync-client.js
+│   └── __tests__/          # node:test 單元測試
+├── server/                 # 同步後端（Node 內建 SQLite，零依賴，附 Dockerfile）
+├── mobile/                 # iOS 手機版（React Native / Expo）
 ├── build/
 │   ├── icon.png            # App / 托盤圖示（512px 水滴，Windows / 通用）
 │   ├── icons/              # Linux 多尺寸圖示集（16~512px）

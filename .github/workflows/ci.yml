@@ -17,6 +17,14 @@ jobs:
         with:
           node-version: 22
 
+      # 跨平台共用 core（schema/tracking/merge/sync-client）純函式測試。
+      - name: Run shared core unit tests
+        run: node --test "shared/__tests__/*.test.js"
+
+      # 同步後端端到端測試（起真伺服器 + 真 client，零外部依賴）。
+      - name: Run sync server integration tests
+        run: node --test "server/__tests__/*.test.js"
+
       # 排程/統計純邏輯不依賴外部套件，免 npm install，直接以 node 型別剝離執行。
       - name: Run mobile core unit tests
         working-directory: mobile

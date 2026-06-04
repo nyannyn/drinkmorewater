@@ -79,7 +79,8 @@
       ],
       "icon": "build/icon.png",
       "category": "public.app-category.healthcare-fitness",
-      "artifactName": "${name}-${version}-${arch}.${ext}"
+      "artifactName": "${name}-${version}-${arch}.${ext}",
+      "identity": null
     },
     "dmg": {
       "title": "喝水提醒"

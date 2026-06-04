@@ -1,6 +1,23 @@
 # 💧 喝水提醒 Drink Water Reminder（桌面版）
 
+[![最新版本](https://img.shields.io/github/v/release/nyannyn/drinkmorewater?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=00bcd4)](https://github.com/nyannyn/drinkmorewater/releases/latest)
+[![下載次數](https://img.shields.io/github/downloads/nyannyn/drinkmorewater/total?label=%E4%B8%8B%E8%BC%89%E6%AC%A1%E6%95%B8&color=4dd0e1)](https://github.com/nyannyn/drinkmorewater/releases/latest)
+
 一款常駐系統托盤的喝水提醒軟體，時間到會在桌面右下角浮現一個搖晃的水杯，長按 3 秒喝水，並追蹤每日 / 每週飲水量。以 [Electron](https://www.electronjs.org/) 打包成可下載安裝的 **Windows / Linux / macOS** 應用程式。
+
+### 🚀 快速下載
+
+> **[👉 前往下載頁面](https://nyannyn.github.io/drinkmorewater/)**（自動偵測你的系統）
+
+或手動選擇：
+
+| | 下載 |
+|---|---|
+| 🪟 **Windows** | [**安裝版 (.exe)**](https://github.com/nyannyn/drinkmorewater/releases/latest) |
+| 🍎 **macOS** | [**DMG 安裝映像**](https://github.com/nyannyn/drinkmorewater/releases/latest) |
+| 🐧 **Linux** | [**AppImage**](https://github.com/nyannyn/drinkmorewater/releases/latest) |
+
+---
 
 > 本專案原為 Chrome 擴充功能，已改寫為桌面應用程式。原擴充程式的水杯動畫、音效與統計邏輯皆完整保留。
 >

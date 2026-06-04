@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>💧 喝水提醒 — 下載</title>
+  <style>
+    :root { --cyan: #00bcd4; --cyan-light: #4dd0e1; --bg: #0a1628; --card: #132040; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: #e0e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .subtitle { color: #8aa0b8; margin-bottom: 2.5rem; font-size: 1.1rem; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      max-width: 800px;
+      width: 100%;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(77, 208, 225, 0.2);
+      border-radius: 16px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover { transform: translateY(-4px); border-color: var(--cyan-light); }
+    .card .icon { font-size: 3rem; margin-bottom: 1rem; }
+    .card h2 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .card p { color: #8aa0b8; font-size: 0.9rem; margin-bottom: 1.2rem; }
+    .btn {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--cyan), var(--cyan-light));
+      color: #fff;
+      font-weight: 600;
+      padding: 0.7rem 1.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .note {
+      max-width: 600px;
+      text-align: center;
+      color: #6a8098;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      margin-top: 1rem;
+    }
+    .note a { color: var(--cyan-light); text-decoration: none; }
+    .note a:hover { text-decoration: underline; }
+    .all-releases {
+      margin-top: 2rem;
+      color: var(--cyan-light);
+      text-decoration: none;
+      font-size: 0.95rem;
+    }
+    .all-releases:hover { text-decoration: underline; }
+    .detected { color: var(--cyan-light); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>💧 喝水提醒</h1>
+  <p class="subtitle">定時提醒喝水，追蹤每日飲水量</p>
+
+  <p id="detect" style="margin-bottom:1.5rem; font-size:0.95rem; color:#8aa0b8;"></p>
+
+  <div class="cards">
+    <div class="card" id="card-win">
+      <div class="icon">🪟</div>
+      <h2>Windows</h2>
+      <p>Windows 10 以上<br>安裝版 + 免安裝版</p>
+      <a class="btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest" id="btn-win">下載 Windows 版</a>
+    </div>
+    <div class="card" id="card-mac">
+      <div class="icon">🍎</div>
+      <h2>macOS</h2>
+      <p>支援 Intel 與 Apple Silicon<br>DMG 安裝映像</p>
+      <a class="btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest" id="btn-mac">下載 macOS 版</a>
+    </div>
+    <div class="card" id="card-linux">
+      <div class="icon">🐧</div>
+      <h2>Linux</h2>
+      <p>AppImage 通用格式<br>也有 .deb 安裝包</p>
+      <a class="btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest" id="btn-linux">下載 Linux 版</a>
+    </div>
+  </div>
+
+  <div class="note">
+    <p>🍎 macOS 未經 Apple 公證，首次開啟需到「系統設定 → 隱私權與安全性」點「仍要打開」。</p>
+    <p style="margin-top:0.5rem;">📱 手機版（iOS）開發中，詳見 <a href="https://github.com/nyannyn/drinkmorewater/tree/main/mobile">mobile/</a></p>
+  </div>
+
+  <a class="all-releases" href="https://github.com/nyannyn/drinkmorewater/releases">查看所有版本 →</a>
+
+  <script>
+    // Detect OS and highlight the relevant card
+    (function() {
+      const ua = navigator.userAgent || navigator.platform || '';
+      let os = '';
+      if (/Win/.test(ua)) os = 'win';
+      else if (/Mac/.test(ua)) os = 'mac';
+      else if (/Linux/.test(ua)) os = 'linux';
+
+      if (os) {
+        const labels = { win: 'Windows', mac: 'macOS', linux: 'Linux' };
+        document.getElementById('detect').innerHTML =
+          '偵測到你的系統：<span class="detected">' + labels[os] + '</span> — 建議下載對應版本';
+        const card = document.getElementById('card-' + os);
+        if (card) card.style.borderColor = 'rgba(77, 208, 225, 0.6)';
+      }
+    })();
+  </script>
+</body>
+</html>

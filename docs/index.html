@@ -510,6 +510,24 @@
       var btnMac = document.getElementById('btn-mac');
       var btnLinux = document.getElementById('btn-linux');
       var allBtns = [btnWin, btnMac, btnLinux];
+      var btnOs = { 'btn-win': 'win', 'btn-mac': 'mac', 'btn-linux': 'linux' };
+      var osLabels = { win: 'Windows', mac: 'macOS', linux: 'Linux' };
+
+      // Wrong-OS guard: confirm before downloading for a different platform
+      if (os) {
+        allBtns.forEach(function (btn) {
+          btn.addEventListener('click', function (e) {
+            var target = btnOs[btn.id];
+            if (target && target !== os) {
+              var ok = confirm(
+                '您目前使用的是 ' + osLabels[os] + '，確定要下載 ' + osLabels[target] + ' 版本嗎？\n\n' +
+                'You are on ' + osLabels[os] + '. Download the ' + osLabels[target] + ' version anyway?'
+              );
+              if (!ok) e.preventDefault();
+            }
+          });
+        });
+      }
 
       // Buttons already work with hardcoded v1.6.0 URLs.
       // API fetch upgrades to latest release if available.

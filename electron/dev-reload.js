@@ -26,7 +26,7 @@ function watchDir(dir, onChange) {
       if (filename) onChange(filename);
     });
   } catch (err) {
-    console.warn(`[dev] 無法監看 ${dir}: ${err.message}`);
+    console.warn(`[dev] cannot watch ${dir}: ${err.message}`);
     return null;
   }
 }
@@ -36,10 +36,12 @@ function enableDevReload() {
   const rendererDir = path.join(root, "renderer");
   const mainDir = __dirname;
   let restarting = false;
+  const startTime = Date.now();
 
   // renderer 變更：重載所有視窗（保留 preload / 視窗狀態）
   const reloadRenderer = debounce((filename) => {
-    console.log(`[dev] renderer 變更：${filename} → 重載視窗`);
+    if (Date.now() - startTime < 1500) return; // 忽略啟動時 Windows fs.watch 假事件
+    console.log(`[dev] renderer changed: ${filename} -> reload`);
     for (const win of BrowserWindow.getAllWindows()) {
       if (!win.isDestroyed()) win.webContents.reloadIgnoringCache();
     }
@@ -47,9 +49,10 @@ function enableDevReload() {
 
   // 主行程 / preload 變更：重啟整個 App（preload 變更需重建視窗）
   const restartApp = debounce((filename) => {
+    if (Date.now() - startTime < 1500) return; // 忽略啟動時 Windows fs.watch 假事件
     if (restarting) return;
     restarting = true;
-    console.log(`[dev] 主行程變更：${filename} → 重啟 App`);
+    console.log(`[dev] main changed: ${filename} -> restart App`);
     app.relaunch();
     app.exit(0);
   }, 150);
@@ -66,7 +69,7 @@ function enableDevReload() {
     for (const w of watchers) if (w) w.close();
   });
 
-  console.log("[dev] 熱重載已啟用（renderer 即時重載 / 主行程自動重啟）");
+  console.log("[dev] hot-reload enabled (renderer live-reload / main auto-restart)");
 }
 
 module.exports = { enableDevReload };

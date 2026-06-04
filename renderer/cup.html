@@ -12,7 +12,7 @@
       height: 100%;
       background: transparent;
       overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 14px;
       user-select: none;
     }
@@ -35,31 +35,43 @@
     }
     body.active .drink-container { opacity: 1; }
 
-    /* 提示文字（也作為拖曳把手） */
+    /* 提示文字（深色玻璃態卡片，也作為拖曳把手） */
     .hint {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
-      color: #e65100;
+      letter-spacing: 0.3px;
+      color: rgba(255, 255, 255, 0.95);
       text-align: center;
       white-space: nowrap;
-      text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9);
-      animation: hintPulse 1.5s ease-in-out infinite;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background: rgba(20, 60, 80, 0.75);
+      backdrop-filter: blur(12px) saturate(150%);
+      -webkit-backdrop-filter: blur(12px) saturate(150%);
+      border: 1px solid rgba(77, 208, 225, 0.3);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+      animation: hintGlow 2.5s ease-in-out infinite;
       -webkit-app-region: drag;
       cursor: move;
     }
-    @keyframes hintPulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+    @keyframes hintGlow {
+      0%, 100% { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1); }
+      50% { box-shadow: 0 4px 24px rgba(77, 208, 225, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15); }
     }
 
-    /* 水杯 — 擬真毛玻璃杯 */
+    /* 水杯 — 玻璃態 Glassmorphism */
     .cup-wrapper {
       position: relative;
       width: 90px;
       height: 130px;
       cursor: pointer;
-      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+      filter: drop-shadow(0 6px 20px rgba(77, 208, 225, 0.2)) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
       -webkit-app-region: no-drag;
+      transition: filter 0.3s ease;
+    }
+    .cup-wrapper:hover {
+      filter: drop-shadow(0 8px 28px rgba(77, 208, 225, 0.35)) drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12));
     }
     .cup-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
@@ -97,13 +109,14 @@
 
     .progress-ring { position: absolute; top: -8px; right: -8px; width: 32px; height: 32px; }
     .progress-ring circle { fill: none; stroke-width: 3; }
-    .progress-ring .bg { stroke: #e0e0e0; }
+    .progress-ring .bg { stroke: rgba(255, 255, 255, 0.15); }
     .progress-ring .fg {
-      stroke: #4fc3f7;
+      stroke: url(#progress-grad);
       stroke-linecap: round;
       transform: rotate(-90deg);
       transform-origin: center;
       transition: none;
+      filter: drop-shadow(0 0 4px rgba(77, 208, 225, 0.5));
     }
 
     .cup-wrapper.done { animation: celebrate 0.6s ease-out; }
@@ -119,9 +132,11 @@
       top: -20px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 700;
-      color: #2e7d32;
+      letter-spacing: 0.5px;
+      color: rgba(255, 255, 255, 0.95);
+      text-shadow: 0 0 8px rgba(77, 208, 225, 0.6);
       white-space: nowrap;
       pointer-events: none;
       animation: floatUp 1s ease-out forwards;
@@ -205,10 +220,16 @@
 </head>
 <body>
   <div class="drink-container">
-    <div class="hint">🥤 長按杯子或按 Space 喝水！</div>
+    <div class="hint">長按杯子或按 Space 喝水！</div>
     <div class="cup-wrapper shaking">
       <svg class="cup-svg" viewBox="0 0 90 130" xmlns="http://www.w3.org/2000/svg"></svg>
       <svg class="progress-ring" viewBox="0 0 32 32">
+        <defs>
+          <linearGradient id="progress-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#4dd0e1" />
+            <stop offset="100%" stop-color="#00bcd4" />
+          </linearGradient>
+        </defs>
         <circle class="bg" cx="16" cy="16" r="13" />
         <circle class="fg" cx="16" cy="16" r="13" />
       </svg>

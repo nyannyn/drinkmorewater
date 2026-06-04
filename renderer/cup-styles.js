@@ -12,9 +12,10 @@
 
 const SHARED_WATER_DEFS = `
   <linearGradient id="water-grad" x1="0" y1="0" x2="0.15" y2="1">
-    <stop offset="0%" stop-color="#4dd0e1" stop-opacity="0.8" />
-    <stop offset="40%" stop-color="#26c6da" stop-opacity="0.85" />
-    <stop offset="100%" stop-color="#0097a7" stop-opacity="0.95" />
+    <stop offset="0%" stop-color="#4dd0e1" stop-opacity="0.85" />
+    <stop offset="30%" stop-color="#26c6da" stop-opacity="0.9" />
+    <stop offset="70%" stop-color="#00acc1" stop-opacity="0.92" />
+    <stop offset="100%" stop-color="#00838f" stop-opacity="0.95" />
   </linearGradient>
 `;
 
@@ -56,47 +57,58 @@ const CLASSIC = {
         <path d="M16 14 L74 14 L70 112 Q69 118 64 118 L26 118 Q21 118 20 112 Z" />
       </clipPath>
       ${SHARED_WATER_DEFS}
-      <linearGradient id="glass-body" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="rgba(255,255,255,0.08)" />
-        <stop offset="25%" stop-color="rgba(255,255,255,0.15)" />
-        <stop offset="50%" stop-color="rgba(255,255,255,0.05)" />
-        <stop offset="75%" stop-color="rgba(255,255,255,0.12)" />
-        <stop offset="100%" stop-color="rgba(255,255,255,0.06)" />
+      <linearGradient id="glass-body" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.18)" />
+        <stop offset="30%" stop-color="rgba(255,255,255,0.08)" />
+        <stop offset="60%" stop-color="rgba(200,225,255,0.1)" />
+        <stop offset="100%" stop-color="rgba(255,255,255,0.05)" />
       </linearGradient>
       <linearGradient id="highlight-l" x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stop-color="rgba(255,255,255,0.35)" />
+        <stop offset="0%" stop-color="rgba(255,255,255,0.5)" />
         <stop offset="100%" stop-color="rgba(255,255,255,0)" />
       </linearGradient>
       <linearGradient id="highlight-r" x1="1" y1="0" x2="0" y2="0">
-        <stop offset="0%" stop-color="rgba(255,255,255,0.15)" />
+        <stop offset="0%" stop-color="rgba(255,255,255,0.2)" />
         <stop offset="100%" stop-color="rgba(255,255,255,0)" />
       </linearGradient>
-      <radialGradient id="rim-grad" cx="0.5" cy="0.5" r="0.5">
-        <stop offset="0%" stop-color="rgba(240,245,250,0.4)" />
-        <stop offset="70%" stop-color="rgba(200,210,220,0.25)" />
-        <stop offset="100%" stop-color="rgba(180,190,200,0.15)" />
+      <radialGradient id="rim-grad" cx="0.5" cy="0.3" r="0.6">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.5)" />
+        <stop offset="60%" stop-color="rgba(220,235,250,0.3)" />
+        <stop offset="100%" stop-color="rgba(180,200,220,0.15)" />
       </radialGradient>
+      <linearGradient id="glass-edge" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="rgba(200,220,255,0.6)" />
+        <stop offset="50%" stop-color="rgba(180,200,230,0.3)" />
+        <stop offset="100%" stop-color="rgba(160,180,210,0.4)" />
+      </linearGradient>
       <filter id="glass-blur" x="-10%" y="-10%" width="120%" height="120%">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" result="blur" />
+        <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" result="blur" />
         <feComposite in="SourceGraphic" in2="blur" operator="over" />
       </filter>
     </defs>
+    <!-- 杯身玻璃態 -->
     <path d="M16 14 L74 14 L70 112 Q69 118 64 118 L26 118 Q21 118 20 112 Z"
           fill="url(#glass-body)" filter="url(#glass-blur)" />
     ${WATER_LAYER}
+    <!-- 玻璃邊框（微光邊緣） -->
     <path d="M15 12 L75 12 L71 112 Q70 119 64 119 L26 119 Q20 119 19 112 Z"
-          fill="none" stroke="rgba(180,195,210,0.5)" stroke-width="2" />
+          fill="none" stroke="url(#glass-edge)" stroke-width="1.5" />
+    <!-- 左側高光反射 -->
     <path d="M18 16 Q16 14 19 14 L23 14 L24 16 L25 106 Q25 112 26 114 L22 114 Q20 110 20 106 Z"
           fill="url(#highlight-l)" />
+    <!-- 右側淡反射 -->
     <path d="M66 20 L69 20 L67 106 Q66 112 65 114 L63 114 Q64 110 64 106 Z"
           fill="url(#highlight-r)" />
+    <!-- 杯口光環 -->
     <ellipse cx="45" cy="12" rx="31" ry="5" fill="url(#rim-grad)"
-             stroke="rgba(180,195,210,0.45)" stroke-width="1.5" />
+             stroke="rgba(200,220,255,0.5)" stroke-width="1.2" />
+    <!-- 杯底 -->
     <path d="M19 112 L71 112 L69 119 Q68 122 64 122 L26 122 Q22 122 21 119 Z"
-          fill="rgba(180,195,210,0.15)" stroke="rgba(170,185,200,0.3)" stroke-width="1" />
+          fill="rgba(200,215,240,0.12)" stroke="rgba(180,200,230,0.25)" stroke-width="1" />
     <path d="M22 114 L68 114 L67 118 Q66 120 63 120 L27 120 Q24 120 23 118 Z"
-          fill="rgba(200,215,230,0.1)" />
-    <ellipse cx="45" cy="124" rx="22" ry="3" fill="rgba(0,0,0,0.08)" />
+          fill="rgba(220,235,255,0.08)" />
+    <!-- 底部光暈 -->
+    <ellipse cx="45" cy="124" rx="22" ry="3" fill="rgba(77,208,225,0.06)" />
   `,
 };
 

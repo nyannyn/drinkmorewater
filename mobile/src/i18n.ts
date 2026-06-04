@@ -29,6 +29,18 @@ export interface Strings {
   scheduled: (n: number) => string;
   permDenied: string;
   goalReached: string;
+  // 跨裝置同步
+  sync: string;
+  syncDesc: string;
+  syncServerUrl: string;
+  syncCreate: string;
+  syncJoin: string;
+  syncCodeHint: string;
+  syncCodePlaceholder: string;
+  syncLinked: string;
+  syncUnlink: string;
+  syncNow: string;
+  syncFail: string;
   // 通知
   notifyTitle: string;
   notifyBody: string;
@@ -63,6 +75,17 @@ const STRINGS: Record<string, Strings> = {
     scheduled: (n) => `已排定 ${n} 則提醒`,
     permDenied: "未取得通知權限，請到「設定 → 通知」開啟。",
     goalReached: "今日目標達成！🎉",
+    sync: "跨裝置同步",
+    syncDesc: "與桌面版／其他手機共享飲水紀錄。",
+    syncServerUrl: "伺服器網址",
+    syncCreate: "產生配對碼",
+    syncJoin: "用配對碼加入",
+    syncCodeHint: "在另一台裝置輸入此碼（10 分鐘內有效）",
+    syncCodePlaceholder: "6 位配對碼",
+    syncLinked: "已連動",
+    syncUnlink: "解除連動",
+    syncNow: "立即同步",
+    syncFail: "同步失敗，請確認網址與配對碼",
     notifyTitle: "💧 該喝水了！",
     notifyBody: "你已經很久沒喝水了，記得補充水分哦！",
     drankAction: "我喝了 💧",
@@ -93,6 +116,17 @@ const STRINGS: Record<string, Strings> = {
     scheduled: (n) => `已排定 ${n} 则提醒`,
     permDenied: "未取得通知权限，请到「设置 → 通知」开启。",
     goalReached: "今日目标达成！🎉",
+    sync: "跨设备同步",
+    syncDesc: "与桌面版／其他手机共享饮水记录。",
+    syncServerUrl: "服务器网址",
+    syncCreate: "生成配对码",
+    syncJoin: "用配对码加入",
+    syncCodeHint: "在另一台设备输入此码（10 分钟内有效）",
+    syncCodePlaceholder: "6 位配对码",
+    syncLinked: "已连动",
+    syncUnlink: "解除连动",
+    syncNow: "立即同步",
+    syncFail: "同步失败，请确认网址与配对码",
     notifyTitle: "💧 该喝水了！",
     notifyBody: "你已经很久没喝水了，记得补充水分哦！",
     drankAction: "我喝了 💧",
@@ -123,6 +157,17 @@ const STRINGS: Record<string, Strings> = {
     scheduled: (n) => `${n} reminders scheduled`,
     permDenied: "Notifications not allowed. Enable them in Settings → Notifications.",
     goalReached: "Daily goal reached! 🎉",
+    sync: "Cross-device sync",
+    syncDesc: "Share hydration data with desktop / other phones.",
+    syncServerUrl: "Server URL",
+    syncCreate: "Create pairing code",
+    syncJoin: "Join with code",
+    syncCodeHint: "Enter this code on the other device (valid 10 min)",
+    syncCodePlaceholder: "6-digit code",
+    syncLinked: "Linked",
+    syncUnlink: "Unlink",
+    syncNow: "Sync now",
+    syncFail: "Sync failed — check the URL and code",
     notifyTitle: "💧 Time to drink!",
     notifyBody: "You haven't had water in a while — stay hydrated!",
     drankAction: "I drank 💧",
@@ -153,6 +198,17 @@ const STRINGS: Record<string, Strings> = {
     scheduled: (n) => `${n} 件の通知を予約しました`,
     permDenied: "通知が許可されていません。「設定 → 通知」で有効にしてください。",
     goalReached: "目標達成！🎉",
+    sync: "デバイス間同期",
+    syncDesc: "デスクトップ版／他のスマホと記録を共有します。",
+    syncServerUrl: "サーバー URL",
+    syncCreate: "ペアリングコード発行",
+    syncJoin: "コードで参加",
+    syncCodeHint: "別のデバイスでこのコードを入力（10 分間有効）",
+    syncCodePlaceholder: "6 桁のコード",
+    syncLinked: "連携済み",
+    syncUnlink: "連携解除",
+    syncNow: "今すぐ同期",
+    syncFail: "同期に失敗しました。URL とコードを確認してください",
     notifyTitle: "💧 水を飲む時間です！",
     notifyBody: "しばらく水を飲んでいません。水分補給を忘れずに！",
     drankAction: "飲んだ 💧",

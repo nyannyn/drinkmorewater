@@ -1,0 +1,14 @@
+{
+  "name": "drinkwater-sync-server",
+  "version": "1.0.0",
+  "description": "喝水提醒 桌面↔手機 同步後端（裝置配對碼，零外部依賴）",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test __tests__/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

@@ -7,7 +7,7 @@
 
 定時提醒喝水、追蹤每日 / 每週飲水量。原為 Chrome 擴充，現為 **Electron 桌面版**（Windows / Linux / macOS），並有 **iOS 手機版**（React Native / Expo，原生本地排程通知）。
 
-## 兩個應用
+## 兩個應用 + 共用層
 
 | | 桌面版 | 手機版 |
 |---|---|---|
@@ -15,6 +15,27 @@
 | 位置 | `electron/` + `renderer/` | `mobile/` |
 | 提醒機制 | 主行程 `setTimeout` 計時 | `expo-notifications` 預排 OS 本地通知 |
 | 狀態 | 已發行（release.yml 出 Win/Linux/macOS）| 尚未上架（需 macOS / EAS build）|
+
+兩端共用 **`shared/`**（跨平台純邏輯）與選用的 **`server/`**（自架同步後端），達成桌面↔手機資料連動。
+
+## 共用 core（shared/）
+
+跨平台純函式，CommonJS + JSDoc，**桌面 `require()`、手機 metro / `node:test` 皆直接使用、免 build**。
+
+- `schema.js` — 資料 schema 單一真相來源（DEFAULTS、常數、`SETTINGS_KEYS`）。手機 `mobile/src/core/types.ts` re-export 之；桌面直接吃。
+- `tracking.js` — 跨日重設 / 記錄喝水 / 週統計（純函式，不碰 I/O；兩端各自以儲存層包裝）。
+- `merge.js` — **同步合併演算法**：各裝置回報自身每日貢獻 → 伺服器依日期加總 → 顯示 = own + others；設定 last-write-wins。
+- `sync-client.js` — 平台無關同步客戶端（全域 fetch + 注入式儲存）。採「疊加層」：本機追蹤欄位仍只記自己，他機貢獻另存，顯示時相加，故離線行為不變。
+- 手機 import 須帶 `.js` 副檔名（ESM 解析）；metro 靠 `mobile/metro.config.js` 的 watchFolders 納入 shared。
+- 測試：`node --test shared/__tests__/*.test.js`（20 項）。
+
+## 同步後端（server/）
+
+- Node 22 內建 `node:sqlite` / `node:http` / `node:crypto`，**零 npm 依賴**。認證採**裝置配對碼**（無帳號）。
+- API：`/api/pair/create`（產碼）、`/api/pair/claim`（加入）、`/api/sync`（推貢獻+設定、拉加總）。
+- 部署：`server/Dockerfile` + `docker-compose.yml`（build context 須在 repo 根，以帶入 `shared/`）。
+- 測試：`cd server && npm test`（起真伺服器 + 真 client 跑兩裝置全流程，7 項）。
+- 連動操作：桌面設定頁「偏好 → 跨裝置同步」、手機設定頁「跨裝置同步」區塊，填伺服器網址後產碼 / 輸入碼。
 
 ## 桌面版架構
 
@@ -47,7 +68,8 @@
 - 桌面打包：`npm run dist:win|dist:linux|dist:mac`。
 - 發版：推 tag `v*` → `.github/workflows/release.yml` 自動 build Win/Linux/macOS 並建 GitHub Release（含 SHA256 / VirusTotal；macOS 於 `macos-latest` 上產出未簽名 dmg/zip）。
 - 手機測試：`cd mobile && npm test`（純邏輯，免模擬器）；實機需 `expo run:ios` 或 EAS build（需 macOS 或 Expo 帳號）。
-- CI：`.github/workflows/ci.yml` 對 main 的 PR/push 跑手機版核心測試。
+- CI：`.github/workflows/ci.yml` 對 main 的 PR/push 跑 **shared 純函式 + server 端到端 + 手機版核心** 三組測試。
+- 同步後端：`cd server && npm start`（本機）或 Docker 部署；連動需先有可達的伺服器網址（HTTPS）。
 - **iOS 雲端 build：`.github/workflows/ios.yml`（`macos-latest`）**。本 repo 為公開 → GitHub 託管 macOS runner **免費、無額度上限**（私有則 macOS 以 10× 扣額度）。流程：`npm install` → 核心測試 → `expo prebuild` → Xcode 編譯**未簽署 Release（iOS Simulator）** → 開模擬器、啟動、用 idb 點掉通知權限框、截圖上傳成 artifact `ios-simulator-screenshots`。整條不需 Apple 憑證，純驗證 build 鏈 + 看畫面用。一輪約 12–15 分。
 
 ## 開發慣例
@@ -56,6 +78,7 @@
 - repo 已開啟 Allow auto-merge：PR 可掛「等 CI 過自動併」。
 - 不要把模型識別字串寫進 commit / PR / 程式碼。
 - 最終 iOS 編譯/簽署只能在 macOS 或 EAS（本開發容器為 Linux，無法跑 Xcode / GUI 視覺驗證）。
+- 同步的純邏輯與後端在容器內可完整測試；但桌面 / 手機的同步 **UI 與實機網路連動** 無法在 Linux 容器驗證，需在實際環境冒煙（部署 server → 兩端填網址 → 產碼/加入 → 互看數據）。
 
 ## 近期重點（v1.5.0）
 

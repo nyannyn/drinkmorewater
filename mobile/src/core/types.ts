@@ -1,4 +1,6 @@
-// 飲水資料 schema —— 沿用桌面版 (electron/store.js) 的鍵名，方便日後跨平台同步。
+// 飲水資料 schema —— 常數與預設值改由跨平台共用的 ../../../shared/schema.js 提供，
+// 桌面與手機共用同一份真相來源；此處僅保留 TypeScript 介面型別供前端使用。
+import * as schema from "../../../shared/schema.js";
 
 export interface DayLog {
   date: string; // new Date().toDateString()
@@ -24,24 +26,10 @@ export interface AppData {
   lang: string;
 }
 
-export const DRINK_ML = 300;
-export const DEFAULT_INTERVAL_MIN = 30;
-export const DEFAULT_DAILY_GOAL_ML = 2000;
-
-export const DEFAULTS: AppData = {
-  todayMl: 0,
-  todayCups: 0,
-  lastDate: null,
-  weeklyLog: [],
-  dailyGoalMl: DEFAULT_DAILY_GOAL_ML,
-  intervalMin: DEFAULT_INTERVAL_MIN,
-  enabled: true,
-  drinkMl: DRINK_ML,
-  soundEnabled: true,
-  activeStart: "08:00",
-  activeEnd: "22:00",
-  lang: "zh-Hant",
-};
-
-export const INTERVAL_OPTIONS = [15, 30, 45, 60];
-export const DRINK_OPTIONS = [150, 200, 250, 300, 500];
+export const DRINK_ML: number = schema.DRINK_ML;
+export const DEFAULT_INTERVAL_MIN: number = schema.DEFAULT_INTERVAL_MIN;
+export const DEFAULT_DAILY_GOAL_ML: number = schema.DEFAULT_DAILY_GOAL_ML;
+export const DEFAULTS: AppData = schema.DEFAULTS as AppData;
+export const INTERVAL_OPTIONS: number[] = schema.INTERVAL_OPTIONS;
+export const DRINK_OPTIONS: number[] = schema.DRINK_OPTIONS;
+export const SETTINGS_KEYS: string[] = schema.SETTINGS_KEYS;

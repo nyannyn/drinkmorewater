@@ -30,6 +30,7 @@
     "files": [
       "electron/**/*",
       "renderer/**/*",
+      "shared/**/*",
       "build/icon.png",
       "build/notification.png"
     ],

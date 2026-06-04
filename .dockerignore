@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/__tests__
+server/*.sqlite
+server/*.sqlite-*
+server/data/
+mobile/ios
+mobile/android
+electron
+renderer
+build
+*.png

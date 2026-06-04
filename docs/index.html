@@ -256,6 +256,30 @@
       fill: none;
       stroke-width: 2;
     }
+    .dl-alt {
+      display: block;
+      margin-top: 0.5rem;
+      font-size: 0.72rem;
+      color: var(--color-muted);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+    .dl-alt:hover { color: var(--color-primary); }
+    .wrong-os {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.78rem;
+      color: var(--color-muted);
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .wrong-os a {
+      color: var(--color-primary);
+      text-decoration: none;
+    }
+    .wrong-os a:hover { text-decoration: underline; }
 
     /* ─── Features ─── */
     .features {
@@ -396,6 +420,7 @@
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span class="btn-label">下載 v1.6.0 Download</span>
         </a>
+        <a class="dl-alt" href="https://github.com/nyannyn/drinkmorewater/releases">歷史版本 All versions →</a>
       </div>
       <div class="dl-card" id="card-mac">
         <div class="icon-box">
@@ -407,6 +432,7 @@
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span class="btn-label">下載 v1.6.0 Download</span>
         </a>
+        <a class="dl-alt" href="https://github.com/nyannyn/drinkmorewater/releases">Intel 版 / 歷史版本 All versions →</a>
       </div>
       <div class="dl-card" id="card-linux">
         <div class="icon-box">
@@ -418,8 +444,11 @@
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           <span class="btn-label">下載 v1.6.0 Download</span>
         </a>
+        <a class="dl-alt" href="https://github.com/nyannyn/drinkmorewater/releases">.deb 包 / 歷史版本 All versions →</a>
       </div>
     </section>
+
+    <p class="wrong-os">下載錯作業系統？請選擇上方對應的平台卡片，或前往 <a href="https://github.com/nyannyn/drinkmorewater/releases">Releases 頁面</a> 查看所有檔案。<br>Wrong OS? Pick the correct platform above, or visit the <a href="https://github.com/nyannyn/drinkmorewater/releases">Releases page</a> for all files.</p>
 
     <!-- Features -->
     <section class="features" aria-label="功能特色 Features">

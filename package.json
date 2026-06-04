@@ -1,6 +1,6 @@
 {
   "name": "drink-water-reminder",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "定時提醒你喝水，追蹤每日飲水量 — 桌面版",
   "main": "electron/main.js",
   "author": "drinkmorewater",

@@ -158,20 +158,62 @@ jobs:
 
       - name: Prepare release body
         run: |
+          # Detect actual filenames
+          NSIS=$(ls dist/*Setup*.exe 2>/dev/null | head -1 | xargs -r basename)
+          PORTABLE=$(ls dist/*portable*.exe dist/*Portable*.exe 2>/dev/null | head -1 | xargs -r basename)
+          APPIMAGE=$(ls dist/*.AppImage 2>/dev/null | head -1 | xargs -r basename)
+          DEB=$(ls dist/*.deb 2>/dev/null | head -1 | xargs -r basename)
+          DMG_X64=$(ls dist/*-x64.dmg 2>/dev/null | head -1 | xargs -r basename)
+          DMG_ARM=$(ls dist/*-arm64.dmg 2>/dev/null | head -1 | xargs -r basename)
+          ZIP_X64=$(ls dist/*-x64.zip 2>/dev/null | head -1 | xargs -r basename)
+          ZIP_ARM=$(ls dist/*-arm64.zip 2>/dev/null | head -1 | xargs -r basename)
+          TAG="${GITHUB_REF#refs/tags/}"
+
           {
-            echo "## Checksums (SHA256)"
-            echo '```'
-            cat dist/SHA256SUMS-win.txt
-            cat dist/SHA256SUMS-linux.txt
-            cat dist/SHA256SUMS-mac.txt
-            echo '```'
+            echo "## ⬇️ 下載安裝"
             echo ""
-            echo "## VirusTotal Scan"
+            echo "| 系統 | 下載連結 | 說明 |"
+            echo "|------|----------|------|"
+            if [ -n "$NSIS" ]; then
+              echo "| 🪟 **Windows** | [${NSIS}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${NSIS}) | 安裝版（建議）|"
+            fi
+            if [ -n "$PORTABLE" ]; then
+              echo "| 🪟 Windows | [${PORTABLE}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${PORTABLE}) | 免安裝版 |"
+            fi
+            if [ -n "$DMG_ARM" ]; then
+              echo "| 🍎 **macOS (Apple Silicon)** | [${DMG_ARM}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${DMG_ARM}) | M1/M2/M3/M4 |"
+            fi
+            if [ -n "$DMG_X64" ]; then
+              echo "| 🍎 macOS (Intel) | [${DMG_X64}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${DMG_X64}) | Intel Mac |"
+            fi
+            if [ -n "$APPIMAGE" ]; then
+              echo "| 🐧 **Linux** | [${APPIMAGE}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${APPIMAGE}) | 通用（建議）|"
+            fi
+            if [ -n "$DEB" ]; then
+              echo "| 🐧 Linux | [${DEB}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${DEB}) | Debian/Ubuntu |"
+            fi
+            echo ""
+            echo "> **macOS 使用者**：因為未經 Apple 公證，首次開啟需到「系統設定 → 隱私權與安全性」點「仍要打開」。"
+            echo ""
+            echo "---"
+            echo ""
+            echo "<details><summary>🔒 SHA256 校驗碼</summary>"
+            echo ""
+            echo '```'
+            cat dist/SHA256SUMS-win.txt 2>/dev/null || true
+            cat dist/SHA256SUMS-linux.txt 2>/dev/null || true
+            cat dist/SHA256SUMS-mac.txt 2>/dev/null || true
+            echo '```'
+            echo "</details>"
+            echo ""
+            echo "<details><summary>🛡️ VirusTotal 掃描</summary>"
+            echo ""
             if [ -f dist/VT_LINKS.md ]; then
               cat dist/VT_LINKS.md
             else
               echo "_VirusTotal scan skipped (no API key configured)_"
             fi
+            echo "</details>"
           } > dist/RELEASE_BODY.md
 
       - name: Create GitHub Release

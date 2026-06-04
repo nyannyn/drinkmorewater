@@ -7,10 +7,10 @@ const SHATTER_TIMEOUT_MS = 60000; // 1 分鐘不理會自動碎裂
 
 // ===== 水杯提示多語（隨提醒 payload 帶入 lang，與設定視窗語言一致） =====
 const CUP_I18N = {
-  "zh-Hant": { hold: "🥤 長按杯子或按 Space 喝水！", holding: "💧 繼續按住...", more: "😤 再按久一點！" },
-  "zh-Hans": { hold: "🥤 长按杯子或按 Space 喝水！", holding: "💧 继续按住...", more: "😤 再按久一点！" },
-  en: { hold: "🥤 Hold the cup or press Space to drink!", holding: "💧 Keep holding...", more: "😤 Hold a bit longer!" },
-  ja: { hold: "🥤 コップを長押し or Space で水を飲む！", holding: "💧 押し続けて...", more: "😤 もう少し長く！" },
+  "zh-Hant": { hold: "長按杯子或按 Space 喝水！", holding: "繼續按住...", more: "😤 再按久一點！" },
+  "zh-Hans": { hold: "长按杯子或按 Space 喝水！", holding: "继续按住...", more: "😤 再按久一点！" },
+  en: { hold: "Hold the cup or press Space to drink!", holding: "Keep holding...", more: "😤 Hold a bit longer!" },
+  ja: { hold: "コップを長押し or Space で水を飲む！", holding: "押し続けて...", more: "😤 もう少し長く！" },
 };
 let cupLang = "zh-Hant";
 function ct(key) {

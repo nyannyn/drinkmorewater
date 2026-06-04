@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld("api", {
   testReminder: () => ipcRenderer.invoke("test-reminder"),
   exportData: () => ipcRenderer.invoke("export-data"),
   resetData: () => ipcRenderer.invoke("reset-data"),
+  resetToday: () => ipcRenderer.invoke("reset-today"),
   getPrefs: () => ipcRenderer.invoke("get-prefs"),
   setPrefs: (prefs) => ipcRenderer.invoke("set-prefs", prefs),
   drinkNow: (ml) => ipcRenderer.invoke("drink-now", ml),

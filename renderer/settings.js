@@ -17,7 +17,9 @@ const I18N = {
     testBtn: "立即測試",
     exportBtn: "匯出資料",
     resetBtn: "重置紀錄",
+    resetTodayBtn: "重置今日",
     resetConfirm: "確定要重置所有飲水紀錄嗎？此操作無法復原。",
+    resetTodayConfirm: "確定要重置今日飲水紀錄嗎？",
     noData: "尚無歷史資料",
     days: ["日", "一", "二", "三", "四", "五", "六"],
     prefThemeTitle: "介面風格",
@@ -65,7 +67,9 @@ const I18N = {
     testBtn: "立即测试",
     exportBtn: "导出数据",
     resetBtn: "重置记录",
+    resetTodayBtn: "重置今日",
     resetConfirm: "确定要重置所有饮水记录吗？此操作无法恢复。",
+    resetTodayConfirm: "确定要重置今日饮水记录吗？",
     noData: "暂无历史数据",
     days: ["日", "一", "二", "三", "四", "五", "六"],
     prefThemeTitle: "界面风格",
@@ -113,7 +117,9 @@ const I18N = {
     testBtn: "Test now",
     exportBtn: "Export",
     resetBtn: "Reset",
+    resetTodayBtn: "Reset Today",
     resetConfirm: "Are you sure you want to reset all records? This cannot be undone.",
+    resetTodayConfirm: "Reset today's record?",
     noData: "No data yet",
     days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     prefThemeTitle: "THEME",
@@ -161,7 +167,9 @@ const I18N = {
     testBtn: "テスト",
     exportBtn: "出力",
     resetBtn: "リセット",
+    resetTodayBtn: "今日をリセット",
     resetConfirm: "すべての記録をリセットしますか？元に戻せません。",
+    resetTodayConfirm: "今日の記録をリセットしますか？",
     noData: "データなし",
     days: ["日", "月", "火", "水", "木", "金", "土"],
     prefThemeTitle: "テーマ",
@@ -332,6 +340,7 @@ function applyLang(lang) {
   $drinkBtn.textContent = t("drinkBtn")(currentDrinkMl);
   document.getElementById("testBtn").textContent = t("testBtn");
   document.getElementById("exportBtn").textContent = t("exportBtn");
+  document.getElementById("resetTodayBtn").textContent = t("resetTodayBtn");
   document.getElementById("resetBtn").textContent = t("resetBtn");
 
   document.getElementById("prefThemeTitle").textContent = t("prefThemeTitle");
@@ -592,6 +601,12 @@ function showConfirm(message) {
     document.addEventListener("keydown", onKey);
   });
 }
+
+document.getElementById("resetTodayBtn").addEventListener("click", async () => {
+  if (!(await showConfirm(t("resetTodayConfirm")))) return;
+  await window.api.resetToday();
+  refresh();
+});
 
 document.getElementById("resetBtn").addEventListener("click", async () => {
   if (!(await showConfirm(t("resetConfirm")))) return;

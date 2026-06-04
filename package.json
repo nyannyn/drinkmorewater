@@ -17,7 +17,8 @@
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",
     "electron": "^31.0.0",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "sharp": "^0.34.5"
   },
   "build": {
     "appId": "com.drinkmorewater.app",

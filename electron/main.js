@@ -24,6 +24,9 @@ const IDLE_AWAY_SEC = 5 * 60; // 離開超過 5 分鐘視為不在位，略過�
 const ICON_PATH = path.join(__dirname, "..", "build", "icon.png");
 const NOTIF_ICON_PATH = path.join(__dirname, "..", "build", "notification.png");
 
+// Windows 工作列圖示需要 AppUserModelId 才能正確顯示自訂 icon
+app.setAppUserModelId("com.drinkwater.reminder");
+
 // ===== 主行程多語（通知 / 托盤）— 與設定視窗語言一致 =====
 const MAIN_I18N = {
   "zh-Hant": {
@@ -132,18 +135,29 @@ function fireReminder() {
 
 // 顯示水杯 + 系統通知
 function triggerCup() {
-  if (!cupWindow) createCupWindow();
+  if (!cupWindow || cupWindow.isDestroyed()) {
+    cupWindow = null;
+    createCupWindow();
+  }
 
   const { bannerEnabled = true } = store.get(["bannerEnabled"]);
   const { cupStyle = "classic", lang = "zh-Hant", holdSpeed = 1 } = store.get(["cupStyle", "lang", "holdSpeed"]);
 
-  if (bannerEnabled && Notification.isSupported()) {
-    // 水杯往上偏移避開通知，同時顯示
-    positionCupWindow(false);
+  // 確保頁面已載入完成再發送 reminder
+  const sendReminder = () => {
+    positionCupWindow(!bannerEnabled || !Notification.isSupported());
     cupWindow.showInactive();
     cupWindow.setIgnoreMouseEvents(false);
     cupWindow.webContents.send("reminder", { cupStyle, lang, holdSpeed });
+  };
 
+  if (cupWindow.webContents.isLoading()) {
+    cupWindow.webContents.once("did-finish-load", sendReminder);
+  } else {
+    sendReminder();
+  }
+
+  if (bannerEnabled && Notification.isSupported()) {
     const notif = new Notification({
       title: mt("notifyTitle"),
       body: mt("notifyBody"),
@@ -152,23 +166,31 @@ function triggerCup() {
     });
     notif.show();
     setTimeout(() => notif.close(), 3000);
-  } else {
-    // 無橫幅，水杯直接貼右下角
-    positionCupWindow(true);
-    cupWindow.showInactive();
-    cupWindow.setIgnoreMouseEvents(false);
-    cupWindow.webContents.send("reminder", { cupStyle, lang, holdSpeed });
   }
 }
 
 // ===== 水杯視窗 =====
 function positionCupWindow(bottomCorner) {
   if (!cupWindow) return;
-  // 彈在游標所在的螢幕，而非永遠主螢幕（多螢幕情境避免漏看）
+  // 若使用者曾手動拖曳，沿用上次位置
+  const saved = store.get(["cupPosX", "cupPosY"]);
+  if (saved.cupPosX != null && saved.cupPosY != null) {
+    // 確認螢幕上仍可見（可能螢幕已拔除）
+    const displays = screen.getAllDisplays();
+    const visible = displays.some((d) => {
+      const { x, y, width, height } = d.workArea;
+      return saved.cupPosX >= x && saved.cupPosX < x + width &&
+             saved.cupPosY >= y && saved.cupPosY < y + height;
+    });
+    if (visible) {
+      cupWindow.setPosition(Math.round(saved.cupPosX), Math.round(saved.cupPosY));
+      return;
+    }
+  }
+  // 沒有儲存位置或不可見，fallback 到右下角
   const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   const { workArea } = display;
   const [w, h] = cupWindow.getSize();
-  // 有橫幅通知時往上偏移避開 toast；關閉橫幅時貼齊右下角
   const notifyOffset = (!bottomCorner && process.platform === "win32") ? 120 : 0;
   cupWindow.setPosition(
     Math.round(workArea.x + workArea.width - w),
@@ -197,6 +219,20 @@ function createCupWindow() {
   });
   cupWindow.setAlwaysOnTop(true, "screen-saver");
   cupWindow.loadFile(path.join(__dirname, "..", "renderer", "cup.html"));
+  cupWindow.on("closed", () => { cupWindow = null; });
+  // 拖曳後記住位置，並修復 Windows 透明視窗拖曳後消失的問題
+  cupWindow.on("moved", () => {
+    if (cupWindow && !cupWindow.isDestroyed()) {
+      const [x, y] = cupWindow.getPosition();
+      store.set({ cupPosX: x, cupPosY: y });
+      // Windows 透明視窗拖曳後有時不重繪，用微調尺寸強制刷新
+      if (process.platform === "win32") {
+        const [w, h] = cupWindow.getSize();
+        cupWindow.setSize(w + 1, h);
+        cupWindow.setSize(w, h);
+      }
+    }
+  });
 }
 
 // ===== 設定視窗（由原 popup 改寫） =====
@@ -290,7 +326,7 @@ function getStatus() {
     intervalMin: d.intervalMin ?? DEFAULT_INTERVAL_MIN,
     enabled: d.enabled ?? true,
     dailyGoalMl: d.dailyGoalMl ?? DEFAULT_DAILY_GOAL_ML,
-    soundEnabled: d.soundEnabled ?? true,
+    soundEnabled: d.soundEnabled ?? false,
     soundVolume: d.soundVolume ?? 80,
   };
 }
@@ -345,6 +381,16 @@ function resetData() {
   return { ok: true };
 }
 
+function resetToday() {
+  store.set({
+    todayMl: 0,
+    todayCups: 0,
+    lastDate: new Date().toDateString(),
+  });
+  refreshTray();
+  return { ok: true };
+}
+
 function quitApp() {
   app.isQuitting = true;
   app.quit();
@@ -393,8 +439,9 @@ function registerIpc() {
     return { ok: true, filePath };
   });
   ipcMain.handle("reset-data", () => resetData());
+  ipcMain.handle("reset-today", () => resetToday());
   ipcMain.handle("get-sound-settings", () => {
-    const { soundEnabled = true, soundVolume = 80 } = store.get([
+    const { soundEnabled = false, soundVolume = 80 } = store.get([
       "soundEnabled",
       "soundVolume",
     ]);

@@ -1,5 +1,5 @@
-// 用純 Node（無相依套件）產生一個水滴 App 圖示 build/icon.png (256x256)
-// electron-builder 會由此 256px PNG 自動產生 Windows 安裝程式所需的 .ico
+// 用純 Node（無相依套件）產生一個水滴 App 圖示 build/icon.png (512x512)
+// electron-builder 會由此 512px PNG 自動產生 Windows 安裝程式所需的 .ico
 const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
@@ -108,16 +108,25 @@ function render(size) {
   return encodePNG(size, size, rgba);
 }
 
-// 主圖示（Windows / 通用）
-const main = render(SIZE);
-fs.writeFileSync(path.join(__dirname, "icon.png"), main);
-console.log("wrote icon.png", main.length, "bytes");
+// 主圖示（Windows / 通用）— 從 SVG 轉換
+const sharp = require("sharp");
+const svgPath = path.join(__dirname, "icons", "water-bottle-water-svgrepo-com.svg");
+const svgBuf = fs.readFileSync(svgPath);
 
-// Linux 用多尺寸 icon set（electron-builder linux.icon 指向此資料夾）
-const iconsDir = path.join(__dirname, "icons");
-fs.mkdirSync(iconsDir, { recursive: true });
-for (const s of [16, 32, 48, 64, 128, 256, 512]) {
-  const buf = render(s);
-  fs.writeFileSync(path.join(iconsDir, `${s}x${s}.png`), buf);
-  console.log(`wrote icons/${s}x${s}.png`, buf.length, "bytes");
+async function main() {
+  // 主圖示 512px
+  const mainPng = await sharp(svgBuf).resize(SIZE, SIZE).png().toBuffer();
+  fs.writeFileSync(path.join(__dirname, "icon.png"), mainPng);
+  console.log("wrote icon.png", mainPng.length, "bytes");
+
+  // Linux 用多尺寸 icon set
+  const iconsDir = path.join(__dirname, "icons");
+  fs.mkdirSync(iconsDir, { recursive: true });
+  for (const s of [16, 32, 48, 64, 128, 256, 512]) {
+    const buf = await sharp(svgBuf).resize(s, s).png().toBuffer();
+    fs.writeFileSync(path.join(iconsDir, `${s}x${s}.png`), buf);
+    console.log(`wrote icons/${s}x${s}.png`, buf.length, "bytes");
+  }
 }
+
+main().catch((e) => { console.error(e); process.exit(1); });

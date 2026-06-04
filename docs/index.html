@@ -237,8 +237,12 @@
       text-decoration: none;
       background: linear-gradient(135deg, var(--color-primary-dim), var(--color-primary));
       box-shadow: 0 4px 12px rgba(77, 208, 225, 0.2);
-      transition: transform var(--transition), box-shadow var(--transition);
+      transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
       cursor: pointer;
+    }
+    .dl-btn.loading {
+      opacity: 0.5;
+      pointer-events: none;
     }
     .dl-btn:hover {
       transform: translateY(-2px);
@@ -392,9 +396,9 @@
         </div>
         <h3>Windows</h3>
         <p class="meta">Windows 10 以上<br>安裝版 (.exe)</p>
-        <a class="dl-btn" id="btn-win" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 Windows 版 Download for Windows">
+        <a class="dl-btn loading" id="btn-win" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 Windows 版 Download for Windows">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span class="btn-label">下載 Download</span>
+          <span class="btn-label">載入中...</span>
         </a>
       </div>
       <div class="dl-card" id="card-mac">
@@ -403,9 +407,9 @@
         </div>
         <h3>macOS</h3>
         <p class="meta">支援 Intel 與 Apple Silicon<br>DMG 安裝映像</p>
-        <a class="dl-btn" id="btn-mac" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 macOS 版 Download for macOS">
+        <a class="dl-btn loading" id="btn-mac" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 macOS 版 Download for macOS">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span class="btn-label">下載 Download</span>
+          <span class="btn-label">載入中...</span>
         </a>
       </div>
       <div class="dl-card" id="card-linux">
@@ -414,9 +418,9 @@
         </div>
         <h3>Linux</h3>
         <p class="meta">AppImage 通用格式<br>另有 .deb 安裝包</p>
-        <a class="dl-btn" id="btn-linux" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 Linux 版 Download for Linux">
+        <a class="dl-btn loading" id="btn-linux" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 Linux 版 Download for Linux">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span class="btn-label">下載 Download</span>
+          <span class="btn-label">載入中...</span>
         </a>
       </div>
     </section>
@@ -477,41 +481,61 @@
         if (card) card.classList.add('active');
       }
 
-      // Fetch latest release and set direct download links
-      var API = 'https://api.github.com/repos/nyannyn/drinkmorewater/releases/latest';
-      fetch(API).then(function (r) { return r.json(); }).then(function (data) {
-        if (!data || !data.assets) return;
-        var assets = data.assets;
-        var find = function (test) {
+      var btnWin = document.getElementById('btn-win');
+      var btnMac = document.getElementById('btn-mac');
+      var btnLinux = document.getElementById('btn-linux');
+      var allBtns = [btnWin, btnMac, btnLinux];
+
+      function enableBtns(ver) {
+        allBtns.forEach(function (btn) {
+          btn.classList.remove('loading');
+          var label = btn.querySelector('.btn-label');
+          if (label) label.textContent = '下載 ' + (ver || '') + ' Download';
+        });
+      }
+
+      function fallback() {
+        // API failed — just link to releases page and enable
+        allBtns.forEach(function (btn) {
+          btn.classList.remove('loading');
+          var label = btn.querySelector('.btn-label');
+          if (label) label.textContent = '前往下載頁 Go to Downloads';
+        });
+      }
+
+      // Fetch latest release assets
+      fetch('https://api.github.com/repos/nyannyn/drinkmorewater/releases/latest')
+        .then(function (r) {
+          if (!r.ok) throw new Error(r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          if (!data || !data.assets || !data.assets.length) { fallback(); return; }
+
+          var assets = data.assets;
+          var ver = data.tag_name || '';
+
+          // Find direct download URLs by filename pattern
+          var winUrl = null, macUrl = null, linuxUrl = null;
           for (var i = 0; i < assets.length; i++) {
-            if (test(assets[i].name)) return assets[i].browser_download_url;
+            var name = assets[i].name;
+            var url = assets[i].browser_download_url;
+            // Windows: setup installer (not blockmap)
+            if (!winUrl && /setup.*\.exe$/i.test(name) && !/blockmap/i.test(name)) winUrl = url;
+            // macOS: arm64 dmg first
+            if (/arm64\.dmg$/.test(name)) macUrl = url;
+            if (!macUrl && /x64\.dmg$/.test(name)) macUrl = url;
+            // Linux: AppImage
+            if (!linuxUrl && /\.AppImage$/i.test(name)) linuxUrl = url;
           }
-          return null;
-        };
 
-        // Windows: prefer setup exe
-        var win = find(function (n) { return /setup.*\.exe$/i.test(n) && !/blockmap/.test(n); });
-        // macOS: prefer arm64 dmg (Apple Silicon), fallback to x64
-        var mac = find(function (n) { return /arm64\.dmg$/.test(n); })
-               || find(function (n) { return /x64\.dmg$/.test(n); });
-        // Linux: prefer AppImage
-        var linux = find(function (n) { return /\.AppImage$/.test(n); });
+          if (winUrl) btnWin.href = winUrl;
+          if (macUrl) btnMac.href = macUrl;
+          if (linuxUrl) btnLinux.href = linuxUrl;
 
-        if (win) document.getElementById('btn-win').href = win;
-        if (mac) document.getElementById('btn-mac').href = mac;
-        if (linux) document.getElementById('btn-linux').href = linux;
-
-        // Update button labels with version
-        var ver = data.tag_name || '';
-        if (ver) {
-          var labels = document.querySelectorAll('.btn-label');
-          for (var i = 0; i < labels.length; i++) {
-            labels[i].textContent = '下載 ' + ver + ' Download';
-          }
-        }
-      }).catch(function () {
-        // Fallback: keep links pointing to releases/latest page
-      });
+          enableBtns(ver);
+        })
+        .catch(fallback);
     })();
   </script>
 </body>

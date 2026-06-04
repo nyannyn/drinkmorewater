@@ -391,10 +391,10 @@
           <svg viewBox="0 0 24 24"><path d="M3 12V7l7-1v6H3zm0 1h7v6l-7-1v-5zm8-6.5L21 4v8H11V6.5zm0 7.5h10v8l-10-2V14z"/></svg>
         </div>
         <h3>Windows</h3>
-        <p class="meta">Windows 10 以上<br>安裝版 (.exe) + 免安裝版 (.zip)</p>
-        <a class="dl-btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 Windows 版 Download for Windows">
+        <p class="meta">Windows 10 以上<br>安裝版 (.exe)</p>
+        <a class="dl-btn" id="btn-win" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 Windows 版 Download for Windows">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          下載 Download
+          <span class="btn-label">下載 Download</span>
         </a>
       </div>
       <div class="dl-card" id="card-mac">
@@ -402,10 +402,10 @@
           <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79s-2 .77-3.27.82c-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
         </div>
         <h3>macOS</h3>
-        <p class="meta">支援 Intel 與 Apple Silicon<br>DMG 安裝映像 (universal)</p>
-        <a class="dl-btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 macOS 版 Download for macOS">
+        <p class="meta">支援 Intel 與 Apple Silicon<br>DMG 安裝映像</p>
+        <a class="dl-btn" id="btn-mac" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 macOS 版 Download for macOS">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          下載 Download
+          <span class="btn-label">下載 Download</span>
         </a>
       </div>
       <div class="dl-card" id="card-linux">
@@ -414,9 +414,9 @@
         </div>
         <h3>Linux</h3>
         <p class="meta">AppImage 通用格式<br>另有 .deb 安裝包</p>
-        <a class="dl-btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 Linux 版 Download for Linux">
+        <a class="dl-btn" id="btn-linux" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 Linux 版 Download for Linux">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          下載 Download
+          <span class="btn-label">下載 Download</span>
         </a>
       </div>
     </section>
@@ -467,14 +467,51 @@
     (function () {
       var ua = navigator.userAgent || '';
       var os = /Win/.test(ua) ? 'win' : /Mac/.test(ua) ? 'mac' : /Linux/.test(ua) ? 'linux' : '';
-      if (!os) return;
-      var names = { win: 'Windows', mac: 'macOS', linux: 'Linux' };
-      var el = document.getElementById('os-detect');
-      var text = document.getElementById('os-detect-text');
-      el.style.display = 'inline-flex';
-      text.textContent = '偵測到 ' + names[os] + ' — 建議下載對應版本 Recommended for your system';
-      var card = document.getElementById('card-' + os);
-      if (card) card.classList.add('active');
+      if (os) {
+        var names = { win: 'Windows', mac: 'macOS', linux: 'Linux' };
+        var el = document.getElementById('os-detect');
+        var text = document.getElementById('os-detect-text');
+        el.style.display = 'inline-flex';
+        text.textContent = '偵測到 ' + names[os] + ' — 建議下載對應版本 Recommended for your system';
+        var card = document.getElementById('card-' + os);
+        if (card) card.classList.add('active');
+      }
+
+      // Fetch latest release and set direct download links
+      var API = 'https://api.github.com/repos/nyannyn/drinkmorewater/releases/latest';
+      fetch(API).then(function (r) { return r.json(); }).then(function (data) {
+        if (!data || !data.assets) return;
+        var assets = data.assets;
+        var find = function (test) {
+          for (var i = 0; i < assets.length; i++) {
+            if (test(assets[i].name)) return assets[i].browser_download_url;
+          }
+          return null;
+        };
+
+        // Windows: prefer setup exe
+        var win = find(function (n) { return /setup.*\.exe$/i.test(n) && !/blockmap/.test(n); });
+        // macOS: prefer arm64 dmg (Apple Silicon), fallback to x64
+        var mac = find(function (n) { return /arm64\.dmg$/.test(n); })
+               || find(function (n) { return /x64\.dmg$/.test(n); });
+        // Linux: prefer AppImage
+        var linux = find(function (n) { return /\.AppImage$/.test(n); });
+
+        if (win) document.getElementById('btn-win').href = win;
+        if (mac) document.getElementById('btn-mac').href = mac;
+        if (linux) document.getElementById('btn-linux').href = linux;
+
+        // Update button labels with version
+        var ver = data.tag_name || '';
+        if (ver) {
+          var labels = document.querySelectorAll('.btn-label');
+          for (var i = 0; i < labels.length; i++) {
+            labels[i].textContent = '下載 ' + ver + ' Download';
+          }
+        }
+      }).catch(function () {
+        // Fallback: keep links pointing to releases/latest page
+      });
     })();
   </script>
 </body>

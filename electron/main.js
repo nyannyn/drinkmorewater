@@ -6,6 +6,7 @@ const {
   ipcMain,
   Notification,
   dialog,
+  shell,
   screen,
   powerMonitor,
   nativeImage,
@@ -463,6 +464,12 @@ function registerIpc() {
   });
   ipcMain.handle("reset-data", () => resetData());
   ipcMain.handle("reset-today", () => resetToday());
+  ipcMain.handle("open-external", (_e, url) => {
+    // Only allow opening GitHub URLs for safety
+    if (typeof url === "string" && url.startsWith("https://github.com/nyannyn/drinkmorewater")) {
+      shell.openExternal(url);
+    }
+  });
   ipcMain.handle("get-sound-settings", () => {
     const { soundEnabled = false, soundVolume = 80 } = store.get([
       "soundEnabled",

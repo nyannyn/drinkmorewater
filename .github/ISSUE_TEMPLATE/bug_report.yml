@@ -1,0 +1,49 @@
+name: 回報 Bug / Bug Report
+description: 回報程式問題 Report a bug or unexpected behavior
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 平台 Platform
+      options:
+        - Windows
+        - macOS (Intel)
+        - macOS (Apple Silicon)
+        - Linux (AppImage)
+        - Linux (deb)
+        - iOS (mobile)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本 Version
+      placeholder: "e.g. v1.6.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 描述 Description
+      description: 發生了什麼？預期行為是什麼？ What happened? What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 重現步驟 Steps to reproduce
+      description: 越具體越好 Be as specific as possible
+      placeholder: |
+        1. 開啟設定頁
+        2. 點擊「⋯」
+        3. 看到錯誤
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 其他資訊 Additional context
+      description: 截圖、錯誤訊息、log 等 Screenshots, error messages, logs, etc.

@@ -1,0 +1,35 @@
+name: 功能許願 / Feature Request
+description: 許願新功能或改進 Suggest an idea or improvement
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 描述 Description
+      description: 你想要什麼功能？解決什麼問題？ What feature do you want? What problem does it solve?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 適用平台 Platform
+      options:
+        - 桌面版 Desktop
+        - 手機版 Mobile (iOS)
+        - 兩者皆可 Both
+        - 不確定 Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 替代方案 Alternatives considered
+      description: 有沒有想過用別的方式解決？ Have you considered any workarounds?
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 其他資訊 Additional context
+      description: 截圖、mockup、參考連結等 Screenshots, mockups, reference links, etc.

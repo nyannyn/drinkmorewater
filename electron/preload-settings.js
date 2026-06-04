@@ -23,4 +23,5 @@ contextBridge.exposeInMainWorld("api", {
   syncUnlink: () => ipcRenderer.invoke("sync-unlink"),
   // 水杯喝水後主行程通知刷新
   onStatusChanged: (cb) => ipcRenderer.on("status-changed", () => cb()),
+  openExternal: (url) => ipcRenderer.invoke("open-external", url),
 });

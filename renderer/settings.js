@@ -59,6 +59,10 @@ const I18N = {
     syncNow: "立即同步",
     syncUnlink: "解除連動",
     syncError: "同步失敗，請確認網址與配對碼",
+    prefAboutTitle: "關於與隱私",
+    privacyText: "所有飲水紀錄與設定僅儲存於本機，不含任何追蹤、分析或遙測。除非你主動啟用「跨裝置同步」並自行架設伺服器，否則本程式不會進行任何網路連線。原始碼完全公開，歡迎檢視。",
+    feedbackBug: "回報問題",
+    feedbackWish: "功能許願",
   },
   "zh-Hans": {
     tabMain: "统计",
@@ -119,6 +123,10 @@ const I18N = {
     syncNow: "立即同步",
     syncUnlink: "解除连动",
     syncError: "同步失败，请确认网址与配对码",
+    prefAboutTitle: "关于与隐私",
+    privacyText: "所有饮水记录与设置仅存储于本机，不含任何追踪、分析或遥测。除非你主动启用「跨设备同步」并自行架设服务器，否则本程序不会进行任何网络连接。源代码完全公开，欢迎查阅。",
+    feedbackBug: "报告问题",
+    feedbackWish: "功能许愿",
   },
   en: {
     tabMain: "Stats",
@@ -179,6 +187,10 @@ const I18N = {
     syncNow: "Sync now",
     syncUnlink: "Unlink",
     syncError: "Sync failed — check the URL and code",
+    prefAboutTitle: "ABOUT & PRIVACY",
+    privacyText: "All hydration data and settings are stored locally on your device. This app contains no tracking, analytics, or telemetry. No network requests are made unless you enable Cross-device Sync with your own server. The source code is fully open for inspection.",
+    feedbackBug: "Report a bug",
+    feedbackWish: "Request a feature",
   },
   ja: {
     tabMain: "統計",
@@ -239,6 +251,10 @@ const I18N = {
     syncNow: "今すぐ同期",
     syncUnlink: "連携解除",
     syncError: "同期に失敗しました。URL とコードを確認してください",
+    prefAboutTitle: "このアプリについて",
+    privacyText: "すべての記録と設定はお使いの端末にのみ保存されます。トラッキング・分析・テレメトリは一切含まれていません。「デバイス間同期」を有効にし自分のサーバーを指定しない限り、通信は行われません。ソースコードはすべて公開されています。",
+    feedbackBug: "不具合を報告",
+    feedbackWish: "機能リクエスト",
   },
 };
 
@@ -413,6 +429,11 @@ function applyLang(lang) {
   document.getElementById("syncNowBtn").textContent = t("syncNow");
   document.getElementById("syncUnlinkBtn").textContent = t("syncUnlink");
 
+  document.getElementById("prefAboutTitle").textContent = t("prefAboutTitle");
+  document.getElementById("privacyText").textContent = t("privacyText");
+  document.getElementById("feedbackBugBtn").textContent = t("feedbackBug");
+  document.getElementById("feedbackWishBtn").textContent = t("feedbackWish");
+
   const opts = t("intervalOpts");
   $intervalMin.querySelectorAll("option").forEach((opt, i) => { opt.textContent = opts[i]; });
 }
@@ -422,6 +443,14 @@ $langSelect.addEventListener("change", () => {
   applyLang(lang);
   window.api.setPrefs({ lang });
   refresh();
+});
+
+// ===== Feedback buttons =====
+document.getElementById("feedbackBugBtn").addEventListener("click", () => {
+  window.api.openExternal("https://github.com/nyannyn/drinkmorewater/issues/new?template=bug_report.yml");
+});
+document.getElementById("feedbackWishBtn").addEventListener("click", () => {
+  window.api.openExternal("https://github.com/nyannyn/drinkmorewater/issues/new?template=feature_request.yml");
 });
 
 // ===== Auto start =====

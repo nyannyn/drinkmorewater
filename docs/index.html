@@ -3,347 +3,478 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>喝水提醒 Drink Water Reminder — 下載 Download</title>
+  <title>喝水提醒 Drink Water Reminder</title>
+  <meta name="description" content="定時提醒喝水、追蹤每日飲水量的桌面小工具。A desktop widget that reminds you to drink water on schedule and tracks your daily intake." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
+    /* ═══ Design System ═══
+       Style: Dark Mode Premium
+       Category: Habit Tracker / Health
+       Colors: Deep navy + Cyan accent
+       Typography: Inter (clean, professional)
+       Effects: Subtle glass, soft shadows, smooth transitions (200-300ms)
+       Anti-patterns avoided: neon overuse, emoji icons, harsh animations
+       Accessibility: WCAG AA contrast, focus-visible, prefers-reduced-motion
+       Responsive: 375 / 768 / 1024 / 1440
+    */
     :root {
-      --cyan: #00bcd4;
-      --cyan-light: #4dd0e1;
-      --cyan-glow: rgba(77, 208, 225, 0.15);
-      --glass: rgba(255, 255, 255, 0.05);
-      --glass-border: rgba(255, 255, 255, 0.1);
-      --glass-hover: rgba(255, 255, 255, 0.08);
-      --text: #e8f0f8;
-      --text-muted: #8ea4b8;
-      --radius: 20px;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #070e1a;
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
+      --color-bg: #06101c;
+      --color-surface: #0d1b2e;
+      --color-surface-2: #132842;
+      --color-border: rgba(148, 210, 226, 0.08);
+      --color-border-hover: rgba(77, 208, 225, 0.25);
+      --color-primary: #4dd0e1;
+      --color-primary-dim: #2ba8b8;
+      --color-text: #eaf4f8;
+      --color-text-secondary: #8caab8;
+      --color-text-tertiary: #5a7a8c;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.3);
+      --shadow-glow: 0 0 24px rgba(77, 208, 225, 0.12);
+      --transition: 200ms ease;
+      --transition-slow: 350ms ease;
+      --max-width: 1080px;
     }
 
-    /* Animated background */
-    .bg {
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+      html { scroll-behavior: auto; }
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ─── Background ─── */
+    .bg-gradient {
       position: fixed;
       inset: 0;
       z-index: -1;
       background:
-        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0, 188, 212, 0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 50% at 80% 100%, rgba(77, 208, 225, 0.05) 0%, transparent 50%),
-        #070e1a;
-    }
-    .bg::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(circle at 30% 40%, rgba(0, 188, 212, 0.03) 0%, transparent 40%);
-      animation: drift 20s ease-in-out infinite alternate;
-    }
-    @keyframes drift {
-      0% { transform: translate(0, 0); }
-      100% { transform: translate(5%, 3%); }
+        radial-gradient(ellipse 70% 50% at 50% -10%, rgba(77, 208, 225, 0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 85% 90%, rgba(43, 168, 184, 0.04) 0%, transparent 60%),
+        var(--color-bg);
     }
 
-    /* Layout */
-    .container {
-      max-width: 960px;
+    /* ─── Layout ─── */
+    .page {
+      max-width: var(--max-width);
       margin: 0 auto;
-      padding: 4rem 1.5rem;
+      padding: 5rem 1.5rem 3rem;
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 100vh;
+      gap: 4rem;
     }
 
-    /* Hero */
+    /* ─── Hero ─── */
     .hero {
       text-align: center;
-      margin-bottom: 3rem;
+      max-width: 640px;
     }
-    .hero-icon {
-      width: 72px;
-      height: 72px;
-      margin: 0 auto 1.5rem;
-      background: var(--glass);
-      border: 1px solid var(--glass-border);
-      border-radius: 20px;
-      backdrop-filter: blur(12px);
-      display: flex;
+    .hero-badge {
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 100px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      margin-bottom: 1.5rem;
     }
-    .hero-icon svg {
-      width: 36px;
-      height: 36px;
-      fill: var(--cyan-light);
+    .hero-badge svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--color-primary);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
     .hero h1 {
-      font-size: 2.4rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      margin-bottom: 0.6rem;
-      background: linear-gradient(135deg, #fff 30%, var(--cyan-light));
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 1rem;
+    }
+    .hero h1 .gradient-text {
+      background: linear-gradient(135deg, #fff 20%, var(--color-primary) 80%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
-    .hero p {
-      font-size: 1.1rem;
-      color: var(--text-muted);
-      max-width: 480px;
+    .hero .subtitle-zh {
+      font-size: 1.05rem;
+      color: var(--color-text-secondary);
+      margin-bottom: 0.4rem;
+    }
+    .hero .subtitle-en {
+      font-size: 0.88rem;
+      color: var(--color-text-tertiary);
+      max-width: 500px;
       margin: 0 auto;
-      line-height: 1.6;
-    }
-    .hero .sub-zh {
-      font-size: 0.95rem;
-      color: var(--text-muted);
-      margin-top: 0.4rem;
-      opacity: 0.8;
     }
 
-    /* Detect banner */
-    .detect {
+    /* ─── OS Detect ─── */
+    .os-detect {
       display: none;
-      margin-bottom: 2rem;
-      padding: 0.6rem 1.2rem;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
       border-radius: 100px;
-      background: rgba(0, 188, 212, 0.08);
-      border: 1px solid rgba(77, 208, 225, 0.2);
-      font-size: 0.85rem;
-      color: var(--cyan-light);
-      backdrop-filter: blur(8px);
+      background: rgba(77, 208, 225, 0.06);
+      border: 1px solid rgba(77, 208, 225, 0.15);
+      font-size: 0.8rem;
+      color: var(--color-primary);
+      font-weight: 500;
+    }
+    .os-detect svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--color-primary);
+      fill: none;
+      stroke-width: 2;
     }
 
-    /* Cards */
-    .cards {
+    /* ─── Download Cards ─── */
+    .downloads {
+      width: 100%;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 1.25rem;
-      width: 100%;
-      margin-bottom: 2.5rem;
-    }
-    @media (max-width: 720px) {
-      .cards { grid-template-columns: 1fr; max-width: 360px; }
     }
 
-    .card {
+    .dl-card {
       position: relative;
-      background: var(--glass);
-      border: 1px solid var(--glass-border);
-      border-radius: var(--radius);
-      padding: 2rem 1.5rem 1.8rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       text-align: center;
-      backdrop-filter: blur(16px) saturate(120%);
-      -webkit-backdrop-filter: blur(16px) saturate(120%);
-      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      gap: 0.75rem;
+      transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition-slow);
       cursor: default;
     }
-    .card:hover {
-      transform: translateY(-6px);
-      border-color: rgba(77, 208, 225, 0.3);
-      box-shadow: 0 12px 40px rgba(0, 188, 212, 0.1);
-      background: var(--glass-hover);
+    .dl-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--color-border-hover);
+      box-shadow: var(--shadow-glow);
     }
-    .card.highlight {
-      border-color: rgba(77, 208, 225, 0.4);
-      box-shadow: 0 0 0 1px rgba(77, 208, 225, 0.15), 0 8px 32px rgba(0, 188, 212, 0.12);
+    .dl-card:focus-within {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
     }
-    .card .platform-icon {
+    .dl-card.active {
+      border-color: rgba(77, 208, 225, 0.35);
+      box-shadow: 0 0 0 1px rgba(77, 208, 225, 0.1), var(--shadow-glow);
+    }
+
+    .dl-card .icon-box {
       width: 48px;
       height: 48px;
-      margin: 0 auto 1rem;
+      border-radius: var(--radius-sm);
+      background: rgba(77, 208, 225, 0.06);
+      border: 1px solid rgba(77, 208, 225, 0.1);
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 12px;
-      background: rgba(77, 208, 225, 0.08);
     }
-    .card .platform-icon svg {
-      width: 24px;
-      height: 24px;
-      fill: var(--cyan-light);
+    .dl-card .icon-box svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--color-primary);
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
-    .card h2 {
-      font-size: 1.1rem;
+    .dl-card h3 {
+      font-size: 1rem;
       font-weight: 600;
-      margin-bottom: 0.4rem;
     }
-    .card .desc {
-      font-size: 0.82rem;
-      color: var(--text-muted);
+    .dl-card .meta {
+      font-size: 0.78rem;
+      color: var(--color-text-tertiary);
       line-height: 1.5;
-      margin-bottom: 1.2rem;
     }
-    .btn {
-      display: inline-block;
-      padding: 0.65rem 1.4rem;
-      border-radius: 10px;
-      font-size: 0.85rem;
+    .dl-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 0.5rem;
+      padding: 0.6rem 1.3rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
       font-weight: 600;
-      text-decoration: none;
       color: #fff;
-      background: linear-gradient(135deg, var(--cyan), var(--cyan-light));
-      box-shadow: 0 4px 16px rgba(0, 188, 212, 0.25);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-decoration: none;
+      background: linear-gradient(135deg, var(--color-primary-dim), var(--color-primary));
+      box-shadow: 0 4px 12px rgba(77, 208, 225, 0.2);
+      transition: transform var(--transition), box-shadow var(--transition);
+      cursor: pointer;
     }
-    .btn:hover {
+    .dl-btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 24px rgba(0, 188, 212, 0.35);
+      box-shadow: 0 6px 20px rgba(77, 208, 225, 0.3);
     }
-    .btn:active { transform: translateY(0); }
+    .dl-btn:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 3px;
+    }
+    .dl-btn:active { transform: translateY(0); }
+    .dl-btn svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
 
-    /* Features */
+    /* ─── Features ─── */
     .features {
+      width: 100%;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 1rem;
-      width: 100%;
-      margin-bottom: 2.5rem;
     }
-    @media (max-width: 720px) {
-      .features { grid-template-columns: 1fr; max-width: 360px; }
+    .feat-item {
+      padding: 1.5rem;
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      transition: border-color var(--transition);
     }
-    .feature {
-      padding: 1.2rem;
-      border-radius: 14px;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      text-align: center;
+    .feat-item:hover {
+      border-color: var(--color-border-hover);
     }
-    .feature .f-title {
+    .feat-item .feat-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: rgba(77, 208, 225, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+    }
+    .feat-item .feat-icon svg {
+      width: 18px;
+      height: 18px;
+      stroke: var(--color-primary);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .feat-item .feat-title {
       font-size: 0.85rem;
       font-weight: 600;
-      margin-bottom: 0.3rem;
+      margin-bottom: 0.25rem;
     }
-    .feature .f-desc {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      line-height: 1.4;
+    .feat-item .feat-desc {
+      font-size: 0.75rem;
+      color: var(--color-text-tertiary);
+      line-height: 1.5;
     }
 
-    /* Footer */
-    .footer {
-      margin-top: auto;
-      padding-top: 2rem;
+    /* ─── Note ─── */
+    .note {
+      max-width: 560px;
       text-align: center;
-      font-size: 0.8rem;
-      color: var(--text-muted);
+      font-size: 0.78rem;
+      color: var(--color-text-tertiary);
+      line-height: 1.7;
+      padding: 1rem 1.5rem;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--color-border);
     }
-    .footer a {
-      color: var(--cyan-light);
-      text-decoration: none;
-      transition: color 0.2s;
+
+    /* ─── Footer ─── */
+    .footer {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--color-border);
     }
-    .footer a:hover { color: #fff; }
-    .footer .links {
-      margin-top: 0.8rem;
+    .footer-links {
       display: flex;
       gap: 1.5rem;
-      justify-content: center;
       flex-wrap: wrap;
+      justify-content: center;
     }
-    .note-text {
-      margin-top: 1rem;
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      max-width: 500px;
-      text-align: center;
-      line-height: 1.5;
+    .footer-links a {
+      font-size: 0.8rem;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+    .footer-links a:hover { color: var(--color-primary); }
+    .footer-links a:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+      border-radius: 2px;
+    }
+    .footer-copy {
+      font-size: 0.7rem;
+      color: var(--color-text-tertiary);
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      .page { padding: 3rem 1.25rem 2rem; gap: 3rem; }
+      .downloads { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; }
+      .features { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; }
+    }
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .downloads { gap: 1rem; }
+      .features { gap: 0.75rem; }
+      .dl-card { padding: 1.5rem 1.25rem; }
     }
   </style>
 </head>
 <body>
-  <div class="bg"></div>
-  <div class="container">
-    <div class="hero">
-      <div class="hero-icon">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.69l.66.95C13.47 4.84 17 9.97 17 13.5A5 5 0 0 1 7 13.5c0-3.53 3.53-8.66 4.34-9.86L12 2.69z"/></svg>
+  <div class="bg-gradient" aria-hidden="true"></div>
+
+  <main class="page">
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-badge">
+        <svg viewBox="0 0 24 24"><path d="M12 2v6m0 0l3-3m-3 3l-3-3"/><path d="M5 10v10a2 2 0 002 2h10a2 2 0 002-2V10"/></svg>
+        <span>v1.6.0 — Windows / macOS / Linux</span>
       </div>
-      <h1>喝水提醒 Drink Water Reminder</h1>
-      <p>A desktop widget that reminds you to drink water on schedule and tracks your daily intake.</p>
-      <p class="sub-zh">定時提醒喝水、追蹤每日飲水量的桌面小工具</p>
+      <h1><span class="gradient-text">喝水提醒</span></h1>
+      <p class="subtitle-zh">定時提醒喝水、追蹤每日飲水量的桌面小工具</p>
+      <p class="subtitle-en">A lightweight desktop widget that reminds you to drink water on schedule, tracks your daily and weekly intake with a floating cup overlay.</p>
+    </section>
+
+    <!-- OS Detection -->
+    <div class="os-detect" id="os-detect" role="status" aria-live="polite">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>
+      <span id="os-detect-text"></span>
     </div>
 
-    <div class="detect" id="detect"></div>
-
-    <div class="cards">
-      <div class="card" id="card-win">
-        <div class="platform-icon">
-          <svg viewBox="0 0 24 24"><path d="M3 12V6.75l8-1.25V12H3zm0 .5h8v6.5l-8-1.25V12.5zM11.5 5.4l9.5-1.4v8h-9.5V5.4zm0 7.1h9.5v8l-9.5-1.4V12.5z"/></svg>
+    <!-- Download Cards -->
+    <section class="downloads" aria-label="下載 Downloads">
+      <div class="dl-card" id="card-win">
+        <div class="icon-box">
+          <svg viewBox="0 0 24 24"><path d="M3 12V7l7-1v6H3zm0 1h7v6l-7-1v-5zm8-6.5L21 4v8H11V6.5zm0 7.5h10v8l-10-2V14z"/></svg>
         </div>
-        <h2>Windows</h2>
-        <p class="desc">Windows 10+<br>安裝版 + 免安裝版 / Installer or portable</p>
-        <a class="btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest">下載 Download</a>
+        <h3>Windows</h3>
+        <p class="meta">Windows 10 以上<br>安裝版 (.exe) + 免安裝版 (.zip)</p>
+        <a class="dl-btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 Windows 版 Download for Windows">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          下載 Download
+        </a>
       </div>
-      <div class="card" id="card-mac">
-        <div class="platform-icon">
-          <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+      <div class="dl-card" id="card-mac">
+        <div class="icon-box">
+          <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79s-2 .77-3.27.82c-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
         </div>
-        <h2>macOS</h2>
-        <p class="desc">Intel &amp; Apple Silicon<br>DMG 安裝映像 / DMG installer</p>
-        <a class="btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest">下載 Download</a>
+        <h3>macOS</h3>
+        <p class="meta">支援 Intel 與 Apple Silicon<br>DMG 安裝映像 (universal)</p>
+        <a class="dl-btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 macOS 版 Download for macOS">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          下載 Download
+        </a>
       </div>
-      <div class="card" id="card-linux">
-        <div class="platform-icon">
+      <div class="dl-card" id="card-linux">
+        <div class="icon-box">
           <svg viewBox="0 0 24 24"><path d="M12.5 2c-1.77 0-3.15 1.31-3.36 3.02-.72.26-1.34.68-1.8 1.23C6.31 5.14 5 5.85 5 7.5c0 .71.28 1.35.75 1.82C5.28 10.37 5 11.15 5 12c0 2.24 1.56 4.1 3.63 4.6.18.76.5 1.47.94 2.06C8.22 19.54 7 20.83 7 22h2c0-.55.78-1.22 2-1.67V22h2v-1.67c1.22.45 2 1.12 2 1.67h2c0-1.17-1.22-2.46-2.57-3.34.44-.59.76-1.3.94-2.06C17.44 16.1 19 14.24 19 12c0-.85-.28-1.63-.75-2.18.47-.47.75-1.11.75-1.82 0-1.65-1.31-2.36-2.34-1.25-.46-.55-1.08-.97-1.8-1.23C14.65 3.31 13.27 2 12.5 2z"/></svg>
         </div>
-        <h2>Linux</h2>
-        <p class="desc">AppImage 通用格式 / Universal<br>也有 .deb / also .deb available</p>
-        <a class="btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest">下載 Download</a>
+        <h3>Linux</h3>
+        <p class="meta">AppImage 通用格式<br>另有 .deb 安裝包</p>
+        <a class="dl-btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 Linux 版 Download for Linux">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          下載 Download
+        </a>
       </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features" aria-label="功能特色 Features">
+      <div class="feat-item">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="feat-title">定時提醒 Scheduled Reminders</div>
+        <div class="feat-desc">自訂間隔、系統匣常駐、閒置自動跳過<br>Custom interval, system tray, idle-aware</div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <div class="feat-title">飲水追蹤 Daily Tracking</div>
+        <div class="feat-desc">進度環、每週長條圖、每日目標設定<br>Progress ring, weekly chart, daily goal</div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-icon">
+          <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        </div>
+        <div class="feat-title">跨裝置同步 Cross-device Sync</div>
+        <div class="feat-desc">六位配對碼、桌面與手機即時連動<br>6-digit code, desktop &amp; mobile in sync</div>
+      </div>
+    </section>
+
+    <!-- Note -->
+    <div class="note">
+      <p><strong>macOS</strong> 版未經 Apple 公證，首次開啟需到「系統設定 → 隱私權與安全性」點「仍要打開」。</p>
+      <p style="margin-top:0.4rem;">macOS builds are not notarized. On first launch, go to System Settings → Privacy &amp; Security → click "Open Anyway".</p>
     </div>
 
-    <div class="features">
-      <div class="feature">
-        <div class="f-title">定時提醒 Scheduled Reminders</div>
-        <div class="f-desc">自訂間隔、常駐系統匣<br>Customizable interval, system tray resident</div>
-      </div>
-      <div class="feature">
-        <div class="f-title">每日追蹤 Daily Tracking</div>
-        <div class="f-desc">進度環、週統計長條圖、目標設定<br>Progress ring, weekly chart, goal setting</div>
-      </div>
-      <div class="feature">
-        <div class="f-title">跨裝置同步 Cross-device Sync</div>
-        <div class="f-desc">六位數配對碼連動桌面與手機<br>Pair desktop &amp; mobile with a 6-digit code</div>
-      </div>
-    </div>
-
-    <p class="note-text">
-      macOS 未經 Apple 公證，首次開啟需到「系統設定 → 隱私權與安全性」點「仍要打開」。<br>
-      macOS: not notarized. On first launch go to System Settings &gt; Privacy &amp; Security &gt; click "Open Anyway".
-    </p>
-
-    <div class="footer">
-      <div class="links">
-        <a href="https://github.com/nyannyn/drinkmorewater/releases">所有版本 All releases</a>
-        <a href="https://github.com/nyannyn/drinkmorewater">原始碼 Source code</a>
+    <!-- Footer -->
+    <footer class="footer">
+      <nav class="footer-links" aria-label="專案連結 Project links">
+        <a href="https://github.com/nyannyn/drinkmorewater/releases">所有版本 All Releases</a>
+        <a href="https://github.com/nyannyn/drinkmorewater">原始碼 Source</a>
         <a href="https://github.com/nyannyn/drinkmorewater/tree/main/mobile">手機版 Mobile (iOS)</a>
-      </div>
-    </div>
-  </div>
+      </nav>
+      <p class="footer-copy">Open source under MIT license</p>
+    </footer>
+  </main>
 
   <script>
-    (function() {
+    (function () {
       var ua = navigator.userAgent || '';
       var os = /Win/.test(ua) ? 'win' : /Mac/.test(ua) ? 'mac' : /Linux/.test(ua) ? 'linux' : '';
-      if (os) {
-        var labels = { win: 'Windows', mac: 'macOS', linux: 'Linux' };
-        var el = document.getElementById('detect');
-        el.style.display = 'inline-block';
-        el.textContent = '偵測到 Detected: ' + labels[os] + ' — 建議下載對應版本';
-        var card = document.getElementById('card-' + os);
-        if (card) card.classList.add('highlight');
-      }
+      if (!os) return;
+      var names = { win: 'Windows', mac: 'macOS', linux: 'Linux' };
+      var el = document.getElementById('os-detect');
+      var text = document.getElementById('os-detect-text');
+      el.style.display = 'inline-flex';
+      text.textContent = '偵測到 ' + names[os] + ' — 建議下載對應版本 Recommended for your system';
+      var card = document.getElementById('card-' + os);
+      if (card) card.classList.add('active');
     })();
   </script>
 </body>

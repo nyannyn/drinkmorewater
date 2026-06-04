@@ -1,27 +1,27 @@
-# 💧 喝水提醒 Drink Water Reminder（桌面版）
+# 喝水提醒 Drink Water Reminder（桌面版）
 
 [![最新版本](https://img.shields.io/github/v/release/nyannyn/drinkmorewater?label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC&color=00bcd4)](https://github.com/nyannyn/drinkmorewater/releases/latest)
 [![下載次數](https://img.shields.io/github/downloads/nyannyn/drinkmorewater/total?label=%E4%B8%8B%E8%BC%89%E6%AC%A1%E6%95%B8&color=4dd0e1)](https://github.com/nyannyn/drinkmorewater/releases/latest)
 
 一款常駐系統托盤的喝水提醒軟體，時間到會在桌面右下角浮現一個搖晃的水杯，長按 3 秒喝水，並追蹤每日 / 每週飲水量。以 [Electron](https://www.electronjs.org/) 打包成可下載安裝的 **Windows / Linux / macOS** 應用程式。
 
-### 🚀 快速下載
+### 快速下載
 
-> **[👉 前往下載頁面](https://nyannyn.github.io/drinkmorewater/)**（自動偵測你的系統）
+> **[前往下載頁面](https://nyannyn.github.io/drinkmorewater/)**（自動偵測你的系統）
 
 或手動選擇：
 
-| | 下載 |
+| 系統 | 下載 |
 |---|---|
-| 🪟 **Windows** | [**安裝版 (.exe)**](https://github.com/nyannyn/drinkmorewater/releases/latest) |
-| 🍎 **macOS** | [**DMG 安裝映像**](https://github.com/nyannyn/drinkmorewater/releases/latest) |
-| 🐧 **Linux** | [**AppImage**](https://github.com/nyannyn/drinkmorewater/releases/latest) |
+| **Windows** | [**安裝版 (.exe)**](https://github.com/nyannyn/drinkmorewater/releases/latest) |
+| **macOS** | [**DMG 安裝映像**](https://github.com/nyannyn/drinkmorewater/releases/latest) |
+| **Linux** | [**AppImage**](https://github.com/nyannyn/drinkmorewater/releases/latest) |
 
 ---
 
 > 本專案原為 Chrome 擴充功能，已改寫為桌面應用程式。原擴充程式的水杯動畫、音效與統計邏輯皆完整保留。
 >
-> 📱 **iOS 手機版**（React Native / Expo，原生本地排程通知）位於 [`mobile/`](mobile/README.md)。
+> **iOS 手機版**（React Native / Expo，原生本地排程通知）位於 [`mobile/`](mobile/README.md)。
 
 ## 下載安裝
 
@@ -36,9 +36,9 @@
 | **macOS (Apple Silicon)** | `drink-water-reminder-x.y.z-arm64.dmg` | M 系列晶片，開啟 DMG 後拖入「應用程式」 |
 | **macOS (Intel)** | `drink-water-reminder-x.y.z-x64.dmg` | Intel 晶片，開啟 DMG 後拖入「應用程式」 |
 
-> 💡 安裝完成後，應用程式會常駐在系統托盤（Windows 工作列右下角 / Linux 通知區域 / macOS 選單列）。左鍵點擊托盤圖示可開啟設定與統計面板。
+> 安裝完成後，應用程式會常駐在系統托盤（Windows 工作列右下角 / Linux 通知區域 / macOS 選單列）。左鍵點擊托盤圖示可開啟設定與統計面板。
 >
-> 🍎 macOS 版未經 Apple 簽署，首次開啟若被擋下，請至「系統設定 → 隱私權與安全性」按「仍要開啟」，或在 App 上按右鍵選「打開」。
+> macOS 版未經 Apple 簽署，首次開啟若被擋下，請至「系統設定 → 隱私權與安全性」按「仍要開啟」，或在 App 上按右鍵選「打開」。
 
 ## 功能
 
@@ -88,7 +88,7 @@ npm start        # 啟動 App（出現托盤水滴圖示）
 
 存檔即可看到變化。要暫時關閉熱重載：`DRINK_DEV=0 npm start`。正式打包版（`npm run dist:*`）不會載入此機制。
 
-> 💡 測試提醒最快的方式：托盤右鍵 →「立即提醒（測試）」可直接觸發水杯與系統通知，不必等計時器。
+> 測試提醒最快的方式：托盤右鍵 →「立即提醒（測試）」可直接觸發水杯與系統通知，不必等計時器。
 
 ## 打包成 Windows 安裝程式
 
@@ -101,7 +101,7 @@ npm run dist:win
 - `喝水提醒 Setup x.y.z.exe` — NSIS 安裝程式
 - `喝水提醒 x.y.z.exe` — 免安裝可攜版
 
-> ⚠️ 建議在 **Windows** 上執行打包。在 Linux / macOS 上產生 Windows 安裝程式需額外安裝 wine 等工具。
+> 建議在 **Windows** 上執行打包。在 Linux / macOS 上產生 Windows 安裝程式需額外安裝 wine 等工具。
 
 ## 打包成 Linux 安裝包
 
@@ -114,7 +114,7 @@ npm run dist:linux
 - `drink-water-reminder-x.y.z-x86_64.AppImage` — 免安裝，`chmod +x` 後直接執行，適用大多數發行版
 - `drink-water-reminder-x.y.z-amd64.deb` — Debian / Ubuntu 安裝包（`sudo apt install ./檔名.deb`）
 
-> ℹ️ 在 GNOME 桌面上系統托盤需安裝 [AppIndicator](https://extensions.gnome.org/extension/615/appindicator-support/) 擴充才會顯示圖示；KDE / XFCE 等多數環境內建支援。透明懸浮水杯需要啟用桌面合成（compositor），大多數現代桌面預設開啟。
+> 在 GNOME 桌面上系統托盤需安裝 [AppIndicator](https://extensions.gnome.org/extension/615/appindicator-support/) 擴充才會顯示圖示；KDE / XFCE 等多數環境內建支援。透明懸浮水杯需要啟用桌面合成（compositor），大多數現代桌面預設開啟。
 
 ## 打包成 macOS 應用程式
 
@@ -127,7 +127,7 @@ npm run dist:mac
 - `drink-water-reminder-x.y.z-x64.dmg` / `drink-water-reminder-x.y.z-arm64.dmg` — DMG 安裝映像
 - `drink-water-reminder-x.y.z-x64.zip` / `drink-water-reminder-x.y.z-arm64.zip` — ZIP 壓縮包（auto-updater 使用）
 
-> ⚠️ 建議在 **macOS** 上執行打包。本 App 以選單列 (menu bar) 形式常駐，不會在 Dock 出現圖示。未經簽署的版本首次開啟需在「系統設定 → 隱私權與安全性」允許執行。
+> 建議在 **macOS** 上執行打包。本 App 以選單列 (menu bar) 形式常駐，不會在 Dock 出現圖示。未經簽署的版本首次開啟需在「系統設定 → 隱私權與安全性」允許執行。
 
 ## 使用方式
 

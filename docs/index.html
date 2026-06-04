@@ -3,123 +3,338 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>💧 喝水提醒 — 下載</title>
+  <title>Drink Water Reminder — Download</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    :root { --cyan: #00bcd4; --cyan-light: #4dd0e1; --bg: #0a1628; --card: #132040; }
+    :root {
+      --cyan: #00bcd4;
+      --cyan-light: #4dd0e1;
+      --cyan-glow: rgba(77, 208, 225, 0.15);
+      --glass: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --glass-hover: rgba(255, 255, 255, 0.08);
+      --text: #e8f0f8;
+      --text-muted: #8ea4b8;
+      --radius: 20px;
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
-      background: var(--bg);
-      color: #e0e8f0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #070e1a;
+      color: var(--text);
       min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    .bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0, 188, 212, 0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 100%, rgba(77, 208, 225, 0.05) 0%, transparent 50%),
+        #070e1a;
+    }
+    .bg::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 30% 40%, rgba(0, 188, 212, 0.03) 0%, transparent 40%);
+      animation: drift 20s ease-in-out infinite alternate;
+    }
+    @keyframes drift {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(5%, 3%); }
+    }
+
+    /* Layout */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 4rem 1.5rem;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 2rem;
+      min-height: 100vh;
     }
-    h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
-    .subtitle { color: #8aa0b8; margin-bottom: 2.5rem; font-size: 1.1rem; }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+    .hero-icon {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 1.5rem;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hero-icon svg {
+      width: 36px;
+      height: 36px;
+      fill: var(--cyan-light);
+    }
+    .hero h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.6rem;
+      background: linear-gradient(135deg, #fff 30%, var(--cyan-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 420px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Detect banner */
+    .detect {
+      display: none;
+      margin-bottom: 2rem;
+      padding: 0.6rem 1.2rem;
+      border-radius: 100px;
+      background: rgba(0, 188, 212, 0.08);
+      border: 1px solid rgba(77, 208, 225, 0.2);
+      font-size: 0.85rem;
+      color: var(--cyan-light);
+      backdrop-filter: blur(8px);
+    }
+
+    /* Cards */
     .cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1.5rem;
-      max-width: 800px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
       width: 100%;
-      margin-bottom: 2rem;
+      margin-bottom: 2.5rem;
     }
+    @media (max-width: 720px) {
+      .cards { grid-template-columns: 1fr; max-width: 360px; }
+    }
+
     .card {
-      background: var(--card);
-      border: 1px solid rgba(77, 208, 225, 0.2);
-      border-radius: 16px;
-      padding: 2rem 1.5rem;
+      position: relative;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 2rem 1.5rem 1.8rem;
       text-align: center;
-      transition: transform 0.2s, border-color 0.2s;
+      backdrop-filter: blur(16px) saturate(120%);
+      -webkit-backdrop-filter: blur(16px) saturate(120%);
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      cursor: default;
     }
-    .card:hover { transform: translateY(-4px); border-color: var(--cyan-light); }
-    .card .icon { font-size: 3rem; margin-bottom: 1rem; }
-    .card h2 { font-size: 1.2rem; margin-bottom: 0.5rem; }
-    .card p { color: #8aa0b8; font-size: 0.9rem; margin-bottom: 1.2rem; }
+    .card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(77, 208, 225, 0.3);
+      box-shadow: 0 12px 40px rgba(0, 188, 212, 0.1);
+      background: var(--glass-hover);
+    }
+    .card.highlight {
+      border-color: rgba(77, 208, 225, 0.4);
+      box-shadow: 0 0 0 1px rgba(77, 208, 225, 0.15), 0 8px 32px rgba(0, 188, 212, 0.12);
+    }
+    .card .platform-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: rgba(77, 208, 225, 0.08);
+    }
+    .card .platform-icon svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--cyan-light);
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+    .card .desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 1.2rem;
+    }
     .btn {
       display: inline-block;
-      background: linear-gradient(135deg, var(--cyan), var(--cyan-light));
-      color: #fff;
-      font-weight: 600;
-      padding: 0.7rem 1.5rem;
-      border-radius: 8px;
-      text-decoration: none;
-      transition: opacity 0.2s;
-    }
-    .btn:hover { opacity: 0.85; }
-    .note {
-      max-width: 600px;
-      text-align: center;
-      color: #6a8098;
+      padding: 0.65rem 1.4rem;
+      border-radius: 10px;
       font-size: 0.85rem;
-      line-height: 1.6;
-      margin-top: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(135deg, var(--cyan), var(--cyan-light));
+      box-shadow: 0 4px 16px rgba(0, 188, 212, 0.25);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    .note a { color: var(--cyan-light); text-decoration: none; }
-    .note a:hover { text-decoration: underline; }
-    .all-releases {
-      margin-top: 2rem;
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(0, 188, 212, 0.35);
+    }
+    .btn:active { transform: translateY(0); }
+
+    /* Features */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      width: 100%;
+      margin-bottom: 2.5rem;
+    }
+    @media (max-width: 720px) {
+      .features { grid-template-columns: 1fr; max-width: 360px; }
+    }
+    .feature {
+      padding: 1.2rem;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      text-align: center;
+    }
+    .feature .f-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+    .feature .f-desc {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: auto;
+      padding-top: 2rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .footer a {
       color: var(--cyan-light);
       text-decoration: none;
-      font-size: 0.95rem;
+      transition: color 0.2s;
     }
-    .all-releases:hover { text-decoration: underline; }
-    .detected { color: var(--cyan-light); font-weight: 600; }
+    .footer a:hover { color: #fff; }
+    .footer .links {
+      margin-top: 0.8rem;
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .note-text {
+      margin-top: 1rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      max-width: 500px;
+      text-align: center;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
-  <h1>💧 喝水提醒</h1>
-  <p class="subtitle">定時提醒喝水，追蹤每日飲水量</p>
-
-  <p id="detect" style="margin-bottom:1.5rem; font-size:0.95rem; color:#8aa0b8;"></p>
-
-  <div class="cards">
-    <div class="card" id="card-win">
-      <div class="icon">🪟</div>
-      <h2>Windows</h2>
-      <p>Windows 10 以上<br>安裝版 + 免安裝版</p>
-      <a class="btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest" id="btn-win">下載 Windows 版</a>
+  <div class="bg"></div>
+  <div class="container">
+    <div class="hero">
+      <div class="hero-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.69l.66.95C13.47 4.84 17 9.97 17 13.5A5 5 0 0 1 7 13.5c0-3.53 3.53-8.66 4.34-9.86L12 2.69z"/></svg>
+      </div>
+      <h1>Drink Water Reminder</h1>
+      <p>A desktop widget that reminds you to drink water on schedule and tracks your daily intake.</p>
     </div>
-    <div class="card" id="card-mac">
-      <div class="icon">🍎</div>
-      <h2>macOS</h2>
-      <p>支援 Intel 與 Apple Silicon<br>DMG 安裝映像</p>
-      <a class="btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest" id="btn-mac">下載 macOS 版</a>
+
+    <div class="detect" id="detect"></div>
+
+    <div class="cards">
+      <div class="card" id="card-win">
+        <div class="platform-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 12V6.75l8-1.25V12H3zm0 .5h8v6.5l-8-1.25V12.5zM11.5 5.4l9.5-1.4v8h-9.5V5.4zm0 7.1h9.5v8l-9.5-1.4V12.5z"/></svg>
+        </div>
+        <h2>Windows</h2>
+        <p class="desc">Windows 10+<br>Installer or portable</p>
+        <a class="btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest">Download</a>
+      </div>
+      <div class="card" id="card-mac">
+        <div class="platform-icon">
+          <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+        </div>
+        <h2>macOS</h2>
+        <p class="desc">Intel &amp; Apple Silicon<br>DMG installer</p>
+        <a class="btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest">Download</a>
+      </div>
+      <div class="card" id="card-linux">
+        <div class="platform-icon">
+          <svg viewBox="0 0 24 24"><path d="M12.5 2c-1.77 0-3.15 1.31-3.36 3.02-.72.26-1.34.68-1.8 1.23C6.31 5.14 5 5.85 5 7.5c0 .71.28 1.35.75 1.82C5.28 10.37 5 11.15 5 12c0 2.24 1.56 4.1 3.63 4.6.18.76.5 1.47.94 2.06C8.22 19.54 7 20.83 7 22h2c0-.55.78-1.22 2-1.67V22h2v-1.67c1.22.45 2 1.12 2 1.67h2c0-1.17-1.22-2.46-2.57-3.34.44-.59.76-1.3.94-2.06C17.44 16.1 19 14.24 19 12c0-.85-.28-1.63-.75-2.18.47-.47.75-1.11.75-1.82 0-1.65-1.31-2.36-2.34-1.25-.46-.55-1.08-.97-1.8-1.23C14.65 3.31 13.27 2 12.5 2z"/></svg>
+        </div>
+        <h2>Linux</h2>
+        <p class="desc">AppImage (universal)<br>also .deb available</p>
+        <a class="btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest">Download</a>
+      </div>
     </div>
-    <div class="card" id="card-linux">
-      <div class="icon">🐧</div>
-      <h2>Linux</h2>
-      <p>AppImage 通用格式<br>也有 .deb 安裝包</p>
-      <a class="btn" href="https://github.com/nyannyn/drinkmorewater/releases/latest" id="btn-linux">下載 Linux 版</a>
+
+    <div class="features">
+      <div class="feature">
+        <div class="f-title">Scheduled reminders</div>
+        <div class="f-desc">Customizable interval, system tray resident</div>
+      </div>
+      <div class="feature">
+        <div class="f-title">Daily tracking</div>
+        <div class="f-desc">Progress ring, weekly chart, goal setting</div>
+      </div>
+      <div class="feature">
+        <div class="f-title">Cross-device sync</div>
+        <div class="f-desc">Pair desktop &amp; mobile with a 6-digit code</div>
+      </div>
+    </div>
+
+    <p class="note-text">
+      macOS: not notarized by Apple. On first launch go to System Settings &gt; Privacy &amp; Security &gt; click "Open Anyway".
+    </p>
+
+    <div class="footer">
+      <div class="links">
+        <a href="https://github.com/nyannyn/drinkmorewater/releases">All releases</a>
+        <a href="https://github.com/nyannyn/drinkmorewater">Source code</a>
+        <a href="https://github.com/nyannyn/drinkmorewater/tree/main/mobile">Mobile (iOS)</a>
+      </div>
     </div>
   </div>
-
-  <div class="note">
-    <p>🍎 macOS 未經 Apple 公證，首次開啟需到「系統設定 → 隱私權與安全性」點「仍要打開」。</p>
-    <p style="margin-top:0.5rem;">📱 手機版（iOS）開發中，詳見 <a href="https://github.com/nyannyn/drinkmorewater/tree/main/mobile">mobile/</a></p>
-  </div>
-
-  <a class="all-releases" href="https://github.com/nyannyn/drinkmorewater/releases">查看所有版本 →</a>
 
   <script>
-    // Detect OS and highlight the relevant card
     (function() {
-      const ua = navigator.userAgent || navigator.platform || '';
-      let os = '';
-      if (/Win/.test(ua)) os = 'win';
-      else if (/Mac/.test(ua)) os = 'mac';
-      else if (/Linux/.test(ua)) os = 'linux';
-
+      var ua = navigator.userAgent || '';
+      var os = /Win/.test(ua) ? 'win' : /Mac/.test(ua) ? 'mac' : /Linux/.test(ua) ? 'linux' : '';
       if (os) {
-        const labels = { win: 'Windows', mac: 'macOS', linux: 'Linux' };
-        document.getElementById('detect').innerHTML =
-          '偵測到你的系統：<span class="detected">' + labels[os] + '</span> — 建議下載對應版本';
-        const card = document.getElementById('card-' + os);
-        if (card) card.style.borderColor = 'rgba(77, 208, 225, 0.6)';
+        var labels = { win: 'Windows', mac: 'macOS', linux: 'Linux' };
+        var el = document.getElementById('detect');
+        el.style.display = 'inline-block';
+        el.textContent = 'Detected: ' + labels[os] + ' — download the matching version below';
+        var card = document.getElementById('card-' + os);
+        if (card) card.classList.add('highlight');
       }
     })();
   </script>

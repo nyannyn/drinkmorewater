@@ -61,7 +61,6 @@
       "artifactName": "${name}-${version}-${arch}.${ext}"
     },
     "mac": {
-      "identity": null,
       "target": [
         {
           "target": "dmg",

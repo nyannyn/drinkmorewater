@@ -62,8 +62,7 @@ const I18N = {
     prefAboutTitle: "關於與隱私",
     privacyText: "所有飲水紀錄與設定僅儲存於本機，不含任何追蹤、分析或遙測。除非你主動啟用「跨裝置同步」並自行架設伺服器，否則本程式不會進行任何網路連線。原始碼完全公開，歡迎檢視。",
     feedbackBug: "回報問題",
-    feedbackWish: "功能許願",
-  },
+    feedbackWish: "功能許願",    sourceCode: "原始碼",  },
   "zh-Hans": {
     tabMain: "统计",
     tabPrefs: "偏好设置",
@@ -127,6 +126,7 @@ const I18N = {
     privacyText: "所有饮水记录与设置仅存储于本机，不含任何追踪、分析或遥测。除非你主动启用「跨设备同步」并自行架设服务器，否则本程序不会进行任何网络连接。源代码完全公开，欢迎查阅。",
     feedbackBug: "报告问题",
     feedbackWish: "功能许愿",
+    sourceCode: "源代码",
   },
   en: {
     tabMain: "Stats",
@@ -191,6 +191,7 @@ const I18N = {
     privacyText: "All hydration data and settings are stored locally on your device. This app contains no tracking, analytics, or telemetry. No network requests are made unless you enable Cross-device Sync with your own server. The source code is fully open for inspection.",
     feedbackBug: "Report a bug",
     feedbackWish: "Request a feature",
+    sourceCode: "Source code",
   },
   ja: {
     tabMain: "統計",
@@ -255,6 +256,7 @@ const I18N = {
     privacyText: "すべての記録と設定はお使いの端末にのみ保存されます。トラッキング・分析・テレメトリは一切含まれていません。「デバイス間同期」を有効にし自分のサーバーを指定しない限り、通信は行われません。ソースコードはすべて公開されています。",
     feedbackBug: "不具合を報告",
     feedbackWish: "機能リクエスト",
+    sourceCode: "ソースコード",
   },
 };
 
@@ -431,8 +433,9 @@ function applyLang(lang) {
 
   document.getElementById("prefAboutTitle").textContent = t("prefAboutTitle");
   document.getElementById("privacyText").textContent = t("privacyText");
-  document.getElementById("feedbackBugBtn").textContent = t("feedbackBug");
-  document.getElementById("feedbackWishBtn").textContent = t("feedbackWish");
+  document.getElementById("feedbackBugLabel").textContent = t("feedbackBug");
+  document.getElementById("feedbackWishLabel").textContent = t("feedbackWish");
+  document.getElementById("sourceCodeLabel").textContent = t("sourceCode");
 
   const opts = t("intervalOpts");
   $intervalMin.querySelectorAll("option").forEach((opt, i) => { opt.textContent = opts[i]; });
@@ -451,6 +454,9 @@ document.getElementById("feedbackBugBtn").addEventListener("click", () => {
 });
 document.getElementById("feedbackWishBtn").addEventListener("click", () => {
   window.api.openExternal("https://github.com/nyannyn/drinkmorewater/issues/new?template=feature_request.yml");
+});
+document.getElementById("sourceCodeBtn").addEventListener("click", () => {
+  window.api.openExternal("https://github.com/nyannyn/drinkmorewater");
 });
 
 // ===== Auto start =====

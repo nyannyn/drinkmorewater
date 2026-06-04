@@ -240,10 +240,6 @@
       transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition);
       cursor: pointer;
     }
-    .dl-btn.loading {
-      opacity: 0.5;
-      pointer-events: none;
-    }
     .dl-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 20px rgba(77, 208, 225, 0.3);
@@ -396,9 +392,9 @@
         </div>
         <h3>Windows</h3>
         <p class="meta">Windows 10 以上<br>安裝版 (.exe)</p>
-        <a class="dl-btn loading" id="btn-win" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 Windows 版 Download for Windows">
+        <a class="dl-btn" id="btn-win" href="https://github.com/nyannyn/drinkmorewater/releases/download/v1.6.0/drink-water-reminder-setup-1.6.0.exe" aria-label="下載 Windows 版 Download for Windows">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span class="btn-label">載入中...</span>
+          <span class="btn-label">下載 v1.6.0 Download</span>
         </a>
       </div>
       <div class="dl-card" id="card-mac">
@@ -407,9 +403,9 @@
         </div>
         <h3>macOS</h3>
         <p class="meta">支援 Intel 與 Apple Silicon<br>DMG 安裝映像</p>
-        <a class="dl-btn loading" id="btn-mac" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 macOS 版 Download for macOS">
+        <a class="dl-btn" id="btn-mac" href="https://github.com/nyannyn/drinkmorewater/releases/download/v1.6.0/drink-water-reminder-1.6.0-arm64.dmg" aria-label="下載 macOS 版 Download for macOS">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span class="btn-label">載入中...</span>
+          <span class="btn-label">下載 v1.6.0 Download</span>
         </a>
       </div>
       <div class="dl-card" id="card-linux">
@@ -418,9 +414,9 @@
         </div>
         <h3>Linux</h3>
         <p class="meta">AppImage 通用格式<br>另有 .deb 安裝包</p>
-        <a class="dl-btn loading" id="btn-linux" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 Linux 版 Download for Linux">
+        <a class="dl-btn" id="btn-linux" href="https://github.com/nyannyn/drinkmorewater/releases/download/v1.6.0/drink-water-reminder-1.6.0-x86_64.AppImage" aria-label="下載 Linux 版 Download for Linux">
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span class="btn-label">載入中...</span>
+          <span class="btn-label">下載 v1.6.0 Download</span>
         </a>
       </div>
     </section>
@@ -486,46 +482,26 @@
       var btnLinux = document.getElementById('btn-linux');
       var allBtns = [btnWin, btnMac, btnLinux];
 
-      function enableBtns(ver) {
-        allBtns.forEach(function (btn) {
-          btn.classList.remove('loading');
-          var label = btn.querySelector('.btn-label');
-          if (label) label.textContent = '下載 ' + (ver || '') + ' Download';
-        });
-      }
-
-      function fallback() {
-        // API failed — just link to releases page and enable
-        allBtns.forEach(function (btn) {
-          btn.classList.remove('loading');
-          var label = btn.querySelector('.btn-label');
-          if (label) label.textContent = '前往下載頁 Go to Downloads';
-        });
-      }
-
-      // Fetch latest release assets
+      // Buttons already work with hardcoded v1.6.0 URLs.
+      // API fetch upgrades to latest release if available.
       fetch('https://api.github.com/repos/nyannyn/drinkmorewater/releases/latest')
         .then(function (r) {
           if (!r.ok) throw new Error(r.status);
           return r.json();
         })
         .then(function (data) {
-          if (!data || !data.assets || !data.assets.length) { fallback(); return; }
+          if (!data || !data.assets || !data.assets.length) return;
 
           var assets = data.assets;
           var ver = data.tag_name || '';
 
-          // Find direct download URLs by filename pattern
           var winUrl = null, macUrl = null, linuxUrl = null;
           for (var i = 0; i < assets.length; i++) {
             var name = assets[i].name;
             var url = assets[i].browser_download_url;
-            // Windows: setup installer (not blockmap)
             if (!winUrl && /setup.*\.exe$/i.test(name) && !/blockmap/i.test(name)) winUrl = url;
-            // macOS: arm64 dmg first
             if (/arm64\.dmg$/.test(name)) macUrl = url;
             if (!macUrl && /x64\.dmg$/.test(name)) macUrl = url;
-            // Linux: AppImage
             if (!linuxUrl && /\.AppImage$/i.test(name)) linuxUrl = url;
           }
 
@@ -533,9 +509,12 @@
           if (macUrl) btnMac.href = macUrl;
           if (linuxUrl) btnLinux.href = linuxUrl;
 
-          enableBtns(ver);
+          allBtns.forEach(function (btn) {
+            var label = btn.querySelector('.btn-label');
+            if (label) label.textContent = '下載 ' + ver + ' Download';
+          });
         })
-        .catch(fallback);
+        .catch(function () { /* hardcoded URLs still work */ });
     })();
   </script>
 </body>

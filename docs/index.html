@@ -186,10 +186,8 @@
     .downloads {
       width: 100%;
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 1.25rem;
-      max-width: 720px;
-      margin: 0 auto;
     }
 
     .dl-card {
@@ -384,9 +382,42 @@
     }
 
     /* ─── Responsive ─── */
+    /* ─── macOS command card ─── */
+    .mac-cmd {
+      width: 100%;
+      text-align: left;
+    }
+    .mac-reason {
+      font-size: 0.7rem;
+      color: var(--color-text-tertiary);
+      line-height: 1.5;
+      margin-bottom: 0.5rem;
+    }
+    .mac-hint {
+      font-size: 0.68rem;
+      color: var(--color-text-tertiary);
+      margin-top: 0.5rem;
+      margin-bottom: 0.3rem;
+    }
+    .cmd-block {
+      display: block;
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(77, 208, 225, 0.15);
+      font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
+      font-size: 0.65rem;
+      color: var(--color-primary);
+      word-break: break-all;
+      line-height: 1.5;
+      cursor: text;
+      user-select: all;
+    }
+
     @media (max-width: 768px) {
       .page { padding: 3rem 1.25rem 2rem; gap: 3rem; }
-      .downloads { grid-template-columns: 1fr; max-width: 380px; }
+      .downloads { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; }
       .features { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; }
     }
     @media (min-width: 769px) and (max-width: 1024px) {
@@ -404,7 +435,7 @@
     <section class="hero">
       <div class="hero-badge">
         <svg viewBox="0 0 24 24"><path d="M12 2v6m0 0l3-3m-3 3l-3-3"/><path d="M5 10v10a2 2 0 002 2h10a2 2 0 002-2V10"/></svg>
-        <span>v1.6.2 — Windows / Linux</span>
+        <span>v1.6.2 — Windows / macOS / Linux</span>
       </div>
       <h1><span class="gradient-text">喝水提醒</span></h1>
       <p class="subtitle-zh">定時提醒喝水、追蹤每日飲水量的桌面小工具</p>
@@ -437,6 +468,21 @@
         <a class="dl-alt" href="https://github.com/nyannyn/drinkmorewater/releases">歷史版本 All versions →</a>
       </div>
 
+      <div class="dl-card" id="card-mac">
+        <div class="icon-box">
+          <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79s-2 .77-3.27.82c-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+        </div>
+        <h3>macOS</h3>
+        <p class="meta">支援 Intel 與 Apple Silicon<br>透過終端機安裝</p>
+        <div class="mac-cmd">
+          <p class="mac-reason">尚未取得 Apple Developer ID，無法提供簽署版下載。請用終端機指令安裝：</p>
+          <p class="mac-reason" style="margin-top:0.3rem;font-style:italic;">Not yet signed with Apple Developer ID. Install via Terminal:</p>
+          <code class="cmd-block">curl -fsSL https://github.com/nyannyn/drinkmorewater/releases/latest/download/drink-water-reminder-1.6.2-arm64.dmg -o ~/Downloads/drink.dmg &amp;&amp; open ~/Downloads/drink.dmg</code>
+          <p class="mac-hint">安裝後執行：After install, run:</p>
+          <code class="cmd-block">xattr -dr com.apple.quarantine "/Applications/喝水提醒.app"</code>
+        </div>
+        <a class="dl-alt" href="https://github.com/nyannyn/drinkmorewater/releases">Intel 版 / 歷史版本 All versions →</a>
+      </div>
       <div class="dl-card" id="card-linux">
         <div class="icon-box">
           <svg viewBox="0 0 24 24"><path d="M12.5 2c-1.77 0-3.15 1.31-3.36 3.02-.72.26-1.34.68-1.8 1.23C6.31 5.14 5 5.85 5 7.5c0 .71.28 1.35.75 1.82C5.28 10.37 5 11.15 5 12c0 2.24 1.56 4.1 3.63 4.6.18.76.5 1.47.94 2.06C8.22 19.54 7 20.83 7 22h2c0-.55.78-1.22 2-1.67V22h2v-1.67c1.22.45 2 1.12 2 1.67h2c0-1.17-1.22-2.46-2.57-3.34.44-.59.76-1.3.94-2.06C17.44 16.1 19 14.24 19 12c0-.85-.28-1.63-.75-2.18.47-.47.75-1.11.75-1.82 0-1.65-1.31-2.36-2.34-1.25-.46-.55-1.08-.97-1.8-1.23C14.65 3.31 13.27 2 12.5 2z"/></svg>
@@ -493,9 +539,9 @@
   <script>
     (function () {
       var ua = navigator.userAgent || '';
-      var os = /Win/.test(ua) ? 'win' : /Linux/.test(ua) ? 'linux' : '';
+      var os = /Win/.test(ua) ? 'win' : /Mac/.test(ua) ? 'mac' : /Linux/.test(ua) ? 'linux' : '';
       if (os) {
-        var names = { win: 'Windows', linux: 'Linux' };
+        var names = { win: 'Windows', mac: 'macOS', linux: 'Linux' };
         var el = document.getElementById('os-detect');
         var text = document.getElementById('os-detect-text');
         el.style.display = 'inline-flex';
@@ -508,7 +554,7 @@
       var btnLinux = document.getElementById('btn-linux');
       var allBtns = [btnWin, btnLinux];
       var btnOs = { 'btn-win': 'win', 'btn-linux': 'linux' };
-      var osLabels = { win: 'Windows', linux: 'Linux' };
+      var osLabels = { win: 'Windows', mac: 'macOS', linux: 'Linux' };
 
       // Wrong-OS guard: confirm before downloading for a different platform
       if (os) {

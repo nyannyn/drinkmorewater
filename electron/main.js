@@ -503,6 +503,12 @@ function registerIpc() {
       shell.openExternal(url);
     }
   });
+  ipcMain.handle("download-update", () => {
+    autoUpdater.downloadUpdate().catch(() => {});
+  });
+  ipcMain.handle("install-update", () => {
+    autoUpdater.quitAndInstall();
+  });
   ipcMain.handle("get-sound-settings", () => {
     const { soundEnabled = false, soundVolume = 80 } = store.get([
       "soundEnabled",
@@ -637,6 +643,10 @@ function registerPowerMonitor() {
 function setupAutoUpdater() {
   autoUpdater.autoDownload = false;
   autoUpdater.on("update-available", (info) => {
+    // 通知設定視窗顯示更新橫幅
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+      settingsWindow.webContents.send("update-available", info.version);
+    }
     dialog
       .showMessageBox({
         type: "info",
@@ -650,6 +660,10 @@ function setupAutoUpdater() {
       });
   });
   autoUpdater.on("update-downloaded", () => {
+    // 通知設定視窗更新已就緒
+    if (settingsWindow && !settingsWindow.isDestroyed()) {
+      settingsWindow.webContents.send("update-downloaded");
+    }
     dialog
       .showMessageBox({
         type: "info",

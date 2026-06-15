@@ -23,5 +23,10 @@ contextBridge.exposeInMainWorld("api", {
   syncUnlink: () => ipcRenderer.invoke("sync-unlink"),
   // 水杯喝水後主行程通知刷新
   onStatusChanged: (cb) => ipcRenderer.on("status-changed", () => cb()),
+  // 自動更新通知
+  onUpdateAvailable: (cb) => ipcRenderer.on("update-available", (_e, version) => cb(version)),
+  onUpdateDownloaded: (cb) => ipcRenderer.on("update-downloaded", () => cb()),
+  downloadUpdate: () => ipcRenderer.invoke("download-update"),
+  installUpdate: () => ipcRenderer.invoke("install-update"),
   openExternal: (url) => ipcRenderer.invoke("open-external", url),
 });

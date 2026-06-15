@@ -62,7 +62,12 @@ const I18N = {
     prefAboutTitle: "關於與隱私",
     privacyText: "所有飲水紀錄與設定僅儲存於本機，不含任何追蹤、分析或遙測。除非你主動啟用「跨裝置同步」並自行架設伺服器，否則本程式不會進行任何網路連線。原始碼完全公開，歡迎檢視。",
     feedbackBug: "回報問題",
-    feedbackWish: "功能許願",    sourceCode: "原始碼",  },
+    feedbackWish: "功能許愿",    sourceCode: "原始碼",
+    updateAvailable: (v) => `新版本 v${v} 可用`,
+    updateDownload: "下載更新",
+    updateReady: "更新已就緒，點此重啟",
+    updateInstall: "立即重啟",
+  },
   "zh-Hans": {
     tabMain: "统计",
     tabPrefs: "偏好设置",
@@ -127,6 +132,10 @@ const I18N = {
     feedbackBug: "报告问题",
     feedbackWish: "功能许愿",
     sourceCode: "源代码",
+    updateAvailable: (v) => `新版本 v${v} 可用`,
+    updateDownload: "下载更新",
+    updateReady: "更新已就绪，点此重启",
+    updateInstall: "立即重启",
   },
   en: {
     tabMain: "Stats",
@@ -192,6 +201,10 @@ const I18N = {
     feedbackBug: "Report a bug",
     feedbackWish: "Request a feature",
     sourceCode: "Source code",
+    updateAvailable: (v) => `Version ${v} available`,
+    updateDownload: "Download",
+    updateReady: "Update ready — click to restart",
+    updateInstall: "Restart",
   },
   ja: {
     tabMain: "統計",
@@ -257,6 +270,10 @@ const I18N = {
     feedbackBug: "不具合を報告",
     feedbackWish: "機能リクエスト",
     sourceCode: "ソースコード",
+    updateAvailable: (v) => `新バージョン v${v} が利用可能`,
+    updateDownload: "ダウンロード",
+    updateReady: "アップデート準備完了—クリックで再起動",
+    updateInstall: "再起動",
   },
 };
 
@@ -765,3 +782,22 @@ document.getElementById("syncUnlinkBtn").addEventListener("click", async () => {
 });
 
 loadSyncStatus();
+
+// ===== 自動更新橫幅 =====
+const $updateBanner = document.getElementById("updateBanner");
+const $updateText = document.getElementById("updateText");
+const $updateAction = document.getElementById("updateAction");
+
+window.api.onUpdateAvailable((version) => {
+  $updateText.textContent = t("updateAvailable")(version);
+  $updateAction.textContent = t("updateDownload");
+  $updateBanner.classList.add("show");
+  $updateAction.onclick = () => window.api.downloadUpdate();
+});
+
+window.api.onUpdateDownloaded(() => {
+  $updateText.textContent = t("updateReady");
+  $updateAction.textContent = t("updateInstall");
+  $updateBanner.classList.add("show");
+  $updateAction.onclick = () => window.api.installUpdate();
+});

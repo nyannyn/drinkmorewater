@@ -100,12 +100,21 @@ let welcomeWindow = null;
 let reminderTimer = null;
 let paused = false; // 鎖屏 / 睡眠時暫停
 
+// 設定 App User Model ID（Windows 通知歸屬 + 任務欄分組）
+app.setAppUserModelId("com.drinkwater.reminder");
+
 // ===== 單一實例 =====
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
-  app.on("second-instance", () => openSettings());
+  // 僅當使用者主動開啟第二實例時才打開設定（非 Windows 重啟恢復）
+  app.on("second-instance", (_event, argv) => {
+    // Windows 重啟恢復帶 --restore 或類似旗標，不打開視窗
+    if (!argv.includes("--hidden")) {
+      openSettings();
+    }
+  });
 }
 
 // ===== 跨日重設（含每週記錄）— 移植自 background.js =====
@@ -523,7 +532,7 @@ function registerIpc() {
     if (prefs.bannerEnabled != null) updates.bannerEnabled = prefs.bannerEnabled;
     if (prefs.autoStart != null) {
       updates.autoStart = prefs.autoStart;
-      app.setLoginItemSettings({ openAtLogin: prefs.autoStart });
+      app.setLoginItemSettings({ openAtLogin: prefs.autoStart, args: ["--hidden"] });
     }
     store.set(updates);
     if (prefs.lang != null) refreshTray(); // 語言改變即時更新托盤選單 / tooltip
@@ -690,7 +699,7 @@ app.whenReady().then(() => {
 
   // 同步開機自動啟動設定
   const { autoStart = false } = store.get(["autoStart"]);
-  app.setLoginItemSettings({ openAtLogin: autoStart });
+  app.setLoginItemSettings({ openAtLogin: autoStart, args: ["--hidden"] });
 
   setupAutoUpdater();
 });

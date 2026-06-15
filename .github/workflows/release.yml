@@ -198,7 +198,19 @@ jobs:
               echo "| 🐧 Linux | [${DEB}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/$(urlencode "$DEB")) | Debian/Ubuntu |"
             fi
             echo ""
-            echo "> **macOS 使用者**：因為未經 Apple 公證，首次開啟需到「系統設定 → 隱私權與安全性」點「仍要打開」。"
+            echo "> **⚠️ macOS 使用者注意**：本版本未經 Apple 簽署／公證，下載後可能出現「映像檔已損壞」或「無法打開」提示。"
+            echo "> 這不是檔案損壞，是 macOS Gatekeeper 安全機制。請依照以下步驟解決："
+            echo ">"
+            echo '> ```bash'
+            echo '> # 方法一：移除下載隔離屬性（推薦）'
+            echo '> xattr -cr ~/Downloads/喝水提醒*.dmg'
+            echo '> # 然後雙擊 dmg 安裝即可'
+            echo '>'
+            echo '> # 方法二：安裝後對 .app 解除'
+            echo '> xattr -cr /Applications/喝水提醒.app'
+            echo '> ```'
+            echo ">"
+            echo "> 或到「系統設定 → 隱私權與安全性」找到「仍要打開」按鈕。"
             echo ""
             echo "---"
             echo ""

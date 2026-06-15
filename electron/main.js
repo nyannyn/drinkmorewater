@@ -96,15 +96,25 @@ function mt(key) {
 let tray = null;
 let cupWindow = null;
 let settingsWindow = null;
+let welcomeWindow = null;
 let reminderTimer = null;
 let paused = false; // 鎖屏 / 睡眠時暫停
+
+// 設定 App User Model ID（Windows 通知歸屬 + 任務欄分組）
+app.setAppUserModelId("com.drinkwater.reminder");
 
 // ===== 單一實例 =====
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
-  app.on("second-instance", () => openSettings());
+  // 僅當使用者主動開啟第二實例時才打開設定（非 Windows 重啟恢復）
+  app.on("second-instance", (_event, argv) => {
+    // Windows 重啟恢復帶 --restore 或類似旗標，不打開視窗
+    if (!argv.includes("--hidden")) {
+      openSettings();
+    }
+  });
 }
 
 // ===== 跨日重設（含每週記錄）— 移植自 background.js =====
@@ -253,6 +263,29 @@ function createCupWindow() {
         cupWindow.setSize(w, h);
       }
     }
+  });
+}
+
+// ===== 歡迎視窗（首次啟動） =====
+function createWelcomeWindow() {
+  welcomeWindow = new BrowserWindow({
+    width: 420,
+    height: 480,
+    resizable: false,
+    center: true,
+    title: "喝水提醒",
+    icon: ICON_PATH,
+    webPreferences: {
+      preload: path.join(__dirname, "preload-welcome.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  welcomeWindow.setMenuBarVisibility(false);
+  welcomeWindow.loadFile(path.join(__dirname, "..", "renderer", "welcome.html"));
+  welcomeWindow.on("closed", () => {
+    welcomeWindow = null;
+    openSettings();
   });
 }
 
@@ -499,7 +532,7 @@ function registerIpc() {
     if (prefs.bannerEnabled != null) updates.bannerEnabled = prefs.bannerEnabled;
     if (prefs.autoStart != null) {
       updates.autoStart = prefs.autoStart;
-      app.setLoginItemSettings({ openAtLogin: prefs.autoStart });
+      app.setLoginItemSettings({ openAtLogin: prefs.autoStart, args: ["--hidden"] });
     }
     store.set(updates);
     if (prefs.lang != null) refreshTray(); // 語言改變即時更新托盤選單 / tooltip
@@ -556,6 +589,17 @@ function registerIpc() {
       cupWindow.hide();
     }
   });
+
+  // 歡迎視窗
+  ipcMain.on("welcome-get-info", (e) => {
+    const { lang = "zh-Hant" } = store.get(["lang"]);
+    e.returnValue = { lang, platform: process.platform };
+  });
+  ipcMain.on("welcome-done", () => {
+    if (welcomeWindow && !welcomeWindow.isDestroyed()) {
+      welcomeWindow.close();
+    }
+  });
 }
 
 // ===== 閒置 / 電源（取代 chrome.idle） =====
@@ -572,6 +616,21 @@ function registerPowerMonitor() {
   powerMonitor.on("suspend", pause);
   powerMonitor.on("unlock-screen", resume);
   powerMonitor.on("resume", resume);
+
+  // Watchdog：每 3 分鐘檢查計時器是否意外停止（防 resume/unlock 事件遺失）
+  setInterval(() => {
+    const { enabled = true } = store.get(["enabled"]);
+    if (!enabled) return;
+    // 如果系統 idle 短於閒置門檻，代表使用者正在用電腦
+    const userActive = powerMonitor.getSystemIdleTime() < IDLE_AWAY_SEC;
+    if (paused && userActive) {
+      // resume/unlock 事件遺失，強制解除暫停
+      paused = false;
+    }
+    if (!paused && !reminderTimer) {
+      scheduleReminder();
+    }
+  }, 3 * 60 * 1000);
 }
 
 // ===== 自動更新 =====
@@ -631,9 +690,16 @@ app.whenReady().then(() => {
   scheduleReminder();
   triggerSync(); // 啟動時拉一次其他裝置數據
 
+  // 首次啟動顯示歡迎視窗
+  const { welcomeShown } = store.get(["welcomeShown"]);
+  if (!welcomeShown) {
+    store.set({ welcomeShown: true });
+    createWelcomeWindow();
+  }
+
   // 同步開機自動啟動設定
   const { autoStart = false } = store.get(["autoStart"]);
-  app.setLoginItemSettings({ openAtLogin: autoStart });
+  app.setLoginItemSettings({ openAtLogin: autoStart, args: ["--hidden"] });
 
   setupAutoUpdater();
 });

@@ -597,6 +597,35 @@
     .modal-actions { display: flex; gap: 10px; }
     .modal-actions .btn { flex: 1; }
 
+    /* 更新提示橫幅 */
+    .update-banner {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: var(--accent-light);
+      border-bottom: 1px solid var(--accent-color);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .update-banner:hover { filter: brightness(0.96); }
+    .update-banner.show { display: flex; }
+    .update-banner .update-icon { font-size: 16px; flex-shrink: 0; }
+    .update-banner .update-text { flex: 1; }
+    .update-banner .update-action {
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      background: var(--btn-primary-bg);
+      color: var(--btn-primary-text);
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
     /* 尊重系統「減少動態效果」偏好 */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
@@ -604,6 +633,13 @@
   </style>
 </head>
 <body data-theme="default" class="preload">
+  <!-- 更新提示橫幅 -->
+  <div class="update-banner" id="updateBanner" role="alert">
+    <span class="update-icon">⬆</span>
+    <span class="update-text" id="updateText"></span>
+    <button class="update-action" id="updateAction"></button>
+  </div>
+
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="main" id="tabMain"></button>
     <button class="tab-btn" data-tab="prefs" id="tabPrefs"></button>

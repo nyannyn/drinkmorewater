@@ -92,6 +92,8 @@ eas submit --platform ios --profile production --latest `
 
 ## 7. 上架資料（App Store Connect → App → 版本頁）
 
+> 前提：PR #33 已 merge 進 `main`。隱私權政策網址由 GitHub Pages 從 `main` 的 `docs/` 提供，merge 前那個網址是 404，App Store Connect 會驗證網址能開。
+
 | 欄位 | 填什麼 |
 |---|---|
 | 截圖 | **6.9 吋 iPhone 必填**；`app.json` 目前 `supportsTablet: true` → **13 吋 iPad 截圖也必填**。沒打算認真做 iPad 版就把 `supportsTablet` 改 `false` 省一組截圖（要改就在送審前改、重 build） |

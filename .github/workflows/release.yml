@@ -3,12 +3,16 @@ name: Build & Release
 on:
   push:
     tags: ["v*"]
+  # 手動觸發＝只跑 build-mac 的簽署／公證乾跑（不建 Release、不上傳到 GitHub Release），
+  # 用來在打 tag 前驗證 Apple 憑證與 secrets 設定正確。
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   build-win:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,6 +85,7 @@ jobs:
             dist/VT_LINKS.md
 
   build-linux:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -123,11 +128,57 @@ jobs:
 
       - run: npm ci
 
-      - run: npm run dist:mac
+      # 缺任一 secret 時 electron-builder 只會「警告後略過」簽署／公證，照樣綠燈——
+      # 這裡先擋下，避免打 tag 後靜默出貨未簽名版。
+      - name: 檢查 Apple 簽署 secrets 已設定
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          missing=()
+          for v in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD; do
+            [ -n "${!v}" ] || missing+=("$v")
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::缺少 repo secrets：${missing[*]}（設定方式見 docs/APPLE_SIGNING_READY.md）"
+            exit 1
+          fi
+          if grep -q REPLACE_WITH_APPLE_TEAM_ID package.json; then
+            echo "::error::package.json build.mac.notarize.teamId 仍是 placeholder，請填入 Apple Team ID"
+            exit 1
+          fi
+
+      - run: npm run dist:mac -- --publish ${{ github.event_name == 'workflow_dispatch' && 'never' || 'onTag' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 未設定 Apple 簽署憑證時，關閉自動簽署，產出未簽名版本
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+          # Developer ID Application 憑證（.p12 base64）與密碼；electron-builder 據此簽署
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          # notarytool 登入用 Apple ID＋App 專用密碼；Team ID 寫在 package.json build.mac.notarize.teamId
+          # （electron-builder 24.x 不讀 APPLE_TEAM_ID 環境變數）
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+
+      # 正向證據：每個 .app 都要是 Developer ID 簽章、已釘上公證票（stapler）、Gatekeeper 放行
+      - name: 驗證簽署與公證
+        run: |
+          shopt -s nullglob
+          apps=(dist/mac*/*.app)
+          if [ ${#apps[@]} -eq 0 ]; then
+            echo "::error::dist/ 底下找不到任何 .app"
+            exit 1
+          fi
+          for app in "${apps[@]}"; do
+            echo "=== $app ==="
+            codesign -dv --verbose=4 "$app" 2>&1 | tee /tmp/codesign.txt
+            grep -q 'Authority=Developer ID Application' /tmp/codesign.txt
+            codesign --verify --deep --strict --verbose=2 "$app"
+            xcrun stapler validate "$app"
+            spctl -a -vvv -t exec "$app" 2>&1 | tee /tmp/spctl.txt
+            grep -q 'source=Notarized Developer ID' /tmp/spctl.txt
+          done
 
       - name: Generate SHA256 checksums
         run: |
@@ -147,6 +198,7 @@ jobs:
             dist/SHA256SUMS-mac.txt
 
   release:
+    if: startsWith(github.ref, 'refs/tags/')
     needs: [build-win, build-linux, build-mac]
     runs-on: ubuntu-latest
     steps:
@@ -198,19 +250,7 @@ jobs:
               echo "| 🐧 Linux | [${DEB}](https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/$(urlencode "$DEB")) | Debian/Ubuntu |"
             fi
             echo ""
-            echo "> **⚠️ macOS 使用者注意**：本版本未經 Apple 簽署／公證，下載後可能出現「映像檔已損壞」或「無法打開」提示。"
-            echo "> 這不是檔案損壞，是 macOS Gatekeeper 安全機制。請依照以下步驟解決："
-            echo ">"
-            echo '> ```bash'
-            echo '> # 方法一：移除下載隔離屬性（推薦）'
-            echo '> xattr -cr ~/Downloads/喝水提醒*.dmg'
-            echo '> # 然後雙擊 dmg 安裝即可'
-            echo '>'
-            echo '> # 方法二：安裝後對 .app 解除'
-            echo '> xattr -cr /Applications/喝水提醒.app'
-            echo '> ```'
-            echo ">"
-            echo "> 或到「系統設定 → 隱私權與安全性」找到「仍要打開」按鈕。"
+            echo "> macOS 版已由 Apple Developer ID 簽署並完成公證（notarized），開啟 DMG 後將 App 拖入「應用程式」即可，無需任何額外設定。"
             echo ""
             echo "---"
             echo ""

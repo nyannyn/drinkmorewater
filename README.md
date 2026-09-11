@@ -38,12 +38,7 @@
 
 > 安裝完成後，應用程式會常駐在系統托盤（Windows 工作列右下角 / Linux 通知區域 / macOS 選單列）。左鍵點擊托盤圖示可開啟設定與統計面板。
 >
-> macOS 版未經 Apple 簽署，首次開啟若被擋下，請至「系統設定 → 隱私權與安全性」按「仍要開啟」，或在 App 上按右鍵選「打開」。
->
-> 若上述方式仍無法開啟（Apple Silicon 偶有此情況），可在「終端機」執行以下指令移除隔離標記後再開啟：
-> ```sh
-> xattr -dr com.apple.quarantine "/Applications/喝水提醒.app"
-> ```
+> macOS 版已由 Apple Developer ID 簽署並完成公證，開啟 DMG 後拖入「應用程式」即可，不需額外放行。
 
 ## 功能
 
@@ -132,7 +127,9 @@ npm run dist:mac
 - `drink-water-reminder-x.y.z-x64.dmg` / `drink-water-reminder-x.y.z-arm64.dmg` — DMG 安裝映像
 - `drink-water-reminder-x.y.z-x64.zip` / `drink-water-reminder-x.y.z-arm64.zip` — ZIP 壓縮包（auto-updater 使用）
 
-> 建議在 **macOS** 上執行打包。本 App 以選單列 (menu bar) 形式常駐，不會在 Dock 出現圖示。未經簽署的版本首次開啟需在「系統設定 → 隱私權與安全性」允許執行。
+> 建議在 **macOS** 上執行打包。本 App 以選單列 (menu bar) 形式常駐，不會在 Dock 出現圖示。
+>
+> 本機打包若未提供 `CSC_LINK` / `CSC_KEY_PASSWORD` / `APPLE_ID` / `APPLE_APP_SPECIFIC_PASSWORD`，electron-builder 會略過簽署與公證（僅警告），產出的未簽名版首次開啟需在「系統設定 → 隱私權與安全性」允許執行。正式發版由 CI 簽署＋公證，設定方式見 `docs/APPLE_SIGNING_READY.md`。
 
 ## 使用方式
 

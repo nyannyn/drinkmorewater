@@ -382,39 +382,6 @@
     }
 
     /* ─── Responsive ─── */
-    /* ─── macOS command card ─── */
-    .mac-cmd {
-      width: 100%;
-      text-align: left;
-    }
-    .mac-reason {
-      font-size: 0.7rem;
-      color: var(--color-text-tertiary);
-      line-height: 1.5;
-      margin-bottom: 0.5rem;
-    }
-    .mac-hint {
-      font-size: 0.68rem;
-      color: var(--color-text-tertiary);
-      margin-top: 0.5rem;
-      margin-bottom: 0.3rem;
-    }
-    .cmd-block {
-      display: block;
-      width: 100%;
-      padding: 8px 10px;
-      border-radius: 6px;
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(77, 208, 225, 0.15);
-      font-family: 'SF Mono', 'Menlo', 'Monaco', monospace;
-      font-size: 0.65rem;
-      color: var(--color-primary);
-      word-break: break-all;
-      line-height: 1.5;
-      cursor: text;
-      user-select: all;
-    }
-
     @media (max-width: 768px) {
       .page { padding: 3rem 1.25rem 2rem; gap: 3rem; }
       .downloads { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; }
@@ -473,14 +440,11 @@
           <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79s-2 .77-3.27.82c-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
         </div>
         <h3>macOS</h3>
-        <p class="meta">支援 Intel 與 Apple Silicon<br>透過終端機安裝</p>
-        <div class="mac-cmd">
-          <p class="mac-reason">尚未取得 Apple Developer ID，無法提供簽署版下載。請用終端機指令安裝：</p>
-          <p class="mac-reason" style="margin-top:0.3rem;font-style:italic;">Not yet signed with Apple Developer ID. Install via Terminal:</p>
-          <code class="cmd-block">curl -fsSL https://github.com/nyannyn/drinkmorewater/releases/latest/download/drink-water-reminder-1.6.2-arm64.dmg -o ~/Downloads/drink.dmg &amp;&amp; open ~/Downloads/drink.dmg</code>
-          <p class="mac-hint">安裝後執行：After install, run:</p>
-          <code class="cmd-block">xattr -dr com.apple.quarantine "/Applications/喝水提醒.app"</code>
-        </div>
+        <p class="meta">支援 Intel 與 Apple Silicon<br>DMG 安裝映像（已簽署公證）</p>
+        <a class="dl-btn" id="btn-mac" href="https://github.com/nyannyn/drinkmorewater/releases/latest" aria-label="下載 macOS 版 Download for macOS">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span class="btn-label">下載 Download</span>
+        </a>
         <a class="dl-alt" href="https://github.com/nyannyn/drinkmorewater/releases">Intel 版 / 歷史版本 All versions →</a>
       </div>
       <div class="dl-card" id="card-linux">
@@ -551,9 +515,10 @@
       }
 
       var btnWin = document.getElementById('btn-win');
+      var btnMac = document.getElementById('btn-mac');
       var btnLinux = document.getElementById('btn-linux');
-      var allBtns = [btnWin, btnLinux];
-      var btnOs = { 'btn-win': 'win', 'btn-linux': 'linux' };
+      var allBtns = [btnWin, btnMac, btnLinux];
+      var btnOs = { 'btn-win': 'win', 'btn-mac': 'mac', 'btn-linux': 'linux' };
       var osLabels = { win: 'Windows', mac: 'macOS', linux: 'Linux' };
 
       // Wrong-OS guard: confirm before downloading for a different platform
@@ -585,15 +550,19 @@
           var assets = data.assets;
           var ver = data.tag_name || '';
 
-          var winUrl = null, linuxUrl = null;
+          var winUrl = null, macUrl = null, linuxUrl = null;
           for (var i = 0; i < assets.length; i++) {
             var name = assets[i].name;
             var url = assets[i].browser_download_url;
             if (!winUrl && /setup.*\.exe$/i.test(name) && !/blockmap/i.test(name)) winUrl = url;
+            // Apple Silicon 優先，找不到才退回 Intel
+            if (/arm64\.dmg$/i.test(name)) macUrl = url;
+            if (!macUrl && /x64\.dmg$/i.test(name)) macUrl = url;
             if (!linuxUrl && /\.AppImage$/i.test(name)) linuxUrl = url;
           }
 
           if (winUrl) btnWin.href = winUrl;
+          if (macUrl) btnMac.href = macUrl;
           if (linuxUrl) btnLinux.href = linuxUrl;
 
           allBtns.forEach(function (btn) {

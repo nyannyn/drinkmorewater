@@ -66,7 +66,7 @@
 
 - 桌面開發：`npm start`（自動熱重載；`DRINK_DEV=0` 關閉）。
 - 桌面打包：`npm run dist:win|dist:linux|dist:mac`。
-- 發版：推 tag `v*` → `.github/workflows/release.yml` 自動 build Win/Linux/macOS 並建 GitHub Release（含 SHA256 / VirusTotal；macOS 於 `macos-latest` 上產出未簽名 dmg/zip）。
+- 發版：推 tag `v*` → `.github/workflows/release.yml` 自動 build Win/Linux/macOS 並建 GitHub Release（含 SHA256 / VirusTotal）。macOS 以 Developer ID **簽署＋公證**，並在 job 內以 `codesign` / `stapler validate` / `spctl` 驗證正向證據（缺 secrets 直接紅燈，不會靜默出貨未簽名版）。`workflow_dispatch` 手動觸發＝只跑 build-mac 乾跑、不建 Release，用來在打 tag 前驗憑證。憑證建立與 secrets 設定見 `docs/APPLE_SIGNING_READY.md`。
 - 手機測試：`cd mobile && npm test`（純邏輯，免模擬器）＋ `npx tsc --noEmit`（型別閘，含測試檔）＋ `npx expo-doctor`；實機需 `expo run:ios` 或 EAS build（需 macOS 或 Expo 帳號）。
 - **iOS 上架走 EAS Build＋Submit**，但憑證／ASC API key／版號都留在自己手上（可攜性契約與完整 SOP 見 `docs/IOS_RELEASE.md`）；`eas.json` `appVersionSource: local`，不用 expo-updates。
 - CI：`.github/workflows/ci.yml` 對 main 的 PR/push 跑 **shared 純函式 + server 端到端 + 手機版核心** 三組測試。
@@ -93,11 +93,8 @@
 - **Expo SDK 升級注意**（52→57，2026-09）：Apple 自 2026-04-28 起要求 Xcode 26 / iOS 26 SDK，Expo SDK 54+ 的 EAS 預設映像才有 Xcode 26。SDK 57 起 `babel-preset-expo` 要明列 devDependency（否則 metro 報 `Cannot find module 'babel-preset-expo'`）、`app.json` 頂層 `splash` 已移除改用 `expo-splash-screen` plugin、`@types/react` 要跟 React 19。`expo prebuild --platform ios` 在 Windows 不可用（WSL 可）。
 - **iOS Release 打包需 `expo-asset` 相依**（已補進 `mobile/package.json`）。Release 的「Bundle React Native code and images」階段會跑 `expo export:embed`，缺 expo-asset 會報 `The required package expo-asset cannot be found`（exit 65）；Debug 不打包 JS 故不踩此雷。
 - iOS 模擬器要截到 Home 畫面，須先點掉啟動時的通知權限框：`App.tsx` 一掛載即 `requestPermissions()`，未回應前畫面停在 loading。CI 用 `idb ui tap` 找「Allow/允許」按鈕座標點掉（`xcrun simctl privacy` 不支援授予通知權限）。
+- **macOS 公證的 Team ID 寫在 `package.json` `build.mac.notarize.teamId`（非 secret）**：electron-builder 24.x **不讀 `APPLE_TEAM_ID` 環境變數**，且 `notarize: true` 走的是不帶 teamId 的舊路徑，會被 `@electron/notarize` 2.x 以「teamId is required」擋下——所以必須用物件形式 `{ "teamId": "…" }`。若升級 electron-builder 到 26+ 才可改用環境變數。
 
 ## 待辦
 
 - **iOS 上架**：程式面已就緒（SDK 57、`eas.json`、隱私權頁）；剩帳號持有人動作：ASC 建 App 記錄＋API key、`eas login/init/build/submit`、備份憑證、上架資料——照 `docs/IOS_RELEASE.md`。`eas.json` 的 `ascAppId` 仍是 placeholder。
-- **macOS 簽署 + 公證**：目前 `release.yml` 的 `build-mac` 設 `CSC_IDENTITY_AUTO_DISCOVERY=false`，出的是**未簽名版**，使用者首次開啟需在「系統設定 → 隱私權與安全性」放行。若要正式簽署 + 公證（notarize），需在 repo Secrets 加：
-  - `CSC_LINK`（base64 的 Developer ID Application `.p12`）、`CSC_KEY_PASSWORD`（憑證密碼）
-  - Apple notarize 所需：`APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID`
-  - 並在 build 設定開啟 `mac.notarize` / hardened runtime + entitlements，移除上述 `CSC_IDENTITY_AUTO_DISCOVERY=false`。

@@ -3,6 +3,8 @@ name: iOS Build (unsigned)
 # 在 GitHub 託管的 macOS runner 上實際編譯 iOS app 並在模擬器啟動截圖。
 # 產出未簽署的模擬器版（CODE_SIGNING_ALLOWED=NO），故不需 Apple 開發者憑證。
 # 公開 repo 使用 GitHub 託管 runner（含 macOS）免費、無額度上限。
+# macos-latest = macOS 26 / Xcode 26：Apple 自 2026-04-28 起要求上傳 App Store 的 build 用 Xcode 26 / iOS 26 SDK，
+# 對應 Expo SDK 54+（本專案 SDK 57）。這條 workflow 是 SDK 升級後「原生專案能編譯」的驗收閘。
 
 on:
   push:
@@ -38,7 +40,7 @@ jobs:
 
       - name: 安裝相依
         working-directory: mobile
-        run: npm install
+        run: npm ci
 
       - name: 核心邏輯單元測試
         working-directory: mobile
@@ -146,7 +148,7 @@ jobs:
 
       - name: 安裝相依
         working-directory: mobile
-        run: npm install
+        run: npm ci
 
       - name: Prebuild（產生 ios/ 原生專案並安裝 Pods）
         working-directory: mobile

@@ -166,8 +166,9 @@ jobs:
         run: |
           shopt -s nullglob
           apps=(dist/mac*/*.app)
-          if [ ${#apps[@]} -eq 0 ]; then
-            echo "::error::dist/ 底下找不到任何 .app"
+          # x64 出在 dist/mac/、arm64 出在 dist/mac-arm64/；少一個＝有一種架構沒驗到
+          if [ ${#apps[@]} -ne 2 ]; then
+            echo "::error::預期 dist/mac*/ 底下有 2 個 .app（x64 + arm64），實際 ${#apps[@]}：${apps[*]}"
             exit 1
           fi
           for app in "${apps[@]}"; do

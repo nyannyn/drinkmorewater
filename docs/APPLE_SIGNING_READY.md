@@ -98,7 +98,8 @@ gh secret list --repo nyannyn/drinkmorewater
 ## 7. 乾跑驗證（不打 tag、不建 Release）
 
 ```bash
-gh workflow run release.yml --repo nyannyn/drinkmorewater --ref main
+# --ref 要指向「含 workflow_dispatch 的 release.yml」所在分支：PR #32 merge 前是 claude/macos-signing，merge 後才是 main
+gh workflow run release.yml --repo nyannyn/drinkmorewater --ref claude/macos-signing
 gh run watch --repo nyannyn/drinkmorewater
 ```
 只會跑 `build-mac`。要看的是「**驗證簽署與公證**」步驟綠燈，代表每個 `.app` 都：

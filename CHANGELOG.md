@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### iOS 上架準備
+- **Expo SDK 52 → 57**（React Native 0.86、React 19、New Architecture）：Apple 自 2026-04-28 起要求 Xcode 26 / iOS 26 SDK 才能上傳 App Store，舊 SDK 的 build 會被拒收。
+- 新增 `eas.json`（版號以 repo 為準、不用 OTA 更新）、`docs/privacy.html` 隱私權政策頁（App Store 必填）、`docs/IOS_RELEASE.md` 上架 SOP（含避免 EAS 鎖定的可攜性契約與退出步驟）。
+- 修手機版 `storage.ts` 既有型別錯誤，`tsc --noEmit` 現在是有效閘門。
+
 ### 跨裝置同步（桌面 ↔ 手機）
 - **裝置配對碼連動**：一台產生 6 位配對碼、另一台輸入即可共享飲水紀錄，無需 email / 密碼。桌面、手機設定頁皆可操作。
 - **正確的多裝置合併**：每台裝置只回報自身每日貢獻，伺服器依日期加總；多裝置就算各自離線記錄，同步後**不重複計數也不掉資料**。設定（間隔 / 目標 / 語言…）以時間戳 last-write-wins 合併。

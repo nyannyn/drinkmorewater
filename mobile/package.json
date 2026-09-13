@@ -11,19 +11,22 @@
     "test": "node --experimental-strip-types --test src/core/__tests__/*.test.ts"
   },
   "dependencies": {
-    "expo": "~52.0.0",
-    "expo-asset": "~11.0.1",
-    "expo-notifications": "~0.29.11",
-    "expo-device": "~7.0.1",
-    "expo-status-bar": "~2.0.0",
-    "react": "18.3.1",
-    "react-native": "0.76.5",
-    "@react-native-async-storage/async-storage": "1.23.1"
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "~57.0.0",
+    "expo-asset": "~57.0.17",
+    "expo-device": "~57.0.2",
+    "expo-notifications": "~57.0.18",
+    "expo-splash-screen": "~57.0.9",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "@types/react": "~18.3.12",
-    "typescript": "~5.3.3"
+    "@types/node": "^22.20.2",
+    "@types/react": "~19.2.4",
+    "babel-preset-expo": "~57.0.0",
+    "typescript": "~6.0.3"
   },
   "private": true
 }

@@ -10,13 +10,15 @@ let cache: AppData | null = null;
 
 export async function loadData(): Promise<AppData> {
   if (cache) return cache;
+  let loaded: AppData;
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    cache = raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
+    loaded = raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
   } catch {
-    cache = { ...DEFAULTS };
+    loaded = { ...DEFAULTS };
   }
-  return cache;
+  cache = loaded;
+  return loaded;
 }
 
 export async function saveData(patch: Partial<AppData>): Promise<AppData> {

@@ -64,6 +64,7 @@ npx eas build --platform ios --profile development
 
 ## 打包上架（App Store / TestFlight）
 
+完整 SOP（含避免 EAS 鎖定的可攜性契約）見 **`docs/IOS_RELEASE.md`**。
 最終的 iOS 編譯、簽署、上傳**必須在 macOS 或 EAS 雲端**完成(本 repo 的開發容器為 Linux,無法跑 Xcode):
 
 ```bash

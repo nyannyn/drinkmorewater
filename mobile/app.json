@@ -7,19 +7,19 @@
     "icon": "./assets/icon.png",
     "scheme": "drinkwater",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#E8F4FD"
-    },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.drinkmorewater.app",
       "buildNumber": "1",
       "infoPlist": {
         "UIBackgroundModes": [],
         "NSUserNotificationsUsageDescription": "用於在喝水時間提醒你補充水分。"
+      },
+      "config": {
+        "usesNonExemptEncryption": false
       }
     },
     "plugins": [
@@ -28,6 +28,18 @@
         {
           "icon": "./assets/icon.png",
           "color": "#4DA3FF"
+        }
+      ],
+      "expo-asset",
+      "expo-status-bar",
+      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#E8F4FD",
+          "imageWidth": 200
         }
       ]
     ]

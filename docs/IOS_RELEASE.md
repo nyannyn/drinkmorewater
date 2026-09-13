@@ -96,7 +96,7 @@ eas submit --platform ios --profile production --latest `
 
 | 欄位 | 填什麼 |
 |---|---|
-| 截圖 | **6.9 吋 iPhone 必填**；`app.json` 目前 `supportsTablet: true` → **13 吋 iPad 截圖也必填**。沒打算認真做 iPad 版就把 `supportsTablet` 改 `false` 省一組截圖（要改就在送審前改、重 build） |
+| 截圖 | **6.9 吋 iPhone 必填**（`app.json` 已設 `supportsTablet: false`，只上 iPhone，不需 iPad 截圖；日後要支援 iPad 改回 `true` 重 build 即可） |
 | 隱私權政策網址 | `https://nyannyn.github.io/drinkmorewater/privacy.html`（本 repo `docs/privacy.html`，中英雙語，已寫好） |
 | App Privacy 問卷 | 「Do you collect data from this app?」→ **No**（本 App 零收集；跨裝置同步是使用者自架伺服器，不屬開發者收集） |
 | 分類 | Health & Fitness |

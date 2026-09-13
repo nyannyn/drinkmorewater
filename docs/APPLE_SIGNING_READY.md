@@ -22,9 +22,11 @@ Team ID 不是秘密（每個簽署後的 App 都看得到），放 repo 沒關�
 ```bash
 mkdir -p ~/apple-signing && cd ~/apple-signing
 openssl genrsa -out developerid.key 2048
-openssl req -new -key developerid.key -out developerid.certSigningRequest \
+MSYS_NO_PATHCONV=1 openssl req -new -key developerid.key -out developerid.certSigningRequest \
   -subj "/emailAddress=<你的 Apple ID email>/CN=Drink Water Reminder/C=TW"
+openssl req -in developerid.certSigningRequest -noout -subject   # 應印出 subject=emailAddress=…, CN=…, C=TW
 ```
+`MSYS_NO_PATHCONV=1` 必加：Git Bash 會把 `-subj` 開頭的 `/` 轉成 `C:/Program Files/Git/`，openssl 報 `subject name is expected to be in the format`。
 `developerid.key` 是私鑰，**之後匯出 .p12 要用，別刪**。
 
 ## 3. 在 Apple 建 Developer ID Application 憑證

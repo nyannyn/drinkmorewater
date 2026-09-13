@@ -2,6 +2,7 @@
 
 程式碼與 CI 已經改好（`package.json` `build.mac`、`build/entitlements.mac.plist`、`release.yml`），
 剩下的是**只有帳號持有人能做的事**：建憑證、產 App 專用密碼、把秘密放進 GitHub。依序做完 1–6 即可。
+**全程在 Windows 完成，不需要 Mac**：憑證用 Git Bash 的 OpenSSL 產，簽署與公證在 GitHub 的 macOS runner 上跑。
 
 > 前提：你是該 Apple Developer 帳號的 **Account Holder**（Developer ID 憑證只有這個角色能建）。
 
@@ -16,14 +17,8 @@ Team ID 不是秘密（每個簽署後的 App 都看得到），放 repo 沒關�
 
 > 為什麼不放 secret：本專案 electron-builder 是 24.x，**不讀 `APPLE_TEAM_ID` 環境變數**；而且 `notarize: true` 這種寫法會走不帶 teamId 的舊路徑，被 `@electron/notarize` 2.x 以「teamId is required」擋下。所以只能用 `{ "teamId": "…" }` 物件形式。CI 有檢查：placeholder 沒換會直接紅燈。
 
-## 2. 產生 CSR（憑證請求檔）
+## 2. 產生 CSR（憑證請求檔）— Windows，Git Bash（內建 OpenSSL，不需 Mac）
 
-二選一。**有 Mac 選 A**（之後匯出 .p12 最省事）。
-
-### A. Mac
-「鑰匙圈存取」→ 選單「鑰匙圈存取 → 憑證輔助程式 → 從憑證授權要求憑證…」→ 填 Apple ID email、常用名稱任填、選「儲存到磁碟」→ 得到 `CertificateSigningRequest.certSigningRequest`。
-
-### B. Windows（Git Bash，內建 OpenSSL）
 ```bash
 mkdir -p ~/apple-signing && cd ~/apple-signing
 openssl genrsa -out developerid.key 2048
@@ -38,12 +33,8 @@ openssl req -new -key developerid.key -out developerid.certSigningRequest \
 
 （每個帳號最多 5 張 Developer ID Application 憑證；憑證效期 5 年。）
 
-## 4. 匯出 `.p12`（憑證＋私鑰）
+## 4. 匯出 `.p12`（憑證＋私鑰）— Windows，承步驟 2
 
-### A. Mac
-雙擊 `.cer` 匯入鑰匙圈 → 「鑰匙圈存取 → 我的憑證」找到「Developer ID Application: <名字> (<Team ID>)」→ 右鍵 → **輸出…** → 格式 `.p12` → 設一組密碼（記下來，就是 `CSC_KEY_PASSWORD`）。
-
-### B. Windows（承步驟 2B）
 先下載 Apple 中繼憑證 [DeveloperIDG2CA.cer](https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer) 到同目錄，然後：
 ```bash
 cd ~/apple-signing
@@ -82,7 +73,6 @@ gh secret set APPLE_APP_SPECIFIC_PASSWORD --repo nyannyn/drinkmorewater # 貼步
 Remove-Item csc_link.txt
 gh secret list --repo nyannyn/drinkmorewater
 ```
-（Mac 用 `base64 -i developerid.p12 | tr -d '\n' > csc_link.txt`，其餘相同。）
 
 | Secret | 內容 | 用途 |
 |---|---|---|
@@ -107,11 +97,11 @@ gh run watch --repo nyannyn/drinkmorewater
 - `xcrun stapler validate`：公證票已釘上
 - `spctl -a`：`source=Notarized Developer ID`
 
-有 Mac 的話再從 Actions artifact `dist-mac` 下載 dmg，正常雙擊安裝、不應出現任何「無法打開」提示。
+（沒有 Mac 可以實測安裝，上面三項 CI 驗證就是全部證據；之後有 Mac 使用者回報「打不開」再查。）
 
 常見失敗：
-- `security: SecKeychainItemImport … MAC verification failed` → .p12 不是 `-legacy` 產的，回步驟 4B 重做。
-- `unable to build chain to self-signed root` → .p12 少了中繼憑證，步驟 4B 的 `-certfile` 漏了。
+- `security: SecKeychainItemImport … MAC verification failed` → .p12 不是 `-legacy` 產的，回步驟 4 重做。
+- `unable to build chain to self-signed root` → .p12 少了中繼憑證，步驟 4 的 `-certfile` 漏了。
 - `Invalid credentials` / `HTTP status code: 401` → App 專用密碼錯或不是 Account Holder 的 Apple ID。
 - `teamId is required` → 步驟 1 沒填。
 

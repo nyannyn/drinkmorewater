@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### macOS 簽署與公證
+- **macOS 版改為 Apple Developer ID 簽署＋公證**：開啟 DMG 拖入「應用程式」即可，不再需要 `xattr` 或「仍要打開」放行。
+- **macOS 自動更新可用**：Squirrel.Mac 只接受已簽署的 App，先前未簽名版的自動更新形同停用。
+- **發版流程防呆**：缺任一簽署 secret 直接失敗，並在 CI 內以 `codesign` / `stapler` / `spctl` 驗證每個 .app 已簽署且公證票已釘上；新增手動乾跑（`workflow_dispatch`）可在打 tag 前驗憑證。
+- 下載頁恢復 macOS 直接下載按鈕（Apple Silicon 優先）。
+
 ### iOS 上架準備
 - **Expo SDK 52 → 57**（React Native 0.86、React 19、New Architecture）：Apple 自 2026-04-28 起要求 Xcode 26 / iOS 26 SDK 才能上傳 App Store，舊 SDK 的 build 會被拒收。
 - 新增 `eas.json`（版號以 repo 為準、不用 OTA 更新）、`docs/privacy.html` 隱私權政策頁（App Store 必填）、`docs/IOS_RELEASE.md` 上架 SOP（含避免 EAS 鎖定的可攜性契約與退出步驟）。

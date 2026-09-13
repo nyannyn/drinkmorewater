@@ -80,7 +80,13 @@
       "icon": "build/icon.png",
       "category": "public.app-category.healthcare-fitness",
       "artifactName": "${name}-${version}-${arch}.${ext}",
-      "identity": null
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": {
+        "teamId": "24AD9R4PQ2"
+      }
     },
     "dmg": {
       "title": "喝水提醒"

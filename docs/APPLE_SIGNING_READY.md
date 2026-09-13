@@ -12,7 +12,7 @@
 
 [developer.apple.com/account](https://developer.apple.com/account) → **Membership details** → **Team ID**（10 碼英數）。
 
-把 `package.json` 裡 `build.mac.notarize.teamId` 的 `REPLACE_WITH_APPLE_TEAM_ID` 換成它並 commit。
+本專案已填：`package.json` `build.mac.notarize.teamId` = `24AD9R4PQ2`（2026-09-14）。換帳號時改這裡。
 Team ID 不是秘密（每個簽署後的 App 都看得到），放 repo 沒關係。
 
 > 為什麼不放 secret：本專案 electron-builder 是 24.x，**不讀 `APPLE_TEAM_ID` 環境變數**；而且 `notarize: true` 這種寫法會走不帶 teamId 的舊路徑，被 `@electron/notarize` 2.x 以「teamId is required」擋下。所以只能用 `{ "teamId": "…" }` 物件形式。CI 有檢查：placeholder 沒換會直接紅燈。

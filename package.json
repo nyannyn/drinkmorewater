@@ -85,7 +85,7 @@
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
       "notarize": {
-        "teamId": "REPLACE_WITH_APPLE_TEAM_ID"
+        "teamId": "24AD9R4PQ2"
       }
     },
     "dmg": {

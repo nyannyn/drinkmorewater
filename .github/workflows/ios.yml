@@ -112,26 +112,9 @@ jobs:
           sleep 12
           xcrun simctl io "$UDID" screenshot "$OUT/01-home.png" || true
 
-          # 安裝 idb，用來點底部「設定」分頁，截設定頁
-          brew install idb-companion || true
-          pipx install fb-idb 2>/dev/null || python3 -m pip install --user --break-system-packages fb-idb || true
-          export PATH="$HOME/.local/bin:$PATH"
-          idb list-targets || true
-          if command -v idb >/dev/null 2>&1; then
-            idb ui describe-all --udid "$UDID" --json > ui.json 2>/dev/null || true
-            COORD=$(python3 -c "
-          import json
-          try:
-              els=json.load(open('ui.json'))
-          except Exception:
-              els=[]
-          for e in els:
-              if (e.get('AXLabel') or '') in ('設定','设置','Settings'):
-                  f=e['frame']; print(int(f['x']+f['width']/2), int(f['y']+f['height']/2)); break
-          ")
-            echo "Settings tab coord: $COORD"
-            if [ -n "$COORD" ]; then idb ui tap --udid "$UDID" $COORD || true; sleep 3; fi
-          fi
+          # 用截圖模式的 URL scheme 切到「設定」分頁（App.tsx 只在 EXPO_PUBLIC_SCREENSHOT=1 時監聽）
+          xcrun simctl openurl "$UDID" "drinkwater://shot?tab=settings" || true
+          sleep 3
           xcrun simctl io "$UDID" screenshot "$OUT/02-settings.png" || true
 
           ls -la "$OUT"
@@ -181,12 +164,6 @@ jobs:
           mkdir -p app && tar -xzf simulator-app.tgz -C app
           ls app
 
-      - name: 安裝 idb（UI 定位與點擊）
-        run: |
-          brew install idb-companion
-          pipx install fb-idb
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
       - name: 開 6.9 吋模擬器並固定狀態列
         id: sim
         run: |
@@ -216,23 +193,13 @@ jobs:
           OUT="$GITHUB_WORKSPACE/store"
           mkdir -p "$OUT"
 
-          # 用 accessibilityIdentifier（RN testID）定位，跨語言穩定；找不到就列出畫面上所有 id 再失敗。
-          tap() {
-            local id="$1"
-            local coord
-            coord=$(idb ui describe-all --udid "$UDID" --json | python3 -c "
-          import json,sys
-          want=sys.argv[1]
-          els=json.load(sys.stdin)
-          for e in els:
-              if e.get('AXUniqueId')==want:
-                  f=e['frame']; print(int(f['x']+f['width']/2), int(f['y']+f['height']/2)); sys.exit()
-          ids=sorted({e.get('AXUniqueId') for e in els if e.get('AXUniqueId')})
-          sys.exit('找不到 testID='+want+'；畫面上有：'+', '.join(ids))
-          " "$id")
-            echo "tap $id @ $coord"
-            idb ui tap --udid "$UDID" $coord
-            sleep 2
+          # 截圖模式的 App 監聽 drinkwater://shot?lang=&tab=（見 App.tsx），用 openurl 切語言與分頁，
+          # 不依賴 idb 等 UI 點擊工具（macos runner 的 brew 沒有 idb-companion，先前那條路從未真的跑通）。
+          shot() {
+            local lang="$1" tab="$2" file="$3"
+            xcrun simctl openurl "$UDID" "drinkwater://shot?lang=$lang&tab=$tab"
+            sleep 3
+            xcrun simctl io "$UDID" screenshot "$file"
           }
 
           xcrun simctl launch "$UDID" "$BUNDLE_ID"
@@ -240,11 +207,8 @@ jobs:
 
           for lang in $LANGS; do
             mkdir -p "$OUT/$lang"
-            tap tab-settings
-            tap "lang-$lang"
-            xcrun simctl io "$UDID" screenshot "$OUT/$lang/02-settings.png"
-            tap tab-home
-            xcrun simctl io "$UDID" screenshot "$OUT/$lang/01-home.png"
+            shot "$lang" settings "$OUT/$lang/02-settings.png"
+            shot "$lang" home "$OUT/$lang/01-home.png"
           done
           find "$OUT" -name '*.png' | sort
 

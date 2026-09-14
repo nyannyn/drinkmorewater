@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   AppState,
   AppStateStatus,
-  Linking,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -15,7 +14,7 @@ import * as Notifications from "expo-notifications";
 
 import HomeScreen from "./src/screens/HomeScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
-import { loadData, saveData } from "./src/core/storage";
+import { getRawItem, loadData, saveData } from "./src/core/storage";
 import { handleDrinkComplete, padToWeek, resetDailyIfNeeded, resetData } from "./src/core/tracking";
 import { getDisplayTracking, markSettingsChanged, runSync } from "./src/core/sync";
 import { buildDemoData } from "./src/core/demo";
@@ -78,6 +77,11 @@ export default function App() {
       if (process.env.EXPO_PUBLIC_SCREENSHOT === "1") {
         const cur = await loadData();
         if (cur.todayMl === 0 && cur.weeklyLog.length === 0) await saveData(buildDemoData());
+        // CI 在兩次啟動之間直接改 AsyncStorage 的 manifest.json 寫入 screenshot-config，
+        // 決定這次啟動要用的語言與分頁（simctl openurl 會跳「Open in…?」確認框，走不通）。
+        const cfg = JSON.parse((await getRawItem("screenshot-config")) ?? "{}") as { lang?: string; tab?: Tab };
+        if (cfg.lang) await saveData({ lang: cfg.lang });
+        if (cfg.tab === "settings") setTab("settings");
       } else {
         const granted = await requestPermissions();
         if (!granted) {
@@ -91,25 +95,6 @@ export default function App() {
       setReady(true);
     })();
   }, [reschedule, doSync]);
-
-  // 截圖模式（僅 CI）：用 URL scheme 切語言與分頁，讓截圖腳本不必依賴 UI 點擊工具。
-  // 例：drinkwater://shot?lang=ja&tab=settings  正式 build 不註冊此監聽。
-  useEffect(() => {
-    if (process.env.EXPO_PUBLIC_SCREENSHOT !== "1") return;
-    const apply = async (url: string | null) => {
-      if (!url || !url.includes("://shot")) return;
-      const lang = /[?&]lang=([\w-]+)/.exec(url)?.[1];
-      const tabParam = /[?&]tab=(home|settings)/.exec(url)?.[1] as Tab | undefined;
-      if (lang) {
-        await saveData({ lang });
-        await reload();
-      }
-      if (tabParam) setTab(tabParam);
-    };
-    Linking.getInitialURL().then(apply);
-    const sub = Linking.addEventListener("url", (e) => apply(e.url));
-    return () => sub.remove();
-  }, [reload]);
 
   // 進前景：跨日重設並重排（補上背景期間消耗掉的通知）
   useEffect(() => {

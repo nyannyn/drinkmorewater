@@ -21,6 +21,15 @@ export async function loadData(): Promise<AppData> {
   return loaded;
 }
 
+// 讀任意 AsyncStorage 原始字串（CI 截圖模式用來讀取 screenshot-config）。
+export async function getRawItem(key: string): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
 export async function saveData(patch: Partial<AppData>): Promise<AppData> {
   const current = await loadData();
   const next = { ...current, ...patch };

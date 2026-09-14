@@ -112,9 +112,12 @@ jobs:
           sleep 12
           xcrun simctl io "$UDID" screenshot "$OUT/01-home.png" || true
 
-          # 用截圖模式的 URL scheme 切到「設定」分頁（App.tsx 只在 EXPO_PUBLIC_SCREENSHOT=1 時監聽）
-          xcrun simctl openurl "$UDID" "drinkwater://shot?tab=settings" || true
-          sleep 3
+          # 切到「設定」分頁：改 AsyncStorage manifest 寫 screenshot-config 後重啟（做法同 store-screenshots job）
+          xcrun simctl terminate "$UDID" "$BUNDLE_ID" || true
+          MANIFEST="$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data)/Library/Application Support/$BUNDLE_ID/RCTAsyncLocalStorage_V1/manifest.json"
+          python3 -c "import json,sys; p=sys.argv[1]; m=json.load(open(p)); m['screenshot-config']=json.dumps({'tab':'settings'}); json.dump(m,open(p,'w'))" "$MANIFEST" || true
+          xcrun simctl launch "$UDID" "$BUNDLE_ID" || true
+          sleep 8
           xcrun simctl io "$UDID" screenshot "$OUT/02-settings.png" || true
 
           ls -la "$OUT"
@@ -193,17 +196,32 @@ jobs:
           OUT="$GITHUB_WORKSPACE/store"
           mkdir -p "$OUT"
 
-          # 截圖模式的 App 監聽 drinkwater://shot?lang=&tab=（見 App.tsx），用 openurl 切語言與分頁，
-          # 不依賴 idb 等 UI 點擊工具（macos runner 的 brew 沒有 idb-companion，先前那條路從未真的跑通）。
+          # 切語言／分頁的方式：在兩次啟動之間，直接改 App 沙盒裡 AsyncStorage 的 manifest.json，
+          # 寫入 screenshot-config（App.tsx 只在截圖 build 讀它）。不用 idb（runner 裝不到）、
+          # 也不用 simctl openurl（iOS 會跳「Open in 喝水提醒?」確認框，沒有工具能按）。
+          xcrun simctl launch "$UDID" "$BUNDLE_ID"
+          sleep 12   # 首次啟動：等 RN 載入＋示範資料寫入
+          xcrun simctl terminate "$UDID" "$BUNDLE_ID"
+          CONTAINER=$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data)
+          MANIFEST="$CONTAINER/Library/Application Support/$BUNDLE_ID/RCTAsyncLocalStorage_V1/manifest.json"
+          if [ ! -f "$MANIFEST" ]; then
+            echo "::error::找不到 AsyncStorage manifest：$MANIFEST"; ls -R "$CONTAINER/Library" | head -50; exit 1
+          fi
+
           shot() {
             local lang="$1" tab="$2" file="$3"
-            xcrun simctl openurl "$UDID" "drinkwater://shot?lang=$lang&tab=$tab"
-            sleep 3
+            python3 - "$MANIFEST" "$lang" "$tab" <<'PY'
+          import json, sys
+          p, lang, tab = sys.argv[1:4]
+          m = json.load(open(p))
+          m["screenshot-config"] = json.dumps({"lang": lang, "tab": tab})
+          json.dump(m, open(p, "w"))
+          PY
+            xcrun simctl launch "$UDID" "$BUNDLE_ID"
+            sleep 8
             xcrun simctl io "$UDID" screenshot "$file"
+            xcrun simctl terminate "$UDID" "$BUNDLE_ID"
           }
-
-          xcrun simctl launch "$UDID" "$BUNDLE_ID"
-          sleep 12   # 等 RN 載入＋示範資料寫入
 
           for lang in $LANGS; do
             mkdir -p "$OUT/$lang"

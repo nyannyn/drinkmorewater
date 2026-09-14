@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F7FBFF" },
   header: { fontSize: 22, fontWeight: "700", color: "#1B6FC4", textAlign: "center", paddingVertical: 14 },
   body: { flex: 1 },
-  tabbar: { flexDirection: "row", borderTopWidth: 1, borderTopColor: "#e3eef7" },
+  tabbar: { flexDirection: "row", borderTopWidth: 1, borderTopColor: "#e3eef7", backgroundColor: "#F7FBFF" },
   tab: { flex: 1, paddingVertical: 14, alignItems: "center" },
   tabText: { fontSize: 16, color: "#9bb6cc" },
   tabOn: { color: "#1B6FC4", fontWeight: "700" },

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import {
   Alert,
   Pressable,
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -34,8 +35,10 @@ export default function SettingsScreen({ data, scheduledCount, onPatch, onReset,
     ]);
   };
 
+  // 設定頁比一個螢幕高（加了跨裝置同步區塊之後），要能捲動；
+  // 之前是純 View，內容溢出到分頁列底下且小螢幕碰不到同步區。
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       {/* 啟用提醒 */}
       <View style={styles.row}>
         <Text style={styles.label}>{s.enabled}</Text>
@@ -138,12 +141,13 @@ export default function SettingsScreen({ data, scheduledCount, onPatch, onReset,
       <Pressable style={styles.resetBtn} onPress={confirmReset}>
         <Text style={styles.resetText}>{s.reset}</Text>
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  scroll: { flex: 1 },
+  container: { padding: 20, paddingBottom: 32 },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginVertical: 10 },
   label: { fontSize: 16, color: "#333", marginTop: 10, marginBottom: 6, fontWeight: "500" },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },

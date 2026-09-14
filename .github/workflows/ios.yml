@@ -208,6 +208,15 @@ jobs:
             echo "::error::找不到 AsyncStorage manifest：$MANIFEST"; ls -R "$CONTAINER/Library" | head -50; exit 1
           fi
 
+          # 等 App 行程真的活著再截圖：terminate 後立刻 launch 偶爾會拍到 iOS 桌面或空白啟動畫面。
+          wait_running() {
+            for _ in $(seq 1 30); do
+              # 模擬器裡的 App 是宿主機行程，pgrep 直接看得到；launchctl 當備援
+              if pgrep -f "/app.app/app$" >/dev/null || xcrun simctl spawn "$UDID" launchctl list 2>/dev/null | grep -q "UIKitApplication:$BUNDLE_ID"; then return 0; fi
+              sleep 1
+            done
+            echo "::error::App 在 30 秒內沒有進入執行狀態"; return 1
+          }
           shot() {
             local lang="$1" tab="$2" file="$3"
             python3 - "$MANIFEST" "$lang" "$tab" <<'PY'
@@ -218,9 +227,11 @@ jobs:
           json.dump(m, open(p, "w"))
           PY
             xcrun simctl launch "$UDID" "$BUNDLE_ID"
-            sleep 8
+            wait_running
+            sleep 10   # RN bundle 載入＋畫面穩定
             xcrun simctl io "$UDID" screenshot "$file"
             xcrun simctl terminate "$UDID" "$BUNDLE_ID"
+            sleep 2
           }
 
           for lang in $LANGS; do

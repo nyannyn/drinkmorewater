@@ -134,7 +134,10 @@ jobs:
       # 用 tar 包起來是因為 upload-artifact 不保留執行權限，直接傳 .app 目錄會讓 simctl launch 失敗。
       - name: 打包模擬器 .app 供截圖 job 使用
         working-directory: mobile/ios/build/Build/Products/Release-iphonesimulator
-        run: tar -czf "$GITHUB_WORKSPACE/simulator-app.tgz" *.app
+        run: |
+          APP=$(find . -maxdepth 1 -name '*.app' | head -1)
+          [ -n "$APP" ] || { echo "::error::找不到 .app"; exit 1; }
+          tar -czf "$GITHUB_WORKSPACE/simulator-app.tgz" "$APP"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -186,7 +189,9 @@ jobs:
           xcrun simctl boot "$UDID" || true
           xcrun simctl bootstatus "$UDID" -b
           xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularBars 4
-          xcrun simctl install "$UDID" app/*.app
+          APP=$(find app -maxdepth 1 -name '*.app' | head -1)
+          [ -n "$APP" ] || { echo "::error::解包後找不到 .app"; exit 1; }
+          xcrun simctl install "$UDID" "$APP"
 
       - name: 逐語言截圖
         env:

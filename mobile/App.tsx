@@ -75,8 +75,9 @@ export default function App() {
       // 避免系統權限對話框擋住畫面，使自動截圖能拍到實際 UI；並在儲存為空時
       // 寫入示範資料，讓 App Store 截圖有內容。正式 build 不受影響。
       if (process.env.EXPO_PUBLIC_SCREENSHOT === "1") {
-        const cur = await loadData();
-        if (cur.todayMl === 0 && cur.weeklyLog.length === 0) await saveData(buildDemoData());
+        // 每次啟動都重寫示範資料（不只在空儲存時）：截圖 job 會連續重啟 8 次，
+        // 若跨過午夜，resetDailyIfNeeded 會把示範資料歸零，各語言截圖內容就不一致。
+        await saveData(buildDemoData());
         // CI 在兩次啟動之間直接改 AsyncStorage 的 manifest.json 寫入 screenshot-config，
         // 決定這次啟動要用的語言與分頁（simctl openurl 會跳「Open in…?」確認框，走不通）。
         const cfg = JSON.parse((await getRawItem("screenshot-config")) ?? "{}") as { lang?: string; tab?: Tab };

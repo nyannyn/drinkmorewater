@@ -17,6 +17,7 @@ import SettingsScreen from "./src/screens/SettingsScreen";
 import { loadData, saveData } from "./src/core/storage";
 import { handleDrinkComplete, padToWeek, resetDailyIfNeeded, resetData } from "./src/core/tracking";
 import { getDisplayTracking, markSettingsChanged, runSync } from "./src/core/sync";
+import { buildDemoData } from "./src/core/demo";
 import { AppData, DEFAULTS, DayLog } from "./src/core/types";
 import {
   ACTION_DRANK,
@@ -71,8 +72,12 @@ export default function App() {
     (async () => {
       await registerCategory();
       // 截圖模式（EXPO_PUBLIC_SCREENSHOT=1，僅 CI 截圖 build 設定）跳過權限請求，
-      // 避免系統權限對話框擋住畫面，使自動截圖能拍到實際 UI。正式 build 不受影響。
-      if (process.env.EXPO_PUBLIC_SCREENSHOT !== "1") {
+      // 避免系統權限對話框擋住畫面，使自動截圖能拍到實際 UI；並在儲存為空時
+      // 寫入示範資料，讓 App Store 截圖有內容。正式 build 不受影響。
+      if (process.env.EXPO_PUBLIC_SCREENSHOT === "1") {
+        const cur = await loadData();
+        if (cur.todayMl === 0 && cur.weeklyLog.length === 0) await saveData(buildDemoData());
+      } else {
         const granted = await requestPermissions();
         if (!granted) {
           const s = t(DEFAULTS.lang);
@@ -161,10 +166,11 @@ export default function App() {
       </View>
 
       <View style={styles.tabbar}>
-        <Pressable style={styles.tab} onPress={() => setTab("home")}>
+        {/* testID → iOS accessibilityIdentifier，CI 截圖腳本靠它跨語言定位分頁 */}
+        <Pressable style={styles.tab} onPress={() => setTab("home")} testID="tab-home">
           <Text style={[styles.tabText, tab === "home" && styles.tabOn]}>{s.home}</Text>
         </Pressable>
-        <Pressable style={styles.tab} onPress={() => setTab("settings")}>
+        <Pressable style={styles.tab} onPress={() => setTab("settings")} testID="tab-settings">
           <Text style={[styles.tabText, tab === "settings" && styles.tabOn]}>{s.settings}</Text>
         </Pressable>
       </View>

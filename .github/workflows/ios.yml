@@ -18,6 +18,11 @@ on:
       - "mobile/**"
       - ".github/workflows/ios.yml"
   workflow_dispatch:
+    inputs:
+      store_device:
+        description: "App Store 截圖用模擬器機型（6.9 吋）。負向對照時填 iPhone 17 Pro 應紅在尺寸斷言"
+        default: "iPhone 17 Pro Max"
+        required: false
 
 jobs:
   build-ios:
@@ -48,7 +53,10 @@ jobs:
 
       - name: Prebuild（產生 ios/ 原生專案並安裝 Pods）
         working-directory: mobile
-        run: npx expo prebuild --platform ios
+        run: |
+          npx expo prebuild --platform ios
+          # app.json ios.privacyManifests 要真的變成檔案，否則上傳 App Store Connect 會收 ITMS-91053
+          test -f ios/app/PrivacyInfo.xcprivacy || { echo "::error::prebuild 未產生 ios/app/PrivacyInfo.xcprivacy"; exit 1; }
 
       - name: Xcode 編譯（未簽署，Release，iOS Simulator）
         working-directory: mobile/ios
@@ -135,6 +143,138 @@ jobs:
           name: ios-simulator-screenshots
           path: screenshots/
           if-no-files-found: warn
+
+      # 給 store-screenshots job 重用同一顆 .app（截圖模式 build），省一次 8–16 分鐘的 xcodebuild。
+      # 用 tar 包起來是因為 upload-artifact 不保留執行權限，直接傳 .app 目錄會讓 simctl launch 失敗。
+      - name: 打包模擬器 .app 供截圖 job 使用
+        working-directory: mobile/ios/build/Build/Products/Release-iphonesimulator
+        run: tar -czf "$GITHUB_WORKSPACE/simulator-app.tgz" *.app
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ios-simulator-app
+          path: simulator-app.tgz
+          if-no-files-found: error
+
+  # App Store 上架截圖：6.9 吋機型（1320×2868）、狀態列 9:41、示範資料、四種語言各拍 Home＋設定。
+  # 任何一步失敗都要紅（沒有 continue-on-error）：尺寸不對的截圖上傳 App Store Connect 會被拒。
+  store-screenshots:
+    name: App Store 截圖（6.9 吋 × 4 語）
+    needs: build-ios
+    runs-on: macos-latest
+    env:
+      BUNDLE_ID: com.drinkmorewater.app
+      STORE_DEVICE: ${{ github.event.inputs.store_device || 'iPhone 17 Pro Max' }}
+      # 與 mobile/src/i18n.ts 的 LANGUAGES.code 一致；testID 為 lang-<code>
+      LANGS: "zh-Hant zh-Hans en ja"
+      EXPECT_W: "1320"
+      EXPECT_H: "2868"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: ios-simulator-app
+
+      - name: 解包 .app
+        run: |
+          mkdir -p app && tar -xzf simulator-app.tgz -C app
+          ls app
+
+      - name: 安裝 idb（UI 定位與點擊）
+        run: |
+          brew install idb-companion
+          pipx install fb-idb
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: 開 6.9 吋模擬器並固定狀態列
+        id: sim
+        run: |
+          set -eo pipefail
+          UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json,sys,os
+          want=os.environ['STORE_DEVICE']
+          d=json.load(sys.stdin)['devices']
+          for rt,devs in d.items():
+              if 'iOS' not in rt: continue
+              for x in devs:
+                  if x.get('isAvailable') and x['name']==want:
+                      print(x['udid']); sys.exit()
+          sys.exit('找不到模擬器 '+want+'；可用機型：'+', '.join(sorted({x['name'] for rt,devs in d.items() if 'iOS' in rt for x in devs})))
+          ")
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularBars 4
+          xcrun simctl install "$UDID" app/*.app
+
+      - name: 逐語言截圖
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          set -eo pipefail
+          OUT="$GITHUB_WORKSPACE/store"
+          mkdir -p "$OUT"
+
+          # 用 accessibilityIdentifier（RN testID）定位，跨語言穩定；找不到就列出畫面上所有 id 再失敗。
+          tap() {
+            local id="$1"
+            local coord
+            coord=$(idb ui describe-all --udid "$UDID" --json | python3 -c "
+          import json,sys
+          want=sys.argv[1]
+          els=json.load(sys.stdin)
+          for e in els:
+              if e.get('AXUniqueId')==want:
+                  f=e['frame']; print(int(f['x']+f['width']/2), int(f['y']+f['height']/2)); sys.exit()
+          ids=sorted({e.get('AXUniqueId') for e in els if e.get('AXUniqueId')})
+          sys.exit('找不到 testID='+want+'；畫面上有：'+', '.join(ids))
+          " "$id")
+            echo "tap $id @ $coord"
+            idb ui tap --udid "$UDID" $coord
+            sleep 2
+          }
+
+          xcrun simctl launch "$UDID" "$BUNDLE_ID"
+          sleep 12   # 等 RN 載入＋示範資料寫入
+
+          for lang in $LANGS; do
+            mkdir -p "$OUT/$lang"
+            tap tab-settings
+            tap "lang-$lang"
+            xcrun simctl io "$UDID" screenshot "$OUT/$lang/02-settings.png"
+            tap tab-home
+            xcrun simctl io "$UDID" screenshot "$OUT/$lang/01-home.png"
+          done
+          find "$OUT" -name '*.png' | sort
+
+      - name: 斷言張數與尺寸
+        run: |
+          set -eo pipefail
+          n_langs=$(echo $LANGS | wc -w | tr -d ' ')
+          expect_n=$((n_langs * 2))
+          files=$(find store -name '*.png' | sort)
+          n=$(echo "$files" | grep -c . || true)
+          if [ "$n" -ne "$expect_n" ]; then
+            echo "::error::截圖張數 $n ≠ 預期 $expect_n"; exit 1
+          fi
+          bad=0
+          for f in $files; do
+            w=$(sips -g pixelWidth "$f" | awk '/pixelWidth/{print $2}')
+            h=$(sips -g pixelHeight "$f" | awk '/pixelHeight/{print $2}')
+            echo "$f ${w}x${h}"
+            if [ "$w" != "$EXPECT_W" ] || [ "$h" != "$EXPECT_H" ]; then
+              echo "::error file=$f::尺寸 ${w}x${h} ≠ App Store 6.9 吋要求 ${EXPECT_W}x${EXPECT_H}（機型 $STORE_DEVICE）"; bad=1
+            fi
+          done
+          [ "$bad" -eq 0 ]
+
+      - name: 上傳 App Store 截圖
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-store-screenshots
+          path: store/
+          if-no-files-found: error
 
   package-ipa:
     name: 打包未簽署 .ipa（供 Sideloadly / SideStore 重簽）

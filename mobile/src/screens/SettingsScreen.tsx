@@ -111,6 +111,7 @@ export default function SettingsScreen({ data, scheduledCount, onPatch, onReset,
         {LANGUAGES.map((l) => (
           <Pressable
             key={l.code}
+            testID={`lang-${l.code}`}
             style={[styles.chip, data.lang === l.code && styles.chipOn]}
             onPress={() => onPatch({ lang: l.code })}
           >

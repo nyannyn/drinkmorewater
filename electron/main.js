@@ -16,6 +16,7 @@ const fs = require("fs");
 const { autoUpdater } = require("electron-updater");
 const store = require("./store");
 const sync = require("./sync");
+const tracking = require("../shared/tracking");
 
 // 同步後通知畫面與托盤刷新（fire-and-forget，失敗不影響離線使用）
 function triggerSync() {
@@ -394,7 +395,7 @@ async function getWeeklyStats() {
   const disp = await sync.getDisplayTracking();
   const today = { date: disp.lastDate, ml: disp.todayMl, cups: disp.todayCups };
   return {
-    log: [...disp.weeklyLog, today],
+    log: tracking.padToWeek([...disp.weeklyLog, today], disp.lastDate),
     dailyGoalMl: d.dailyGoalMl ?? DEFAULT_DAILY_GOAL_ML,
   };
 }

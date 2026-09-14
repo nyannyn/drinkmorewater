@@ -28,7 +28,7 @@ export default function WeeklyChart({ log, dailyGoalMl, lang }: Props) {
                 style={[styles.bar, { height: `${h}%`, backgroundColor: reached ? "#3FB950" : "#4DA3FF" }]}
               />
             </View>
-            <Text style={styles.ml}>{d.ml}</Text>
+            <Text style={styles.ml}>{d.ml > 0 ? d.ml : ""}</Text>
             <Text style={styles.wd}>{wd}</Text>
           </View>
         );

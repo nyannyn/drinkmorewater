@@ -15,7 +15,7 @@ import * as Notifications from "expo-notifications";
 import HomeScreen from "./src/screens/HomeScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
 import { loadData, saveData } from "./src/core/storage";
-import { handleDrinkComplete, resetDailyIfNeeded, resetData } from "./src/core/tracking";
+import { handleDrinkComplete, padToWeek, resetDailyIfNeeded, resetData } from "./src/core/tracking";
 import { getDisplayTracking, markSettingsChanged, runSync } from "./src/core/sync";
 import { AppData, DEFAULTS, DayLog } from "./src/core/types";
 import {
@@ -46,7 +46,7 @@ export default function App() {
     const disp = await getDisplayTracking(raw);
     setData({ ...raw, todayMl: disp.todayMl, todayCups: disp.todayCups, weeklyLog: disp.weeklyLog, lastDate: disp.lastDate });
     setWeekly({
-      log: [...disp.weeklyLog, { date: disp.lastDate, ml: disp.todayMl, cups: disp.todayCups }],
+      log: padToWeek([...disp.weeklyLog, { date: disp.lastDate, ml: disp.todayMl, cups: disp.todayCups }], disp.lastDate),
       dailyGoalMl: raw.dailyGoalMl,
     });
   }, []);

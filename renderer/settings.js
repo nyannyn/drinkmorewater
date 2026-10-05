@@ -11,6 +11,9 @@ const I18N = {
     labelGoal: "每日目標 (ml)",
     labelEnabled: "定時提醒",
     enabledNote: "關閉後不會出現水杯與橫幅通知。",
+    labelEye: "護眼提醒",
+    labelEyeInterval: "護眼間隔（分鐘）",
+    eyeNote: "每隔一段時間提醒你看看遠方 20 秒；離開電腦超過 20 秒會自動算作休息過。",
     labelSound: "音效回饋",
     labelVolume: "音量",
     drinkBtn: (ml) => `+${ml} ml`,
@@ -79,6 +82,9 @@ const I18N = {
     labelGoal: "每日目标 (ml)",
     labelEnabled: "定时提醒",
     enabledNote: "关闭后不会出现水杯与横幅通知。",
+    labelEye: "护眼提醒",
+    labelEyeInterval: "护眼间隔（分钟）",
+    eyeNote: "每隔一段时间提醒你看看远方 20 秒；离开电脑超过 20 秒会自动算作休息过。",
     labelSound: "音效反馈",
     labelVolume: "音量",
     drinkBtn: (ml) => `+${ml} ml`,
@@ -148,6 +154,9 @@ const I18N = {
     labelGoal: "Daily goal (ml)",
     labelEnabled: "Reminders",
     enabledNote: "When off, no cup or banner notification will appear.",
+    labelEye: "Eye break reminder",
+    labelEyeInterval: "Eye break interval (min)",
+    eyeNote: "Reminds you to look into the distance for 20 seconds every so often; stepping away from the computer for over 20 seconds counts as a break.",
     labelSound: "Sound",
     labelVolume: "Volume",
     drinkBtn: (ml) => `+${ml} ml`,
@@ -217,6 +226,9 @@ const I18N = {
     labelGoal: "1日の目標 (ml)",
     labelEnabled: "リマインダー",
     enabledNote: "オフにするとコップもバナー通知も表示されません。",
+    labelEye: "目の休憩リマインダー",
+    labelEyeInterval: "目の休憩間隔（分）",
+    eyeNote: "一定時間ごとに、20 秒間遠くを見るようお知らせします。パソコンから 20 秒以上離れると休憩したものとみなされます。",
     labelSound: "サウンド",
     labelVolume: "音量",
     drinkBtn: (ml) => `+${ml} ml`,
@@ -303,6 +315,10 @@ const $drinkBtn = document.getElementById("drinkBtn");
 const $holdSpeedSlider = document.getElementById("holdSpeedSlider");
 const $holdSpeedLabel = document.getElementById("holdSpeedLabel");
 const $bannerToggle = document.getElementById("bannerToggle");
+const $eyeToggle = document.getElementById("eyeToggle");
+const $eyeIntervalMin = document.getElementById("eyeIntervalMin");
+const $eyeIntervalRow = document.getElementById("eyeIntervalRow");
+let currentEyeInterval = 30;
 
 // ===== Toggle helper =====
 function setToggle(el, on) {
@@ -409,6 +425,9 @@ function applyLang(lang) {
   document.getElementById("labelGoal").textContent = t("labelGoal");
   document.getElementById("labelEnabled").textContent = t("labelEnabled");
   document.getElementById("enabledNote").textContent = t("enabledNote");
+  document.getElementById("labelEye").textContent = t("labelEye");
+  document.getElementById("eyeNote").textContent = t("eyeNote");
+  document.getElementById("labelEyeInterval").textContent = t("labelEyeInterval");
   document.getElementById("labelBanner").textContent = t("labelBanner");
   document.getElementById("labelSound").textContent = t("labelSound");
   document.getElementById("labelVolume").textContent = t("labelVolume");
@@ -615,6 +634,12 @@ async function loadPrefs() {
   $holdSpeedLabel.textContent = speed + "x";
 
   setToggle($bannerToggle, prefs.bannerEnabled !== false);
+
+  const eyeOn = prefs.eyeEnabled !== false;
+  setToggle($eyeToggle, eyeOn);
+  $eyeIntervalRow.style.display = eyeOn ? "" : "none";
+  currentEyeInterval = clampInt(prefs.eyeIntervalMin ?? 30, 1, 240, 30);
+  $eyeIntervalMin.value = currentEyeInterval;
 }
 
 async function refresh() {
@@ -641,6 +666,18 @@ bindToggle($enabledToggle, true, () => {
 
 bindToggle($bannerToggle, true, (on) => {
   window.api.setPrefs({ bannerEnabled: on });
+});
+
+bindToggle($eyeToggle, true, (on) => {
+  $eyeIntervalRow.style.display = on ? "" : "none";
+  window.api.setPrefs({ eyeEnabled: on });
+});
+
+$eyeIntervalMin.addEventListener("change", () => {
+  const val = clampInt($eyeIntervalMin.value, 1, 240, currentEyeInterval);
+  $eyeIntervalMin.value = val;
+  currentEyeInterval = val;
+  window.api.setPrefs({ eyeIntervalMin: val });
 });
 
 $dailyGoal.addEventListener("change", () => {

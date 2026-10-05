@@ -17,6 +17,7 @@ const { autoUpdater } = require("electron-updater");
 const store = require("./store");
 const sync = require("./sync");
 const tracking = require("../shared/tracking");
+const eye = require("../shared/eye");
 
 // 同步後通知畫面與托盤刷新（fire-and-forget，失敗不影響離線使用）
 function triggerSync() {
@@ -42,6 +43,14 @@ const DEFAULT_INTERVAL_MIN = 30;
 const DRINK_ML = 300;
 const DEFAULT_DAILY_GOAL_ML = 2000;
 const IDLE_AWAY_SEC = 5 * 60; // 離開超過 5 分鐘視為不在位，略過該次提醒
+const EYE_POLL_MS = 5 * 1000; // 護眼：每 5 秒讀一次閒置秒數（離開 ≥20 秒必定被讀到）
+
+// 開發用：未打包時可用秒數覆蓋間隔，供實跑驗證；打包版一律忽略
+function devIntervalMs(envName) {
+  if (app.isPackaged) return null;
+  const sec = Number(process.env[envName]);
+  return sec > 0 ? sec * 1000 : null;
+}
 
 const ICON_PATH = path.join(__dirname, "..", "build", "icon.png");
 const NOTIF_ICON_PATH = path.join(__dirname, "..", "build", "notification.png");
@@ -52,6 +61,9 @@ app.setAppUserModelId("com.drinkwater.reminder");
 // ===== 主行程多語（通知 / 托盤）— 與設定視窗語言一致 =====
 const MAIN_I18N = {
   "zh-Hant": {
+    eyeTitle: "護眼提醒",
+    eyeBody: "看看 6 公尺外的地方 20 秒，順便眨眨眼。",
+    mergedBody: "喝口水，順便看看遠方 20 秒、眨眨眼。",
     notifyTitle: "💧 該喝水了！",
     notifyBody: "你已經很久沒喝水了，記得補充水分哦！",
     traySettings: "開啟設定 / 統計",
@@ -61,6 +73,9 @@ const MAIN_I18N = {
     trayTip: (ml, goal) => `喝水提醒 — 今日 ${ml} / ${goal} ml`,
   },
   "zh-Hans": {
+    eyeTitle: "护眼提醒",
+    eyeBody: "看看 6 米外的地方 20 秒，顺便眨眨眼。",
+    mergedBody: "喝口水，顺便看看远方 20 秒、眨眨眼。",
     notifyTitle: "💧 该喝水了！",
     notifyBody: "你已经很久没喝水了，记得补充水分哦！",
     traySettings: "打开设置 / 统计",
@@ -70,6 +85,9 @@ const MAIN_I18N = {
     trayTip: (ml, goal) => `喝水提醒 — 今日 ${ml} / ${goal} ml`,
   },
   en: {
+    eyeTitle: "Eye break",
+    eyeBody: "Look at something 20 feet (6 m) away for 20 seconds, and blink a few times.",
+    mergedBody: "Take a sip, then look into the distance for 20 seconds and blink.",
     notifyTitle: "💧 Time to drink!",
     notifyBody: "You haven't had water in a while — stay hydrated!",
     traySettings: "Open settings / stats",
@@ -79,6 +97,9 @@ const MAIN_I18N = {
     trayTip: (ml, goal) => `Drink Water — Today ${ml} / ${goal} ml`,
   },
   ja: {
+    eyeTitle: "目の休憩",
+    eyeBody: "6 メートル先を 20 秒ほど眺めて、まばたきしましょう。",
+    mergedBody: "水を一口飲んで、遠くを 20 秒眺めてまばたきしましょう。",
     notifyTitle: "💧 水を飲む時間です！",
     notifyBody: "しばらく水を飲んでいません。水分補給を忘れずに！",
     traySettings: "設定 / 統計を開く",
@@ -98,6 +119,8 @@ let tray = null;
 let cupWindow = null;
 let settingsWindow = null;
 let welcomeWindow = null;
+let nextWaterAt = null; // 下次喝水提醒的時間戳（護眼合併判斷用）
+let eyeLastRestAt = Date.now(); // 上次休息或護眼提醒的時間戳（不持久化，啟動即重算）
 let reminderTimer = null;
 let paused = false; // 鎖屏 / 睡眠時暫停
 
@@ -142,6 +165,7 @@ function clearReminderTimer() {
     clearTimeout(reminderTimer);
     reminderTimer = null;
   }
+  nextWaterAt = null;
 }
 
 function scheduleReminder() {
@@ -151,22 +175,81 @@ function scheduleReminder() {
     "enabled",
   ]);
   if (!enabled || paused) return;
+  const ms = devIntervalMs("DRINK_WATER_INTERVAL_SEC") ?? (intervalMin ?? DEFAULT_INTERVAL_MIN) * 60 * 1000;
+  nextWaterAt = Date.now() + ms;
   reminderTimer = setTimeout(() => {
     fireReminder();
-  }, (intervalMin ?? DEFAULT_INTERVAL_MIN) * 60 * 1000);
+  }, ms);
 }
 
 function fireReminder() {
   resetDailyIfNeeded();
   // 使用者離開過久就略過這次（回來後下一輪會再提醒）
-  if (powerMonitor.getSystemIdleTime() < IDLE_AWAY_SEC) {
-    triggerCup();
+  const idleSec = powerMonitor.getSystemIdleTime();
+  if (idleSec < IDLE_AWAY_SEC) {
+    // 護眼提醒已到期或即將到期 → 併進這次喝水通知，省掉一次打擾（剛離開回來＝已休息過，不合併）
+    const merged = waterBannerShown() && eyeActive() && !eye.shouldCredit(idleSec) &&
+      eye.shouldMergeIntoWater({ now: Date.now(), lastRestAt: eyeLastRestAt, intervalMs: eyeIntervalMs() });
+    if (merged) eyeLastRestAt = Date.now();
+    triggerCup({ merged });
   }
   scheduleReminder(); // 排下一次
 }
 
+// ===== 護眼提醒 =====
+function eyeActive() {
+  const { enabled = true, eyeEnabled = true } = store.get(["enabled", "eyeEnabled"]);
+  return enabled && eyeEnabled && !paused;
+}
+
+function eyeIntervalMs() {
+  const { eyeIntervalMin } = store.get(["eyeIntervalMin"]);
+  return devIntervalMs("DRINK_EYE_INTERVAL_SEC") ?? eye.clampEyeInterval(eyeIntervalMin ?? eye.DEFAULT_EYE_INTERVAL_MIN) * 60 * 1000;
+}
+
+// 喝水提醒會不會出現系統通知（不會的話就沒有可合併的對象）
+function waterBannerShown() {
+  const { bannerEnabled = true } = store.get(["bannerEnabled"]);
+  return bannerEnabled && Notification.isSupported();
+}
+
+function checkEye() {
+  if (!eyeActive()) return;
+  const now = Date.now();
+  const action = eye.eyeDecision({
+    now,
+    lastRestAt: eyeLastRestAt,
+    intervalMs: eyeIntervalMs(),
+    idleSec: powerMonitor.getSystemIdleTime(),
+    nextWaterAt: waterBannerShown() ? nextWaterAt : null,
+  });
+  if (action === "credit") {
+    eyeLastRestAt = now;
+  } else if (action === "remind") {
+    eyeLastRestAt = now;
+    showEyeNotification();
+  }
+}
+
+function showEyeNotification() {
+  if (!Notification.isSupported()) return;
+  const notif = new Notification({
+    title: mt("eyeTitle"),
+    body: mt("eyeBody"),
+    icon: NOTIF_ICON_PATH,
+    silent: true,
+  });
+  notif.show();
+  setTimeout(() => notif.close(), 20 * 1000);
+}
+
+function startEyeLoop() {
+  eyeLastRestAt = Date.now();
+  setInterval(checkEye, EYE_POLL_MS);
+}
+
 // 顯示水杯 + 系統通知
-function triggerCup() {
+function triggerCup({ merged = false } = {}) {
   if (!cupWindow || cupWindow.isDestroyed()) {
     cupWindow = null;
     createCupWindow();
@@ -192,12 +275,13 @@ function triggerCup() {
   if (bannerEnabled && Notification.isSupported()) {
     const notif = new Notification({
       title: mt("notifyTitle"),
-      body: mt("notifyBody"),
+      body: mt(merged ? "mergedBody" : "notifyBody"),
       icon: NOTIF_ICON_PATH,
       silent: true,
     });
     notif.show();
-    setTimeout(() => notif.close(), 3000);
+    // 合併文案要使用者看遠方 20 秒，留久一點
+    setTimeout(() => notif.close(), merged ? 20 * 1000 : 3000);
   }
 }
 
@@ -404,6 +488,7 @@ function toggleEnabled() {
   const { enabled = true } = store.get(["enabled"]);
   const next = !enabled;
   store.set({ enabled: next });
+  if (next) eyeLastRestAt = Date.now(); // 重新啟用從頭計時，不要立刻跳護眼
   scheduleReminder();
   refreshTray();
   onSettingsChanged();
@@ -518,7 +603,7 @@ function registerIpc() {
     return { soundEnabled, soundVolume };
   });
   ipcMain.handle("get-prefs", () => {
-    const d = store.get(["theme", "lang", "autoStart", "drinkMl", "cupStyle", "holdSpeed", "bannerEnabled"]);
+    const d = store.get(["theme", "lang", "autoStart", "drinkMl", "cupStyle", "holdSpeed", "bannerEnabled", "eyeEnabled", "eyeIntervalMin"]);
     return {
       theme: d.theme ?? "light",
       lang: d.lang ?? "zh-Hant",
@@ -527,6 +612,8 @@ function registerIpc() {
       cupStyle: d.cupStyle ?? "classic",
       holdSpeed: d.holdSpeed ?? 1,
       bannerEnabled: d.bannerEnabled ?? true,
+      eyeEnabled: d.eyeEnabled ?? true,
+      eyeIntervalMin: eye.clampEyeInterval(d.eyeIntervalMin ?? eye.DEFAULT_EYE_INTERVAL_MIN),
     };
   });
   ipcMain.handle("set-prefs", (_e, prefs) => {
@@ -537,6 +624,11 @@ function registerIpc() {
     if (prefs.cupStyle != null) updates.cupStyle = prefs.cupStyle;
     if (prefs.holdSpeed != null) updates.holdSpeed = prefs.holdSpeed;
     if (prefs.bannerEnabled != null) updates.bannerEnabled = prefs.bannerEnabled;
+    if (prefs.eyeEnabled != null) {
+      updates.eyeEnabled = !!prefs.eyeEnabled;
+      if (updates.eyeEnabled) eyeLastRestAt = Date.now(); // 剛打開從頭計時，不要立刻跳
+    }
+    if (prefs.eyeIntervalMin != null) updates.eyeIntervalMin = eye.clampEyeInterval(prefs.eyeIntervalMin);
     if (prefs.autoStart != null) {
       updates.autoStart = prefs.autoStart;
       app.setLoginItemSettings({ openAtLogin: prefs.autoStart, args: ["--hidden"] });
@@ -617,6 +709,7 @@ function registerPowerMonitor() {
   };
   const resume = () => {
     paused = false;
+    eyeLastRestAt = Date.now(); // 鎖屏 / 睡眠期間算作休息過
     scheduleReminder();
   };
   powerMonitor.on("lock-screen", pause);
@@ -633,6 +726,7 @@ function registerPowerMonitor() {
     if (paused && userActive) {
       // resume/unlock 事件遺失，強制解除暫停
       paused = false;
+      eyeLastRestAt = Date.now(); // 同 resume：鎖屏期間算作休息過
     }
     if (!paused && !reminderTimer) {
       scheduleReminder();
@@ -700,6 +794,7 @@ app.whenReady().then(() => {
 
   registerIpc();
   registerPowerMonitor();
+  startEyeLoop();
   createTray();
   createCupWindow();
   scheduleReminder();

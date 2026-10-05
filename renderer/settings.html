@@ -715,6 +715,21 @@
         <div class="toggle on" id="enabledToggle" role="switch" tabindex="0" aria-checked="true"><div class="toggle-knob"></div></div>
         <p class="pref-note" id="enabledNote" style="width:100%;margin-top:6px;margin-bottom:0;padding-left:16px;"></p>
       </div>
+      <div class="setting-item" style="flex-wrap:wrap;">
+        <div class="setting-info">
+          <div class="dot-blue"></div>
+          <span id="labelEye"></span>
+        </div>
+        <div class="toggle on" id="eyeToggle" role="switch" tabindex="0" aria-checked="true" aria-labelledby="labelEye"><div class="toggle-knob"></div></div>
+        <p class="pref-note" id="eyeNote" style="width:100%;margin-top:6px;margin-bottom:0;padding-left:16px;"></p>
+      </div>
+      <div class="setting-item" id="eyeIntervalRow">
+        <div class="setting-info">
+          <div class="dot-yellow"></div>
+          <span id="labelEyeInterval"></span>
+        </div>
+        <input type="number" class="setting-number" id="eyeIntervalMin" value="30" min="1" max="240" step="1" aria-labelledby="labelEyeInterval">
+      </div>
       <div class="setting-item">
         <div class="setting-info">
           <div class="dot-blue"></div>

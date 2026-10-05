@@ -40,7 +40,31 @@ function applyDrink(data, ml, today = todayStr()) {
 }
 
 /**
- * 取得含今日的 7 天統計（給週圖用）。
+ * 把日誌補滿成「連續 7 天、末筆為今日」：沒開 App 的日子在 weeklyLog 裡不存在，
+ * 週圖要顯示為 0 而不是消失；多於 7 天的只留最近 7 天。
+ * 儲存層的 weeklyLog 不經此函式，仍只記有資料的天。
+ * 日期字串沿用 Date#toDateString 格式（與 todayStr 一致）。
+ * @param {DayLog[]} log
+ * @param {string} [today]
+ * @returns {DayLog[]}
+ */
+function padToWeek(log, today = todayStr()) {
+  const byDate = new Map();
+  for (const d of log ?? []) byDate.set(new Date(d.date).toDateString(), d);
+  const end = new Date(today);
+  const out = [];
+  for (let i = 6; i >= 0; i--) {
+    const day = new Date(end);
+    day.setDate(end.getDate() - i);
+    const key = day.toDateString();
+    const e = byDate.get(key);
+    out.push({ date: key, ml: e?.ml ?? 0, cups: e?.cups ?? 0 });
+  }
+  return out;
+}
+
+/**
+ * 取得含今日的 7 天統計（給週圖用），恆為連續 7 天。
  * @param {AppData} data
  * @param {string} [today]
  * @returns {{ log: DayLog[], dailyGoalMl: number }}
@@ -48,7 +72,7 @@ function applyDrink(data, ml, today = todayStr()) {
 function getWeeklyStats(data, today = todayStr()) {
   const d = resetDailyIfNeeded(data, today);
   const todayLog = { date: d.lastDate ?? today, ml: d.todayMl, cups: d.todayCups };
-  return { log: [...d.weeklyLog, todayLog], dailyGoalMl: d.dailyGoalMl };
+  return { log: padToWeek([...d.weeklyLog, todayLog], today), dailyGoalMl: d.dailyGoalMl };
 }
 
 /**
@@ -61,4 +85,4 @@ function resetTracking(data, today = todayStr()) {
   return { ...data, todayMl: 0, todayCups: 0, weeklyLog: [], lastDate: today };
 }
 
-module.exports = { todayStr, resetDailyIfNeeded, applyDrink, getWeeklyStats, resetTracking };
+module.exports = { todayStr, resetDailyIfNeeded, applyDrink, padToWeek, getWeeklyStats, resetTracking };

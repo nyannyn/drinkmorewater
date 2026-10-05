@@ -14,9 +14,10 @@ import * as Notifications from "expo-notifications";
 
 import HomeScreen from "./src/screens/HomeScreen";
 import SettingsScreen from "./src/screens/SettingsScreen";
-import { loadData, saveData } from "./src/core/storage";
-import { handleDrinkComplete, resetDailyIfNeeded, resetData } from "./src/core/tracking";
+import { getRawItem, loadData, saveData } from "./src/core/storage";
+import { handleDrinkComplete, padToWeek, resetDailyIfNeeded, resetData } from "./src/core/tracking";
 import { getDisplayTracking, markSettingsChanged, runSync } from "./src/core/sync";
+import { buildDemoData } from "./src/core/demo";
 import { AppData, DEFAULTS, DayLog } from "./src/core/types";
 import {
   ACTION_DRANK,
@@ -46,7 +47,7 @@ export default function App() {
     const disp = await getDisplayTracking(raw);
     setData({ ...raw, todayMl: disp.todayMl, todayCups: disp.todayCups, weeklyLog: disp.weeklyLog, lastDate: disp.lastDate });
     setWeekly({
-      log: [...disp.weeklyLog, { date: disp.lastDate, ml: disp.todayMl, cups: disp.todayCups }],
+      log: padToWeek([...disp.weeklyLog, { date: disp.lastDate, ml: disp.todayMl, cups: disp.todayCups }], disp.lastDate),
       dailyGoalMl: raw.dailyGoalMl,
     });
   }, []);
@@ -71,8 +72,18 @@ export default function App() {
     (async () => {
       await registerCategory();
       // 截圖模式（EXPO_PUBLIC_SCREENSHOT=1，僅 CI 截圖 build 設定）跳過權限請求，
-      // 避免系統權限對話框擋住畫面，使自動截圖能拍到實際 UI。正式 build 不受影響。
-      if (process.env.EXPO_PUBLIC_SCREENSHOT !== "1") {
+      // 避免系統權限對話框擋住畫面，使自動截圖能拍到實際 UI；並在儲存為空時
+      // 寫入示範資料，讓 App Store 截圖有內容。正式 build 不受影響。
+      if (process.env.EXPO_PUBLIC_SCREENSHOT === "1") {
+        // 每次啟動都重寫示範資料（不只在空儲存時）：截圖 job 會連續重啟 8 次，
+        // 若跨過午夜，resetDailyIfNeeded 會把示範資料歸零，各語言截圖內容就不一致。
+        await saveData(buildDemoData());
+        // CI 在兩次啟動之間直接改 AsyncStorage 的 manifest.json 寫入 screenshot-config，
+        // 決定這次啟動要用的語言與分頁（simctl openurl 會跳「Open in…?」確認框，走不通）。
+        const cfg = JSON.parse((await getRawItem("screenshot-config")) ?? "{}") as { lang?: string; tab?: Tab };
+        if (cfg.lang) await saveData({ lang: cfg.lang });
+        if (cfg.tab === "settings") setTab("settings");
+      } else {
         const granted = await requestPermissions();
         if (!granted) {
           const s = t(DEFAULTS.lang);
@@ -161,10 +172,11 @@ export default function App() {
       </View>
 
       <View style={styles.tabbar}>
-        <Pressable style={styles.tab} onPress={() => setTab("home")}>
+        {/* testID → iOS accessibilityIdentifier，CI 截圖腳本靠它跨語言定位分頁 */}
+        <Pressable style={styles.tab} onPress={() => setTab("home")} testID="tab-home">
           <Text style={[styles.tabText, tab === "home" && styles.tabOn]}>{s.home}</Text>
         </Pressable>
-        <Pressable style={styles.tab} onPress={() => setTab("settings")}>
+        <Pressable style={styles.tab} onPress={() => setTab("settings")} testID="tab-settings">
           <Text style={[styles.tabText, tab === "settings" && styles.tabOn]}>{s.settings}</Text>
         </Pressable>
       </View>
@@ -177,7 +189,7 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F7FBFF" },
   header: { fontSize: 22, fontWeight: "700", color: "#1B6FC4", textAlign: "center", paddingVertical: 14 },
   body: { flex: 1 },
-  tabbar: { flexDirection: "row", borderTopWidth: 1, borderTopColor: "#e3eef7" },
+  tabbar: { flexDirection: "row", borderTopWidth: 1, borderTopColor: "#e3eef7", backgroundColor: "#F7FBFF" },
   tab: { flex: 1, paddingVertical: 14, alignItems: "center" },
   tabText: { fontSize: 16, color: "#9bb6cc" },
   tabOn: { color: "#1B6FC4", fontWeight: "700" },

@@ -18,6 +18,11 @@ on:
       - "mobile/**"
       - ".github/workflows/ios.yml"
   workflow_dispatch:
+    inputs:
+      store_device:
+        description: "App Store 截圖用模擬器機型（6.9 吋）。負向對照時填 iPhone 17 Pro 應紅在尺寸斷言"
+        default: "iPhone 17 Pro Max"
+        required: false
 
 jobs:
   build-ios:
@@ -48,7 +53,10 @@ jobs:
 
       - name: Prebuild（產生 ios/ 原生專案並安裝 Pods）
         working-directory: mobile
-        run: npx expo prebuild --platform ios
+        run: |
+          npx expo prebuild --platform ios
+          # app.json ios.privacyManifests 要真的變成檔案，否則上傳 App Store Connect 會收 ITMS-91053
+          test -f ios/app/PrivacyInfo.xcprivacy || { echo "::error::prebuild 未產生 ios/app/PrivacyInfo.xcprivacy"; exit 1; }
 
       - name: Xcode 編譯（未簽署，Release，iOS Simulator）
         working-directory: mobile/ios
@@ -104,26 +112,12 @@ jobs:
           sleep 12
           xcrun simctl io "$UDID" screenshot "$OUT/01-home.png" || true
 
-          # 安裝 idb，用來點底部「設定」分頁，截設定頁
-          brew install idb-companion || true
-          pipx install fb-idb 2>/dev/null || python3 -m pip install --user --break-system-packages fb-idb || true
-          export PATH="$HOME/.local/bin:$PATH"
-          idb list-targets || true
-          if command -v idb >/dev/null 2>&1; then
-            idb ui describe-all --udid "$UDID" --json > ui.json 2>/dev/null || true
-            COORD=$(python3 -c "
-          import json
-          try:
-              els=json.load(open('ui.json'))
-          except Exception:
-              els=[]
-          for e in els:
-              if (e.get('AXLabel') or '') in ('設定','设置','Settings'):
-                  f=e['frame']; print(int(f['x']+f['width']/2), int(f['y']+f['height']/2)); break
-          ")
-            echo "Settings tab coord: $COORD"
-            if [ -n "$COORD" ]; then idb ui tap --udid "$UDID" $COORD || true; sleep 3; fi
-          fi
+          # 切到「設定」分頁：改 AsyncStorage manifest 寫 screenshot-config 後重啟（做法同 store-screenshots job）
+          xcrun simctl terminate "$UDID" "$BUNDLE_ID" || true
+          MANIFEST="$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data)/Library/Application Support/$BUNDLE_ID/RCTAsyncLocalStorage_V1/manifest.json"
+          python3 -c "import json,sys; p=sys.argv[1]; m=json.load(open(p)); m['screenshot-config']=json.dumps({'tab':'settings'}); json.dump(m,open(p,'w'))" "$MANIFEST" || true
+          xcrun simctl launch "$UDID" "$BUNDLE_ID" || true
+          sleep 8
           xcrun simctl io "$UDID" screenshot "$OUT/02-settings.png" || true
 
           ls -la "$OUT"
@@ -135,6 +129,150 @@ jobs:
           name: ios-simulator-screenshots
           path: screenshots/
           if-no-files-found: warn
+
+      # 給 store-screenshots job 重用同一顆 .app（截圖模式 build），省一次 8–16 分鐘的 xcodebuild。
+      # 用 tar 包起來是因為 upload-artifact 不保留執行權限，直接傳 .app 目錄會讓 simctl launch 失敗。
+      - name: 打包模擬器 .app 供截圖 job 使用
+        working-directory: mobile/ios/build/Build/Products/Release-iphonesimulator
+        run: |
+          APP=$(find . -maxdepth 1 -name '*.app' | head -1)
+          [ -n "$APP" ] || { echo "::error::找不到 .app"; exit 1; }
+          tar -czf "$GITHUB_WORKSPACE/simulator-app.tgz" "$APP"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ios-simulator-app
+          path: simulator-app.tgz
+          if-no-files-found: error
+
+  # App Store 上架截圖：6.9 吋機型（1320×2868）、狀態列 9:41、示範資料、四種語言各拍 Home＋設定。
+  # 任何一步失敗都要紅（沒有 continue-on-error）：尺寸不對的截圖上傳 App Store Connect 會被拒。
+  store-screenshots:
+    name: App Store 截圖（6.9 吋 × 4 語）
+    needs: build-ios
+    runs-on: macos-latest
+    env:
+      BUNDLE_ID: com.drinkmorewater.app
+      STORE_DEVICE: ${{ github.event.inputs.store_device || 'iPhone 17 Pro Max' }}
+      # 與 mobile/src/i18n.ts 的 LANGUAGES.code 一致；testID 為 lang-<code>
+      LANGS: "zh-Hant zh-Hans en ja"
+      EXPECT_W: "1320"
+      EXPECT_H: "2868"
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: ios-simulator-app
+
+      - name: 解包 .app
+        run: |
+          mkdir -p app && tar -xzf simulator-app.tgz -C app
+          ls app
+
+      - name: 開 6.9 吋模擬器並固定狀態列
+        id: sim
+        run: |
+          set -eo pipefail
+          UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json,sys,os
+          want=os.environ['STORE_DEVICE']
+          d=json.load(sys.stdin)['devices']
+          for rt,devs in d.items():
+              if 'iOS' not in rt: continue
+              for x in devs:
+                  if x.get('isAvailable') and x['name']==want:
+                      print(x['udid']); sys.exit()
+          sys.exit('找不到模擬器 '+want+'；可用機型：'+', '.join(sorted({x['name'] for rt,devs in d.items() if 'iOS' in rt for x in devs})))
+          ")
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --wifiBars 3 --cellularBars 4
+          APP=$(find app -maxdepth 1 -name '*.app' | head -1)
+          [ -n "$APP" ] || { echo "::error::解包後找不到 .app"; exit 1; }
+          xcrun simctl install "$UDID" "$APP"
+
+      - name: 逐語言截圖
+        env:
+          UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          set -eo pipefail
+          OUT="$GITHUB_WORKSPACE/store"
+          mkdir -p "$OUT"
+
+          # 切語言／分頁的方式：在兩次啟動之間，直接改 App 沙盒裡 AsyncStorage 的 manifest.json，
+          # 寫入 screenshot-config（App.tsx 只在截圖 build 讀它）。不用 idb（runner 裝不到）、
+          # 也不用 simctl openurl（iOS 會跳「Open in 喝水提醒?」確認框，沒有工具能按）。
+          xcrun simctl launch "$UDID" "$BUNDLE_ID"
+          sleep 12   # 首次啟動：等 RN 載入＋示範資料寫入
+          xcrun simctl terminate "$UDID" "$BUNDLE_ID"
+          CONTAINER=$(xcrun simctl get_app_container "$UDID" "$BUNDLE_ID" data)
+          MANIFEST="$CONTAINER/Library/Application Support/$BUNDLE_ID/RCTAsyncLocalStorage_V1/manifest.json"
+          if [ ! -f "$MANIFEST" ]; then
+            echo "::error::找不到 AsyncStorage manifest：$MANIFEST"; ls -R "$CONTAINER/Library" | head -50; exit 1
+          fi
+
+          # 等 App 行程真的活著再截圖：terminate 後立刻 launch 偶爾會拍到 iOS 桌面或空白啟動畫面。
+          wait_running() {
+            for _ in $(seq 1 30); do
+              # 模擬器裡的 App 是宿主機行程，pgrep 直接看得到；launchctl 當備援
+              if pgrep -f "/app.app/app$" >/dev/null || xcrun simctl spawn "$UDID" launchctl list 2>/dev/null | grep -q "UIKitApplication:$BUNDLE_ID"; then return 0; fi
+              sleep 1
+            done
+            echo "::error::App 在 30 秒內沒有進入執行狀態"; return 1
+          }
+          shot() {
+            local lang="$1" tab="$2" file="$3"
+            python3 - "$MANIFEST" "$lang" "$tab" <<'PY'
+          import json, sys
+          p, lang, tab = sys.argv[1:4]
+          m = json.load(open(p))
+          m["screenshot-config"] = json.dumps({"lang": lang, "tab": tab})
+          json.dump(m, open(p, "w"))
+          PY
+            xcrun simctl launch "$UDID" "$BUNDLE_ID"
+            wait_running
+            sleep 10   # RN bundle 載入＋畫面穩定
+            xcrun simctl io "$UDID" screenshot "$file"
+            xcrun simctl terminate "$UDID" "$BUNDLE_ID"
+            sleep 2
+          }
+
+          for lang in $LANGS; do
+            mkdir -p "$OUT/$lang"
+            shot "$lang" settings "$OUT/$lang/02-settings.png"
+            shot "$lang" home "$OUT/$lang/01-home.png"
+          done
+          find "$OUT" -name '*.png' | sort
+
+      - name: 斷言張數與尺寸
+        run: |
+          set -eo pipefail
+          n_langs=$(echo $LANGS | wc -w | tr -d ' ')
+          expect_n=$((n_langs * 2))
+          files=$(find store -name '*.png' | sort)
+          n=$(echo "$files" | grep -c . || true)
+          if [ "$n" -ne "$expect_n" ]; then
+            echo "::error::截圖張數 $n ≠ 預期 $expect_n"; exit 1
+          fi
+          bad=0
+          for f in $files; do
+            w=$(sips -g pixelWidth "$f" | awk '/pixelWidth/{print $2}')
+            h=$(sips -g pixelHeight "$f" | awk '/pixelHeight/{print $2}')
+            echo "$f ${w}x${h}"
+            if [ "$w" != "$EXPECT_W" ] || [ "$h" != "$EXPECT_H" ]; then
+              echo "::error file=$f::尺寸 ${w}x${h} ≠ App Store 6.9 吋要求 ${EXPECT_W}x${EXPECT_H}（機型 $STORE_DEVICE）"; bad=1
+            fi
+          done
+          [ "$bad" -eq 0 ]
+
+      - name: 上傳 App Store 截圖
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-store-screenshots
+          path: store/
+          if-no-files-found: error
 
   package-ipa:
     name: 打包未簽署 .ipa（供 Sideloadly / SideStore 重簽）

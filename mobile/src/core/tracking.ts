@@ -17,6 +17,9 @@ export async function handleDrinkComplete(ml?: number): Promise<AppData> {
   return saveData(core.applyDrink(data, ml));
 }
 
+// 把日誌補滿連續 7 天（週圖用；缺日補 0）
+export const padToWeek: (log: DayLog[], today?: string) => DayLog[] = core.padToWeek;
+
 // 取得含今日的 7 天統計
 export async function getWeeklyStats(): Promise<{ log: DayLog[]; dailyGoalMl: number }> {
   const data = await loadData();

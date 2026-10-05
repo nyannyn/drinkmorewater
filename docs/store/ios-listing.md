@@ -13,7 +13,7 @@
 - 隱私權政策網址：https://nyannyn.github.io/drinkmorewater/privacy.html
 - 版權：2026 nyannyn
 - 審核備註（Notes for Review，英文）：
-  > No account or sign-in. All data stays on device. "Cross-device sync" is optional and requires the user's own self-hosted server — it can be skipped during review. To test notifications: Settings tab → "Send test notification" (fires in ~5 seconds); regular reminders are scheduled local notifications at the chosen interval within the active hours.
+  > No account or sign-in. All data stays on device. "Cross-device sync" is optional and requires the user's own self-hosted server — it can be skipped during review. To test notifications: Settings tab → "Send test notification" (fires in about 3 seconds); regular reminders are scheduled local notifications at the chosen interval within the active hours.
 
 ---
 
@@ -29,7 +29,7 @@
 喝水提醒是一個安靜、沒有負擔的喝水小幫手：設定間隔，時間到手機會提醒你；喝了就在通知上按「我喝了」，不必打開 App。
 
 功能
-• 定時提醒：15 分鐘到數小時任你設定，只在你指定的活躍時段內提醒，睡覺時不吵你
+• 定時提醒：每 15、30、45 或 60 分鐘任你選，只在你指定的活躍時段內提醒，睡覺時不吵你
 • 一鍵記錄：通知上直接按「我喝了」，或打開 App 按「喝一杯」
 • 每日目標：自訂目標與每次飲水量，進度用水杯畫給你看，達標會慶祝
 • 過去 7 天：長條圖看這週喝得夠不夠，達標的日子會變綠
@@ -58,7 +58,7 @@
 喝水提醒是一个安静、没有负担的喝水小帮手：设定间隔，时间到手机会提醒你；喝了就在通知上按「我喝了」，不必打开 App。
 
 功能
-• 定时提醒：15 分钟到数小时任你设定，只在你指定的活跃时段内提醒，睡觉时不吵你
+• 定时提醒：每 15、30、45 或 60 分钟任你选，只在你指定的活跃时段内提醒，睡觉时不吵你
 • 一键记录：通知上直接按「我喝了」，或打开 App 按「喝一杯」
 • 每日目标：自定义目标与每次饮水量，进度用水杯画给你看，达标会庆祝
 • 过去 7 天：柱状图看这周喝得够不够，达标的日子会变绿
@@ -87,7 +87,7 @@
 Drink Water Reminder is a quiet, no-fuss hydration companion: pick an interval, get a nudge when it's time, and tap "I drank" on the notification — no need to open the app.
 
 Features
-• Scheduled reminders: from 15 minutes to several hours, only within the active hours you set, so it stays silent while you sleep
+• Scheduled reminders: every 15, 30, 45 or 60 minutes, only within the active hours you set, so it stays silent while you sleep
 • One-tap logging: tap "I drank" on the notification, or "Drink a cup" in the app
 • Daily goal: set your goal and cup size; progress fills a cup, and reaching the goal gets a small celebration
 • Last 7 days: a bar chart shows how the week went, with goal-reached days in green
@@ -116,7 +116,7 @@ Initial release.
 水分補給リマインダーは、静かで手間のかからない飲水サポートアプリです。間隔を決めておけば時間になったら通知でお知らせ。通知の「飲んだ」を押すだけで、アプリを開かずに記録できます。
 
 機能
-• 定時リマインド：15 分から数時間まで自由に設定。指定した活動時間帯の中だけ通知するので、睡眠中は静かです
+• 定時リマインド：15・30・45・60 分ごとから選べます。指定した活動時間帯の中だけ通知するので、睡眠中は静かです
 • ワンタップ記録：通知の「飲んだ」か、アプリの「一杯飲む」をタップ
 • 1 日の目標：目標量と 1 回の量を設定。進み具合はコップの水位で表示、達成するとお祝い
 • 過去 7 日間：棒グラフで今週の飲水量を確認。目標達成日は緑で表示

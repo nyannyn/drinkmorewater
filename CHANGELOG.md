@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### 護眼提醒（桌面版）
+- **每隔一段時間提醒看遠方 20 秒、眨眨眼**（依美國眼科學會 20-20-20 建議）。間隔可自由輸入 1–240 分鐘，預設 30 分；設定頁「護眼提醒」可關閉。
+- **少打擾設計**：離開電腦超過 20 秒（含鎖屏、睡眠）自動算作休息過，不再提醒；與喝水提醒相差 3 分鐘內合併成一則「喝口水，順便看看遠方」。只發靜音系統通知，不叫出水杯、不鎖螢幕。
+- 判斷邏輯抽成 `shared/eye.js` 純函式並附測試，日後手機版可沿用。
+
 ### iOS 上架準備
 - **Expo SDK 52 → 57**（React Native 0.86、React 19、New Architecture）：Apple 自 2026-04-28 起要求 Xcode 26 / iOS 26 SDK 才能上傳 App Store，舊 SDK 的 build 會被拒收。
 - 新增 `eas.json`（版號以 repo 為準、不用 OTA 更新）、`docs/privacy.html` 隱私權政策頁（App Store 必填）、`docs/IOS_RELEASE.md` 上架 SOP（含避免 EAS 鎖定的可攜性契約與退出步驟）。

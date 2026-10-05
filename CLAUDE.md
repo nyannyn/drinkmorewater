@@ -24,10 +24,11 @@
 
 - `schema.js` — 資料 schema 單一真相來源（DEFAULTS、常數、`SETTINGS_KEYS`）。手機 `mobile/src/core/types.ts` re-export 之；桌面直接吃。
 - `tracking.js` — 跨日重設 / 記錄喝水 / 週統計（純函式，不碰 I/O；兩端各自以儲存層包裝）。
+- `eye.js` — 護眼提醒判斷（閒置 ≥20 秒抵扣、與喝水 3 分鐘內合併、喝水計時器晚觸發 10 秒寬限）。目前僅桌面使用；`eyeEnabled` / `eyeIntervalMin` **不進** `SETTINGS_KEYS`（手機無此功能）。
 - `merge.js` — **同步合併演算法**：各裝置回報自身每日貢獻 → 伺服器依日期加總 → 顯示 = own + others；設定 last-write-wins。
 - `sync-client.js` — 平台無關同步客戶端（全域 fetch + 注入式儲存）。採「疊加層」：本機追蹤欄位仍只記自己，他機貢獻另存，顯示時相加，故離線行為不變。
 - 手機 import 須帶 `.js` 副檔名（ESM 解析）；metro 靠 `mobile/metro.config.js` 的 watchFolders 納入 shared。
-- 測試：`node --test shared/__tests__/*.test.js`（20 項）。
+- 測試：`node --test shared/__tests__/*.test.js`（29 項）。
 
 ## 同步後端（server/）
 
@@ -49,7 +50,7 @@
 - `renderer/fonts.css` — base64 內嵌字型（Quicksand / Playfair Display / JetBrains Mono，latin subset）。
 
 ### 資料 schema（store keys，手機版沿用）
-`todayMl`, `todayCups`, `lastDate`, `weeklyLog[]`, `dailyGoalMl`, `intervalMin`, `enabled`, `soundEnabled`, `soundVolume`, `theme`, `lang`, `autoStart`, `drinkMl`, `cupStyle`。手機版另有 `activeStart` / `activeEnd`（活躍時段）。
+`todayMl`, `todayCups`, `lastDate`, `weeklyLog[]`, `dailyGoalMl`, `intervalMin`, `enabled`, `soundEnabled`, `soundVolume`, `theme`, `lang`, `autoStart`, `drinkMl`, `cupStyle`；桌面另有 `eyeEnabled`（預設 true）/ `eyeIntervalMin`（預設 30，1–240）。開發時可用 `DRINK_EYE_INTERVAL_SEC` / `DRINK_WATER_INTERVAL_SEC` 把間隔縮成秒（僅未打包時生效）。手機版另有 `activeStart` / `activeEnd`（活躍時段）。
 
 ### 預設值
 間隔 30 分、每次 300ml、每日目標 2000ml、閒置超過 5 分鐘略過該次提醒。
